@@ -18,7 +18,7 @@ export function ProjectHeader() {
   const [projectPrompt, setProjectPrompt] = useState('');
 
   const totalBalance = agents.reduce((sum, a) => sum + a.balance, 0);
-  const activeAgents = agents.filter((a) => a.status !== 'idle').length;
+  const activeAgents = agents.filter((a) => a.status !== 'idle' && a.status !== 'delivered').length;
 
   const handleStartProject = () => {
     if (!projectPrompt.trim()) return;

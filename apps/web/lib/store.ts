@@ -31,7 +31,7 @@ export interface Agent {
   role: string;
   description: string;
   pricing: string;
-  status: 'idle' | 'thinking' | 'working' | 'waiting' | 'error';
+  status: 'idle' | 'thinking' | 'working' | 'waiting' | 'delivered' | 'error';
   avatar: string;
   color: string;
   currentTask?: string;
@@ -281,6 +281,7 @@ const initialAgents: Agent[] = [
   { id: 'mobile-developer', name: 'Mobile Developer', role: 'Mobile-First Dev', description: 'Responsive & PWA prototypes', pricing: '$0.05-0.12', status: 'idle', avatar: 'MB', color: '#f472b6', balance: 100 },
   { id: 'e-commerce-specialist', name: 'E-commerce Specialist', role: 'Store Setup', description: 'Shopify, catalogs & shipping', pricing: '$0.04-0.10', status: 'idle', avatar: 'EC', color: '#fb923c', balance: 100 },
   { id: 'code-reviewer', name: 'Code Reviewer', role: 'PR Review', description: 'Automated code review & bug detection', pricing: '$0.03-0.08', status: 'idle', avatar: 'CR', color: '#f43f5e', balance: 100 },
+  { id: 'deployer', name: 'Deployer', role: 'Vercel Deploy', description: 'One-click Vercel deployment', pricing: '$0.02', status: 'idle', avatar: 'DP', color: '#000000', balance: 100 },
 ];
 
 export const useShipWithAIStore = create<ShipWithAIState>((set, get) => ({

@@ -7,6 +7,7 @@ import { runAgentStreaming } from '@shipwithai/core/agent-runner-streaming';
 import type { AgentRunConfig, AgentStreamCallbacks } from '@shipwithai/core/types';
 import { getToolRegistry } from '@shipwithai/core/tools';
 import { getDefaultHooks } from '@shipwithai/core/hooks';
+import { listFiles } from '@shipwithai/core/github-repo';
 
 // Agent invocation via Claude CLI or API
 export async function POST(
@@ -68,11 +69,21 @@ export async function POST(
         } catch { /* non-fatal */ }
       }
 
+      // Fetch repo tree to give agent awareness of the project structure
+      let repoTreeBlock = '';
+      if (repoFullName) {
+        try {
+          const rootFiles = await listFiles(repoFullName, undefined, 'main');
+          const tree = rootFiles.map((f) => `${f.type === 'dir' ? '📁' : '📄'} ${f.path}`).join('\n');
+          repoTreeBlock = `\n\n## Repository Structure (${repoFullName})\n\`\`\`\n${tree}\n\`\`\`\nAlways use these actual paths when reading files. Do NOT guess paths.\n`;
+        } catch { /* non-fatal — agent can still list root manually */ }
+      }
+
       // Build agent run config
       const runConfig: AgentRunConfig = {
         agentId: agentId as AgentRunConfig['agentId'],
         model: getModel(config),
-        systemPrompt,
+        systemPrompt: systemPrompt + repoTreeBlock,
         messages,
         maxTokens: (config.maxTokens as number) || 16000,
         maxIterations: (config.maxIterations as number) || 10,

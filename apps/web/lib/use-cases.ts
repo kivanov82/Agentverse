@@ -70,7 +70,7 @@ export const USE_CASES: Record<UseCaseId, UseCaseConfig> = {
     label: 'Business Landing Page',
     tagline: 'Launch my business online',
     icon: 'Globe',
-    agents: ['pm', 'ui-designer', 'ui-developer', 'backend-developer', 'marketing', 'seo-specialist', 'payment-integration', 'code-reviewer'],
+    agents: ['pm', 'ui-designer', 'ui-developer', 'backend-developer', 'marketing', 'seo-specialist', 'payment-integration', 'deployer', 'code-reviewer'],
     questions: [
       {
         id: 'business',
@@ -112,7 +112,7 @@ export const USE_CASES: Record<UseCaseId, UseCaseConfig> = {
     label: 'App Prototype',
     tagline: 'Show me what my app idea looks like',
     icon: 'Smartphone',
-    agents: ['pm', 'ux-analyst', 'ui-designer', 'ui-developer', 'mobile-developer', 'code-reviewer'],
+    agents: ['pm', 'ux-analyst', 'ui-designer', 'ui-developer', 'mobile-developer', 'deployer', 'code-reviewer'],
     questions: [
       {
         id: 'idea',
@@ -145,7 +145,7 @@ export const USE_CASES: Record<UseCaseId, UseCaseConfig> = {
     label: 'E-commerce Store',
     tagline: 'Set up my online store',
     icon: 'ShoppingCart',
-    agents: ['pm', 'ui-designer', 'ui-developer', 'backend-developer', 'marketing', 'e-commerce-specialist', 'payment-integration', 'seo-specialist', 'code-reviewer'],
+    agents: ['pm', 'ui-designer', 'ui-developer', 'backend-developer', 'marketing', 'e-commerce-specialist', 'payment-integration', 'seo-specialist', 'deployer', 'code-reviewer'],
     questions: [
       {
         id: 'products',
@@ -182,7 +182,7 @@ export const USE_CASES: Record<UseCaseId, UseCaseConfig> = {
     label: 'Watch a Demo',
     tagline: 'See our team build a coffee shop website',
     icon: 'Play',
-    agents: ['pm', 'ui-designer', 'ui-developer', 'backend-developer', 'marketing', 'seo-specialist', 'code-reviewer'],
+    agents: ['pm', 'ui-designer', 'ui-developer', 'backend-developer', 'marketing', 'seo-specialist', 'deployer', 'code-reviewer'],
     questions: [],
     pmBriefTemplate: () =>
       `Demo: Coffee Shop Website.\n\nBuild a complete website for "Bean & Bloom Coffee" — a cozy neighborhood coffee shop. Includes menu page, online ordering, table reservations, Google Maps integration, Instagram feed, and review widget. Optimized for local SEO.`,

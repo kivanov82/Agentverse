@@ -26,7 +26,8 @@ export function registerGitHubTools(registry: ToolRegistry): void {
       name: 'github_read_files',
       description:
         'Read files from the project GitHub repository. Use to list directory contents or read file content. ' +
-        'When path is a directory, returns a list of files. When path is a file, returns its content.',
+        'When path is a directory, returns a list of files. When path is a file, returns its content. ' +
+        'IMPORTANT: Always start by listing the root directory (path: "") to understand the repo structure before reading specific files. Do NOT guess paths.',
       input_schema: {
         type: 'object',
         properties: {

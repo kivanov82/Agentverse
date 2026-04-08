@@ -37,6 +37,7 @@ export function AgentCard({ agent, isSelected, onClick }: AgentCardProps) {
     thinking: { color: 'bg-amber-500', text: 'Thinking...', icon: Loader2, style: 'bg-amber-500/15 text-amber-400' },
     working: { color: 'bg-emerald-500', text: 'Working...', icon: Loader2, style: 'bg-emerald-500/15 text-emerald-400' },
     waiting: { color: 'bg-cyan-500', text: 'Ready for input', icon: ArrowRight, style: 'bg-cyan-500/15 text-cyan-400' },
+    delivered: { color: 'bg-emerald-500', text: 'Delivered', icon: CheckCircle, style: 'bg-emerald-500/15 text-emerald-400' },
     error: { color: 'bg-red-500', text: 'Error', icon: null, style: 'bg-red-500/15 text-red-400' },
   }[agent.status];
 

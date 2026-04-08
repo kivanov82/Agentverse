@@ -8,6 +8,7 @@ const statusColors = {
   thinking: 'bg-yellow-500 animate-pulse',
   working: 'bg-green-500 animate-pulse',
   waiting: 'bg-blue-500',
+  delivered: 'bg-emerald-500',
   error: 'bg-red-500',
 };
 
@@ -17,7 +18,7 @@ export function SimpleAgentGrid() {
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
       {agents.map((agent) => {
-        const isActive = agent.status !== 'idle';
+        const isActive = agent.status !== 'idle' && agent.status !== 'delivered';
         const isSelected = selectedAgent === agent.id;
 
         return (
@@ -57,7 +58,8 @@ export function SimpleAgentGrid() {
               >
                 {agent.status === 'working' ? '⚡ Working' :
                  agent.status === 'thinking' ? '💭 Thinking' :
-                 agent.status === 'waiting' ? '⏳ Waiting' : ''}
+                 agent.status === 'waiting' ? '⏳ Waiting' :
+                 agent.status === 'delivered' ? '✓ Delivered' : ''}
               </motion.div>
             )}
           </motion.button>

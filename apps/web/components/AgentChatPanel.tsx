@@ -290,6 +290,10 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
             setSuggestedHandoffs((prev) => ({ ...prev, [agent.id]: targetId }));
             // Mark the target agent as waiting for user input
             updateAgentStatus(targetId, 'waiting', 'Handoff pending');
+            // Dynamically add the target agent to the session if not already involved
+            if (activeSession && !activeSession.involvedAgents.includes(targetId)) {
+              addAgentToSession(activeSession.id, targetId);
+            }
           }
           const friendlyNames: Record<string, string> = {
             github_write_files: 'Committing to repository',
@@ -340,7 +344,12 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
             });
           }
           endAgentStream(agent.id);
-          updateAgentStatus(agent.id, 'idle');
+
+          // Set status based on what the agent did: delivered if it submitted work, idle otherwise
+          const hasDelivered = response.toolCalls?.some(
+            (tc) => ['submit_deliverable', 'submit_audit_report', 'submit_test_report', 'submit_plan', 'github_create_pr'].includes(tc.toolName) && !tc.isError
+          );
+          updateAgentStatus(agent.id, hasDelivered ? 'delivered' : 'idle');
 
           // Mark that this agent has unsummarized messages
           pendingAgentRef.current = agent.id;
@@ -351,6 +360,54 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
             if (suggested && suggested !== agent.id) {
               setSuggestedHandoffs((prev) => ({ ...prev, [agent.id]: suggested }));
               updateAgentStatus(suggested, 'waiting', 'Handoff pending');
+            }
+          }
+
+          // Auto-invoke PM after a non-PM specialist completes their work
+          // (submitted a deliverable or finished without creating a PR)
+          const isSpecialist = agent.id !== 'pm' && agent.id !== 'code-reviewer';
+          const usedOutputTool = response.toolCalls?.some(
+            (tc) => ['submit_deliverable', 'submit_audit_report', 'submit_test_report'].includes(tc.toolName) && !tc.isError
+          );
+          const createdPR = response.toolCalls?.some(
+            (tc) => tc.toolName === 'github_create_pr' && !tc.isError
+          );
+
+          // Only auto-invoke PM if specialist submitted a deliverable but didn't create a PR
+          // (PR flow has its own PM auto-invocation via code review → merge → autoInvokePM)
+          if (isSpecialist && usedOutputTool && !createdPR && activeSession) {
+            // First summarize the specialist's context, then invoke PM
+            const pmAgent = agents.find((a) => a.id === 'pm');
+            if (pmAgent) {
+              // Summarize the specialist's work before invoking PM
+              summarizeContext(agent);
+
+              // Give a brief delay for the summary to persist, then invoke PM
+              setTimeout(() => {
+                const deliverable = response.toolCalls?.find(
+                  (tc) => ['submit_deliverable', 'submit_audit_report', 'submit_test_report'].includes(tc.toolName) && !tc.isError
+                );
+                const deliverableSummary = deliverable?.input?.summary || response.output?.substring(0, 300) || 'Work completed';
+
+                const pmPrompt = `The **${agent.name}** (${agent.id}) has just completed their work and submitted a deliverable:
+
+**Summary**: ${deliverableSummary}
+
+Based on the project plan and what has been delivered so far, what should happen next?
+Use \`request_handoff\` to assign the next specialist, or let the user know if more input is needed.
+Keep your response brief — 2-3 sentences max, then the handoff.`;
+
+                // Switch to PM and invoke
+                addChatMessage({
+                  role: 'system',
+                  agentId: 'pm',
+                  content: `${agent.name} completed their work. PM is deciding next steps...`,
+                });
+                if (onSwitchAgent) {
+                  onSwitchAgent('pm');
+                }
+                handleRealInvocation(pmAgent, pmPrompt);
+              }, 2000);
             }
           }
         },
@@ -568,6 +625,8 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
                   onClick={() => {
                     // Trigger summarization before switching
                     summarizeContext(activeAgent);
+                    // Clear "Handoff pending" status before switching
+                    updateAgentStatus(nextAgentId, 'idle');
                     onSwitchAgent(nextAgentId, true);
                   }}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all text-left"

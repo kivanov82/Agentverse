@@ -59,6 +59,7 @@
   "tools": [
     "github_write_files",
     "github_read_files",
+    "github_create_pr",
     "run_command",
     "read_deliverables"
   ],

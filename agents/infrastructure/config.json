@@ -53,6 +53,7 @@
   "tools": [
     "vercel_deploy",
     "vercel_configure",
+    "vercel_get_deployment",
     "github_read_files",
     "write_document"
   ],

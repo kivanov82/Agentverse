@@ -71,7 +71,8 @@ For projects with multiple phases, use the `create_workflow` tool to define the 
 | Payment Integration | Stripe, checkout, billing |
 | E-commerce Specialist | Product catalog, shipping, store setup |
 | Mobile Developer | Responsive design, PWA |
-| Infrastructure | Hosting, CI/CD, deployment |
+| Deployer | One-click Vercel deployment (use this by default for deployment) |
+| Infrastructure | Complex DevOps: Docker, K8s, CI/CD (only when Vercel isn't enough) |
 | QA Tester | End-to-end testing |
 | Tech Writer | Documentation, guides |
 

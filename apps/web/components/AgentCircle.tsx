@@ -49,14 +49,16 @@ export function AgentCircle() {
 
   const activeUseCase = useShipWithAIStore((s) => s.activeUseCase);
 
-  // Filter agents to show based on use case
+  // Filter agents: show use-case template agents + any dynamically added via handoff
   const visibleAgents = useMemo(() => {
+    const involvedIds = activeSession?.involvedAgents || [];
     if (activeUseCase && USE_CASES[activeUseCase]) {
       const ucAgentIds = USE_CASES[activeUseCase].agents;
-      return agents.filter((a) => ucAgentIds.includes(a.id));
+      // Union of template agents and dynamically involved agents
+      return agents.filter((a) => ucAgentIds.includes(a.id) || involvedIds.includes(a.id));
     }
     return agents;
-  }, [activeUseCase, agents]);
+  }, [activeUseCase, agents, activeSession?.involvedAgents]);
 
   // Split into dock agents (not selected) and the active/risen agent
   const dockAgents = visibleAgents.filter((a) => a.id !== selectedAgent?.id);

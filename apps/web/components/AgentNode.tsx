@@ -11,6 +11,7 @@ const statusConfig = {
   thinking: { icon: Loader2, pulse: true, ring: 'ring-yellow-500/50' },
   working: { icon: null, pulse: true, ring: 'ring-green-500/50' },
   waiting: { icon: Clock, pulse: false, ring: 'ring-blue-500/50' },
+  delivered: { icon: CheckCircle, pulse: false, ring: 'ring-emerald-500/50' },
   error: { icon: AlertCircle, pulse: false, ring: 'ring-red-500/50' },
 };
 
@@ -78,6 +79,7 @@ function AgentNodeComponent({ data, selected }: AgentNodeProps) {
                   data.status === 'working' ? 'bg-green-500' :
                   data.status === 'thinking' ? 'bg-yellow-500' :
                   data.status === 'waiting' ? 'bg-blue-500' :
+                  data.status === 'delivered' ? 'bg-emerald-500' :
                   'bg-red-500'
                 }`}
               />
