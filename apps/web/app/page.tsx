@@ -250,7 +250,8 @@ export default function WelcomePage() {
           transition={{ delay: 1, duration: 0.6 }}
         >
           <p className="text-xs text-zinc-600 tracking-wide">
-            Powered by AI agents &middot; Your project, your code, your repo
+            Powered by AI agents &middot; Your project, your code, your repo &middot;{' '}
+            <span className="text-zinc-500">shipwithai.nl</span>
           </p>
         </motion.div>
       </main>

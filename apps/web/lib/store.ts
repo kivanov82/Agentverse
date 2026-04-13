@@ -238,6 +238,11 @@ interface ShipWithAIState {
   addSessionCost: (amount: number) => void;
   resetSessionCost: () => void;
 
+  // Project plan phases (populated when PM calls submit_plan)
+  projectPhases: Array<{ name: string; status: 'pending' | 'active' | 'done'; deliverable?: { label: string; url?: string } }>;
+  setProjectPhases: (phases: Array<{ name: string; status: 'pending' | 'active' | 'done'; deliverable?: { label: string; url?: string } }>) => void;
+  setPhaseDeliverable: (phaseName: string, deliverable: { label: string; url?: string }) => void;
+
   // Onboarding
   onboardingStep: number | null;
   onboardingComplete: boolean;
@@ -697,6 +702,16 @@ export const useShipWithAIStore = create<ShipWithAIState>((set, get) => ({
   addSessionCost: (amount) =>
     set((state) => ({ sessionCost: state.sessionCost + amount })),
   resetSessionCost: () => set({ sessionCost: 0 }),
+
+  // Project plan phases
+  projectPhases: [],
+  setProjectPhases: (phases) => set({ projectPhases: phases }),
+  setPhaseDeliverable: (phaseName, deliverable) =>
+    set((state) => ({
+      projectPhases: state.projectPhases.map((p) =>
+        p.name === phaseName ? { ...p, deliverable } : p
+      ),
+    })),
 
   // Onboarding
   onboardingStep: null,

@@ -109,7 +109,7 @@ function registerBuiltinTools(reg: ToolRegistry): void {
   const { registerDocumentTools } = require('./document-tools');
   registerDocumentTools(reg);
 
-  // Deployment tools (stubs)
+  // Deployment tools (Vercel)
   const { registerDeploymentTools } = require('./deployment-tools');
   registerDeploymentTools(reg);
 

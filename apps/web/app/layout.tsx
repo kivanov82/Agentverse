@@ -4,7 +4,19 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'ShipWith.AI — Build your business idea with AI',
-  description: 'Tell us what you want to build. Our AI team handles the rest.',
+  description: 'Tell us what you want to build. Our AI team designs, builds, and ships it.',
+  metadataBase: new URL('https://shipwithai.nl'),
+  openGraph: {
+    title: 'ShipWith.AI — Build your business idea with AI',
+    description: 'Describe your vision. A team of AI specialists designs, builds, and ships it.',
+    siteName: 'ShipWith.AI',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ShipWith.AI — Build your business idea with AI',
+    description: 'Describe your vision. A team of AI specialists designs, builds, and ships it.',
+  },
 };
 
 export const viewport: Viewport = {

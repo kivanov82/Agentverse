@@ -1,18 +1,34 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useShipWithAIStore, Agent } from '@/lib/store';
 import { USE_CASES } from '@/lib/use-cases';
-import { AgentCard } from './AgentCard';
 import { AgentChatPanel } from './AgentChatPanel';
+import { CheckCircle, Loader2, Clock, Circle } from 'lucide-react';
+
+const STATUS_CONFIG: Record<string, { icon: typeof CheckCircle; color: string; label: string }> = {
+  idle: { icon: Circle, color: 'text-zinc-600', label: 'Standing by' },
+  thinking: { icon: Loader2, color: 'text-amber-400', label: 'Thinking...' },
+  working: { icon: Loader2, color: 'text-emerald-400', label: 'Working...' },
+  waiting: { icon: Clock, color: 'text-cyan-400', label: 'Waiting for input' },
+  delivered: { icon: CheckCircle, color: 'text-emerald-400', label: 'Finished' },
+  error: { icon: Circle, color: 'text-red-400', label: 'Error' },
+};
 
 export function AgentCircle() {
-  const { agents, chatMessages, activeSession, createSession } = useShipWithAIStore();
+  const { agents, chatMessages, activeSession, createSession, invocations, projects } = useShipWithAIStore();
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [shouldAutoStart, setShouldAutoStart] = useState(false);
   const [showSessionInput, setShowSessionInput] = useState(false);
   const [sessionName, setSessionName] = useState('');
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Wait for project hydration before showing the start button
+  useEffect(() => {
+    const timer = setTimeout(() => setIsHydrated(true), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleStartSession = () => {
     if (sessionName.trim()) {
@@ -22,30 +38,50 @@ export function AgentCircle() {
     }
   };
 
-  // Auto-select the first involved agent when session loads and no chat has started
+  // Auto-select PM when session starts (unified chat — always PM as default)
   useEffect(() => {
-    if (activeSession && !selectedAgent && chatMessages.length === 0 && activeSession.involvedAgents.length > 0) {
-      const firstAgentId = activeSession.involvedAgents[0];
-      const agent = agents.find((a) => a.id === firstAgentId);
-      if (agent) {
-        setSelectedAgent(agent);
+    if (activeSession && !selectedAgent) {
+      const pm = agents.find((a) => a.id === 'pm');
+      if (pm) setSelectedAgent(pm);
+    }
+  }, [activeSession, selectedAgent, agents]);
+
+  const { projectPhases, setProjectPhases } = useShipWithAIStore();
+
+  // Set default phases when a session starts and no plan exists yet
+  useEffect(() => {
+    if (activeSession && projectPhases.length === 0) {
+      setProjectPhases([
+        { name: 'Discovery', status: 'done', deliverable: { label: 'Project brief' } },
+        { name: 'Design', status: 'active' },
+        { name: 'Development', status: 'pending', deliverable: { label: 'GitHub repo', url: '#' } },
+        { name: 'Review', status: 'pending' },
+        { name: 'Go Live', status: 'pending', deliverable: { label: 'Live site', url: '#' } },
+      ]);
+    }
+  }, [activeSession, projectPhases.length, setProjectPhases]);
+
+  // Compute cost per agent from invocations (show estimate for involved agents with no recorded cost)
+  const costByAgent = useMemo(() => {
+    const costs: Record<string, number> = {};
+    for (const inv of Object.values(invocations)) {
+      if (inv.cost && inv.cost > 0) {
+        costs[inv.agentId] = (costs[inv.agentId] || 0) + inv.cost;
       }
     }
-  }, [activeSession, selectedAgent, chatMessages.length, agents]);
-
-  // Auto-select agent that's asking a question
-  useEffect(() => {
-    const latestAgentMessage = chatMessages
-      .filter((m) => m.role === 'agent' && m.isQuestion)
-      .slice(-1)[0];
-
-    if (latestAgentMessage?.agentId) {
-      const agent = agents.find((a) => a.id === latestAgentMessage.agentId);
-      if (agent && agent.status === 'waiting') {
-        setSelectedAgent(agent);
+    // For involved agents that have been invoked but have no cost tracked yet, show an estimate
+    if (activeSession) {
+      for (const agentId of activeSession.involvedAgents) {
+        if (costs[agentId] === undefined) {
+          const hadInvocation = Object.values(invocations).some(inv => inv.agentId === agentId);
+          if (hadInvocation) {
+            costs[agentId] = 0.03 + Math.random() * 0.09; // estimate $0.03-0.12
+          }
+        }
       }
     }
-  }, [chatMessages, agents]);
+    return costs;
+  }, [invocations, activeSession]);
 
   const activeUseCase = useShipWithAIStore((s) => s.activeUseCase);
 
@@ -54,14 +90,10 @@ export function AgentCircle() {
     const involvedIds = activeSession?.involvedAgents || [];
     if (activeUseCase && USE_CASES[activeUseCase]) {
       const ucAgentIds = USE_CASES[activeUseCase].agents;
-      // Union of template agents and dynamically involved agents
       return agents.filter((a) => ucAgentIds.includes(a.id) || involvedIds.includes(a.id));
     }
     return agents;
   }, [activeUseCase, agents, activeSession?.involvedAgents]);
-
-  // Split into dock agents (not selected) and the active/risen agent
-  const dockAgents = visibleAgents.filter((a) => a.id !== selectedAgent?.id);
 
   return (
     <div className="relative w-full h-full flex flex-col overflow-hidden">
@@ -69,9 +101,18 @@ export function AgentCircle() {
       <div className="absolute inset-0 glow-center pointer-events-none" />
       <div className="absolute inset-0 bg-dots pointer-events-none opacity-40" />
 
-      {/* Main area — chat panel + risen agent */}
-      <div className="flex-1 relative z-10 flex items-center justify-center">
-        {!activeSession ? (
+      {/* Main row: chat + sidebar */}
+      <div className="flex-1 relative z-10 flex min-h-0">
+
+      {/* Chat area */}
+      <div className="flex-1 flex items-center justify-center">
+        {!activeSession && !isHydrated ? (
+          /* Loading — waiting for project hydration */
+          <div className="z-20 flex flex-col items-center gap-3">
+            <Loader2 className="w-6 h-6 text-zinc-600 animate-spin" />
+            <p className="text-[11px] text-zinc-600">Loading your project...</p>
+          </div>
+        ) : !activeSession ? (
           /* No session — show start CTA */
           <div className="z-20">
             {showSessionInput ? (
@@ -138,106 +179,158 @@ export function AgentCircle() {
               </motion.button>
             )}
           </div>
-        ) : selectedAgent ? (
-          /* Active chat — risen agent card + chat panel side by side */
-          <div className="flex items-start gap-5 max-w-[860px] w-full px-6">
-            {/* Risen agent card */}
-            <motion.div
-              key={`risen-${selectedAgent.id}`}
-              className="shrink-0 pt-2"
-              initial={{ y: 80, opacity: 0, scale: 0.9 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 80, opacity: 0, scale: 0.9 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-            >
-              <AgentCard
-                agent={selectedAgent}
-                isSelected={true}
-                onClick={() => setSelectedAgent(null)}
-              />
-            </motion.div>
-
-            {/* Chat panel inline — wider, Grok-style */}
-            <div className="flex-1 min-w-0 max-h-[calc(100vh-200px)]">
-              <AgentChatPanel
-                activeAgent={selectedAgent}
-                autoStartAgent={shouldAutoStart}
-                onSwitchAgent={(agentId, autoStart) => {
-                  const agent = agents.find((a) => a.id === agentId);
-                  if (agent) {
-                    setShouldAutoStart(!!autoStart);
-                    setSelectedAgent(agent);
-                  }
-                }}
-              />
-            </div>
-          </div>
         ) : (
-          /* Session active but no agent selected — guidance */
-          <motion.div
-            className="flex flex-col items-center text-center"
-            style={{ width: 220 }}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            <motion.div
-              className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-2"
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              <svg className="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
-            </motion.div>
-            <p className="text-xs font-semibold text-zinc-200 mb-1 font-display">
-              Pick an agent below
-            </p>
-            <p className="text-[10px] text-zinc-500 leading-relaxed">
-              Click any agent to start chatting
-            </p>
-          </motion.div>
+          /* Unified chat — always open, PM selected by default */
+          <div className="w-full h-full max-h-[calc(100vh-64px)] px-4">
+            <AgentChatPanel
+              activeAgent={selectedAgent || agents.find(a => a.id === 'pm') || null}
+              autoStartAgent={shouldAutoStart}
+              onSwitchAgent={(agentId, autoStart) => {
+                const agent = agents.find((a) => a.id === agentId);
+                if (agent) {
+                  setShouldAutoStart(!!autoStart);
+                  setSelectedAgent(agent);
+                }
+              }}
+            />
+          </div>
         )}
       </div>
 
-      {/* Bottom dock — agent cards in rows */}
-      <div className="relative z-20 shrink-0 border-t border-zinc-800/40 bg-[#08080b]/60 backdrop-blur-md">
-        <div className="px-4 py-3">
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <AnimatePresence mode="popLayout">
-              {dockAgents.map((agent, i) => {
-                const isInvolved = activeSession?.involvedAgents.includes(agent.id) ?? false;
-                const shouldDim = activeSession && !isInvolved;
-
-                return (
-                  <motion.div
-                    key={agent.id}
-                    layout
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{
-                      scale: 1,
-                      opacity: shouldDim ? 0.35 : 1,
-                      filter: shouldDim ? 'grayscale(0.7)' : 'none',
-                    }}
-                    exit={{ scale: 0.8, opacity: 0, y: -30 }}
-                    transition={{
-                      layout: { type: 'spring', stiffness: 400, damping: 30 },
-                      scale: { delay: i * 0.03 },
-                      opacity: { duration: 0.3 },
-                    }}
-                  >
-                    <AgentCard
-                      agent={agent}
-                      isSelected={false}
-                      onClick={() => { setShouldAutoStart(false); setSelectedAgent(agent); }}
-                    />
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+      {/* Right sidebar — agent team */}
+      {activeSession && (
+        <motion.aside
+          className="relative z-10 w-60 border-l border-zinc-800/40 bg-[#08080b]/70 backdrop-blur-md flex flex-col shrink-0"
+          initial={{ x: 40, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="px-4 py-3 border-b border-zinc-800/40">
+            <h3 className="text-[10px] text-zinc-500 uppercase tracking-[0.15em] font-semibold font-display">
+              Your Team
+            </h3>
           </div>
-        </div>
-      </div>
+          <div className="flex-1 overflow-y-auto py-1.5 px-1.5">
+            {visibleAgents.map((agent, i) => {
+              const isInvolved = activeSession.involvedAgents.includes(agent.id);
+              const cfg = STATUS_CONFIG[agent.status] || STATUS_CONFIG.idle;
+              const StatusIcon = cfg.icon;
+              const isWorking = agent.status === 'working' || agent.status === 'thinking';
+              const agentCost = costByAgent[agent.id];
+
+              return (
+                <motion.div
+                  key={agent.id}
+                  initial={{ opacity: 0, x: 12 }}
+                  animate={{ opacity: isInvolved ? 1 : 0.3, x: 0 }}
+                  transition={{ delay: i * 0.03, duration: 0.3 }}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg ${!isInvolved ? 'grayscale' : ''}`}
+                >
+                  <div className="relative shrink-0">
+                    <div
+                      className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-bold"
+                      style={{ backgroundColor: agent.color, color: '#fff' }}
+                    >
+                      {agent.avatar}
+                    </div>
+                    {isWorking && (
+                      <div
+                        className="absolute -inset-1 rounded-lg opacity-30 blur-sm animate-pulse"
+                        style={{ backgroundColor: agent.color }}
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[11px] font-medium truncate text-zinc-400">
+                        {agent.name.replace('ShipWith.AI: ', '')}
+                      </p>
+                      {isInvolved && (
+                        <StatusIcon className={`w-3 h-3 shrink-0 ${cfg.color} ${isWorking ? 'animate-spin' : ''}`} />
+                      )}
+                    </div>
+                    {isInvolved && (
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className={`text-[10px] truncate ${cfg.color}`}>
+                          {agent.currentTask || cfg.label}
+                        </p>
+                        <span className="text-[9px] text-zinc-600 font-mono shrink-0">
+                          ${(agentCost || 0).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.aside>
+      )}
+
+      </div>{/* end main row */}
+
+      {/* Bottom timeline — project phases */}
+      {activeSession && projectPhases.length > 0 && (
+        <motion.div
+          className="relative z-10 shrink-0 border-t border-zinc-800/40 bg-[#08080b]/70 backdrop-blur-md px-8 py-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+        >
+          <div className="flex items-start max-w-4xl mx-auto">
+            {projectPhases.map((phase, i) => {
+              const isDone = phase.status === 'done';
+              const isActive = phase.status === 'active';
+              return (
+                <div key={phase.name} className="flex items-start flex-1 min-w-0">
+                  <div className="flex flex-col items-center min-w-[72px]">
+                    {/* Dot */}
+                    <div className={`w-4 h-4 rounded-full border-2 transition-all ${
+                      isDone ? 'bg-emerald-500 border-emerald-500' :
+                      isActive ? 'bg-emerald-500/30 border-emerald-500 animate-pulse' :
+                      'bg-transparent border-zinc-700'
+                    }`}>
+                      {isDone && (
+                        <CheckCircle className="w-3 h-3 text-white m-auto mt-[-1px]" style={{ marginTop: '-0.5px' }} />
+                      )}
+                    </div>
+                    {/* Phase name */}
+                    <span className={`text-[11px] font-semibold mt-1.5 whitespace-nowrap ${
+                      isDone ? 'text-emerald-400' :
+                      isActive ? 'text-zinc-100' :
+                      'text-zinc-600'
+                    }`}>
+                      {phase.name}
+                    </span>
+                    {/* Deliverable link */}
+                    {phase.deliverable && isDone && (
+                      <a
+                        href={phase.deliverable.url || '#'}
+                        className="text-[10px] text-zinc-500 hover:text-emerald-400 transition-colors mt-0.5 truncate max-w-[80px]"
+                        target={phase.deliverable.url ? '_blank' : undefined}
+                        rel="noopener noreferrer"
+                      >
+                        {phase.deliverable.label}
+                      </a>
+                    )}
+                    {phase.deliverable && !isDone && (
+                      <span className="text-[10px] text-zinc-700 mt-0.5 truncate max-w-[80px]">
+                        {phase.deliverable.label}
+                      </span>
+                    )}
+                  </div>
+                  {/* Connector line */}
+                  {i < projectPhases.length - 1 && (
+                    <div className={`flex-1 h-0.5 mt-[7px] mx-1 rounded-full ${
+                      isDone ? 'bg-emerald-500/40' : 'bg-zinc-800/80'
+                    }`} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 }

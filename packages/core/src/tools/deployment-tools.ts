@@ -1,16 +1,81 @@
 /**
  * Deployment Tools — Vercel integration for preview and production deploys.
  *
- * Tools: vercel_deploy_preview, vercel_deploy, vercel_configure, vercel_get_preview
+ * Tools: vercel_deploy_preview, vercel_deploy, vercel_configure, vercel_get_deployment
  *
  * Uses the Vercel REST API: https://vercel.com/docs/rest-api
  * Requires: VERCEL_TOKEN, VERCEL_TEAM_ID (optional)
  */
 
 import type { ToolRegistry } from './index';
+import type { ToolExecutionContext, ToolExecutionResult } from '../types';
 
-function getVercelToken(): string | null {
-  return process.env.VERCEL_TOKEN || null;
+const FRAMEWORK_ENUM = [
+  'nextjs', 'vite', 'create-react-app', 'gatsby', 'nuxtjs',
+  'svelte', 'astro', 'remix', 'hugo', 'eleventy', null,
+] as const;
+
+interface ProjectOptions {
+  framework?: string;
+  rootDirectory?: string;
+  buildCommand?: string;
+  installCommand?: string;
+  outputDirectory?: string;
+}
+
+/** Shared deploy tool input properties (framework, rootDirectory, build settings). */
+const DEPLOY_OPTION_PROPERTIES = {
+  framework: {
+    type: 'string',
+    description: 'Framework (nextjs, vite, create-react-app, etc.). Auto-detected if omitted.',
+    enum: FRAMEWORK_ENUM,
+  },
+  rootDirectory: {
+    type: 'string',
+    description: 'Root directory for monorepos (e.g. "packages/web"). Leave empty for single-app repos.',
+  },
+  buildCommand: { type: 'string', description: 'Custom build command. Defaults to "npm run build".' },
+  installCommand: { type: 'string', description: 'Custom install command (e.g. "pnpm install").' },
+  outputDirectory: { type: 'string', description: 'Build output directory (e.g. ".next", "dist", "build").' },
+} as const;
+
+/** Extract project options from raw tool input. */
+function extractProjectOptions(input: Record<string, unknown>): ProjectOptions {
+  const opts: ProjectOptions = {};
+  if (input.framework) opts.framework = input.framework as string;
+  if (input.rootDirectory) opts.rootDirectory = input.rootDirectory as string;
+  if (input.buildCommand) opts.buildCommand = input.buildCommand as string;
+  if (input.installCommand) opts.installCommand = input.installCommand as string;
+  if (input.outputDirectory) opts.outputDirectory = input.outputDirectory as string;
+  return opts;
+}
+
+/** Validate that the Vercel token and repo are available. Returns context or error. */
+function requireVercelContext(context: ToolExecutionContext):
+  | { projectName: string; repoFullName: string }
+  | { error: ToolExecutionResult } {
+  if (!process.env.VERCEL_TOKEN) {
+    return {
+      error: {
+        content: 'VERCEL_TOKEN is not configured. Set the VERCEL_TOKEN environment variable to enable Vercel deployments.',
+        isError: true,
+        errorCategory: 'business' as const,
+        isRetryable: false,
+      },
+    };
+  }
+  if (!context.repoFullName) {
+    return {
+      error: {
+        content: 'No GitHub repository linked to this project. Create a repo first.',
+        isError: true,
+      },
+    };
+  }
+  return {
+    projectName: context.repoFullName.split('/')[1],
+    repoFullName: context.repoFullName,
+  };
 }
 
 function getVercelTeamId(): string | undefined {
@@ -18,7 +83,7 @@ function getVercelTeamId(): string | undefined {
 }
 
 async function vercelFetch(path: string, options: RequestInit = {}): Promise<Response> {
-  const token = getVercelToken();
+  const token = process.env.VERCEL_TOKEN;
   if (!token) throw new Error('VERCEL_TOKEN not configured');
 
   const teamId = getVercelTeamId();
@@ -41,31 +106,44 @@ async function vercelFetch(path: string, options: RequestInit = {}): Promise<Res
 async function createVercelProject(
   repoFullName: string,
   projectName: string,
-  framework: string = 'nextjs'
+  options: {
+    framework?: string;
+    rootDirectory?: string;
+    buildCommand?: string;
+    installCommand?: string;
+    outputDirectory?: string;
+  } = {}
 ): Promise<{ id: string; name: string; url: string }> {
-  const [owner, repo] = repoFullName.split('/');
+  const framework = options.framework || 'nextjs';
+  const outputDir = options.outputDirectory || (framework === 'nextjs' ? '.next' : 'dist');
+
+  const body: Record<string, unknown> = {
+    name: projectName,
+    framework,
+    gitRepository: {
+      type: 'github',
+      repo: repoFullName,
+    },
+    buildCommand: options.buildCommand || 'npm run build',
+    outputDirectory: outputDir,
+    installCommand: options.installCommand || 'npm install',
+  };
+
+  if (options.rootDirectory) {
+    body.rootDirectory = options.rootDirectory;
+  }
 
   const res = await vercelFetch('/v10/projects', {
     method: 'POST',
-    body: JSON.stringify({
-      name: projectName,
-      framework,
-      gitRepository: {
-        type: 'github',
-        repo: repoFullName,
-      },
-      buildCommand: 'npm run build',
-      outputDirectory: '.next',
-      installCommand: 'npm install',
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
-    const err = await res.json();
+    const err: any = await res.json();
     throw new Error(`Failed to create Vercel project: ${err.error?.message || JSON.stringify(err)}`);
   }
 
-  const project = await res.json();
+  const project: any = await res.json();
   return {
     id: project.id,
     name: project.name,
@@ -86,7 +164,7 @@ async function triggerDeployment(
   if (!projectRes.ok) {
     throw new Error(`Project "${projectName}" not found on Vercel`);
   }
-  const project = await projectRes.json();
+  const project: any = await projectRes.json();
 
   // Get the linked repo info
   const repoFullName = project.link?.repo
@@ -112,11 +190,11 @@ async function triggerDeployment(
   });
 
   if (!res.ok) {
-    const err = await res.json();
+    const err: any = await res.json();
     throw new Error(`Deployment failed: ${err.error?.message || JSON.stringify(err)}`);
   }
 
-  const deployment = await res.json();
+  const deployment: any = await res.json();
   return {
     id: deployment.id,
     url: `https://${deployment.url}`,
@@ -137,7 +215,7 @@ async function getLatestDeployment(
   const res = await vercelFetch(`/v6/deployments?${params.toString()}`);
   if (!res.ok) return null;
 
-  const data = await res.json();
+  const data: any = await res.json();
   const dep = data.deployments?.[0];
   if (!dep) return null;
 
@@ -170,8 +248,46 @@ async function setEnvVars(
   });
 
   if (!res.ok) {
-    const err = await res.json();
+    const err: any = await res.json();
     throw new Error(`Failed to set env vars: ${err.error?.message || JSON.stringify(err)}`);
+  }
+}
+
+/** Shared deploy-or-create handler used by both vercel_deploy and vercel_deploy_preview. */
+async function handleDeploy(
+  input: Record<string, unknown>,
+  context: ToolExecutionContext,
+  isProduction: boolean,
+): Promise<ToolExecutionResult> {
+  const ctx = requireVercelContext(context);
+  if ('error' in ctx) return ctx.error;
+
+  const branch = (input.branch as string) || (isProduction ? 'main' : '');
+  const label = isProduction ? 'Production' : 'Preview';
+
+  try {
+    try {
+      const deployment = await triggerDeployment(ctx.projectName, branch, isProduction);
+      return {
+        content: `${label} deployment triggered!\n\nURL: ${deployment.url}\nStatus: ${deployment.readyState}\nDeployment ID: ${deployment.id}\n\nCall vercel_get_deployment in ~60 seconds to verify the build succeeded.`,
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('not found')) {
+        const project = await createVercelProject(ctx.repoFullName, ctx.projectName, extractProjectOptions(input));
+        return {
+          content: `Vercel project created and linked to ${ctx.repoFullName}!\n\nProject: ${project.name}\n${label} URL: ${project.url}\n\nThe first deployment is building now. Call vercel_get_deployment in ~60 seconds to verify.`,
+        };
+      }
+      throw err;
+    }
+  } catch (error) {
+    return {
+      content: `Vercel deployment error: ${error instanceof Error ? error.stack || error.message : String(error)}`,
+      isError: true,
+      errorCategory: 'transient' as const,
+      isRetryable: true,
+    };
   }
 }
 
@@ -183,64 +299,18 @@ export function registerDeploymentTools(registry: ToolRegistry): void {
       description:
         'Trigger a preview deployment on Vercel for a branch. ' +
         'Creates the Vercel project automatically if it does not exist. ' +
-        'Returns a preview URL for testing.',
+        'Returns a preview URL for testing. ' +
+        'For monorepos, set rootDirectory to the app folder (e.g. "packages/web").',
       input_schema: {
         type: 'object',
         properties: {
           branch: { type: 'string', description: 'Branch to deploy from' },
+          ...DEPLOY_OPTION_PROPERTIES,
         },
         required: ['branch'],
       },
     },
-    async (input, context) => {
-      const token = getVercelToken();
-      if (!token) {
-        return {
-          content: 'VERCEL_TOKEN is not configured. Set the VERCEL_TOKEN environment variable to enable Vercel deployments.',
-          isError: true,
-          errorCategory: 'business' as const,
-          isRetryable: false,
-        };
-      }
-
-      const branch = input.branch as string;
-      const repoFullName = context.repoFullName;
-
-      if (!repoFullName) {
-        return {
-          content: 'No GitHub repository linked to this project. Create a repo first.',
-          isError: true,
-        };
-      }
-
-      try {
-        // Derive project name from repo
-        const projectName = repoFullName.split('/')[1];
-
-        // Try to deploy — if project doesn't exist, create it first
-        try {
-          const deployment = await triggerDeployment(projectName, branch, false);
-          return {
-            content: `Preview deployment triggered!\n\nURL: ${deployment.url}\nStatus: ${deployment.readyState}\n\nThe preview will be ready in 1-2 minutes.`,
-          };
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          if (msg.includes('not found')) {
-            // Auto-create the project
-            const project = await createVercelProject(repoFullName, projectName);
-            return {
-              content: `Vercel project created and linked to ${repoFullName}!\n\nProject: ${project.name}\nURL: ${project.url}\n\nVercel will automatically deploy when code is pushed. The first deployment is building now.`,
-            };
-          }
-          throw err;
-        }
-      } catch (error) {
-        return {
-          content: `Vercel deployment error: ${error instanceof Error ? error.stack || error.message : String(error)}`,
-          isError: true,
-        };
-      }
-    }
+    (input, context) => handleDeploy(input, context, false),
   );
 
   // --- vercel_deploy ---
@@ -249,60 +319,17 @@ export function registerDeploymentTools(registry: ToolRegistry): void {
       name: 'vercel_deploy',
       description:
         'Deploy to production on Vercel from the main branch. ' +
-        'Creates the Vercel project automatically if it does not exist.',
+        'Creates the Vercel project automatically if it does not exist. ' +
+        'For monorepos, set rootDirectory to the app folder (e.g. "packages/web").',
       input_schema: {
         type: 'object',
         properties: {
           branch: { type: 'string', description: 'Branch to deploy. Defaults to "main".' },
+          ...DEPLOY_OPTION_PROPERTIES,
         },
       },
     },
-    async (input, context) => {
-      const token = getVercelToken();
-      if (!token) {
-        return {
-          content: 'VERCEL_TOKEN is not configured. Set the VERCEL_TOKEN environment variable to enable Vercel deployments.',
-          isError: true,
-          errorCategory: 'business' as const,
-          isRetryable: false,
-        };
-      }
-
-      const branch = (input.branch as string) || 'main';
-      const repoFullName = context.repoFullName;
-
-      if (!repoFullName) {
-        return {
-          content: 'No GitHub repository linked to this project. Create a repo first.',
-          isError: true,
-        };
-      }
-
-      try {
-        const projectName = repoFullName.split('/')[1];
-
-        try {
-          const deployment = await triggerDeployment(projectName, branch, true);
-          return {
-            content: `Production deployment triggered!\n\nURL: ${deployment.url}\nStatus: ${deployment.readyState}\n\nThe deployment will be live in 1-2 minutes.`,
-          };
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          if (msg.includes('not found')) {
-            const project = await createVercelProject(repoFullName, projectName);
-            return {
-              content: `Vercel project created and linked to ${repoFullName}!\n\nProject: ${project.name}\nProduction URL: ${project.url}\n\nThe first production deployment is building now.`,
-            };
-          }
-          throw err;
-        }
-      } catch (error) {
-        return {
-          content: `Vercel deployment error: ${error instanceof Error ? error.stack || error.message : String(error)}`,
-          isError: true,
-        };
-      }
-    }
+    (input, context) => handleDeploy(input, context, true),
   );
 
   // --- vercel_configure ---
@@ -310,7 +337,7 @@ export function registerDeploymentTools(registry: ToolRegistry): void {
     {
       name: 'vercel_configure',
       description:
-        'Configure Vercel project settings: environment variables, custom domains, build settings.',
+        'Configure Vercel project settings: environment variables, custom domains, build settings, root directory.',
       input_schema: {
         type: 'object',
         properties: {
@@ -319,73 +346,72 @@ export function registerDeploymentTools(registry: ToolRegistry): void {
             description: 'Environment variables to set (key-value pairs)',
           },
           domain: { type: 'string', description: 'Custom domain to add' },
-          buildCommand: { type: 'string', description: 'Custom build command' },
+          ...DEPLOY_OPTION_PROPERTIES,
         },
       },
     },
     async (input, context) => {
-      const token = getVercelToken();
-      if (!token) {
-        return {
-          content: 'VERCEL_TOKEN is not configured. Set the VERCEL_TOKEN environment variable to enable Vercel deployments.',
-          isError: true,
-          errorCategory: 'business' as const,
-          isRetryable: false,
-        };
-      }
-
-      const repoFullName = context.repoFullName;
-      if (!repoFullName) {
-        return { content: 'No GitHub repository linked.', isError: true };
-      }
-
-      const projectName = repoFullName.split('/')[1];
-      const results: string[] = [];
+      const ctx = requireVercelContext(context);
+      if ('error' in ctx) return ctx.error;
 
       try {
+        // Build independent operations to run in parallel
+        const ops: Promise<string>[] = [];
+
         // Set environment variables
         const envVars = input.envVars as Record<string, string> | undefined;
         if (envVars && Object.keys(envVars).length > 0) {
-          await setEnvVars(projectName, envVars);
-          results.push(`Set ${Object.keys(envVars).length} environment variable(s): ${Object.keys(envVars).join(', ')}`);
+          ops.push(
+            setEnvVars(ctx.projectName, envVars)
+              .then(() => `Set ${Object.keys(envVars).length} environment variable(s): ${Object.keys(envVars).join(', ')}`)
+              .catch((e) => `Env vars error: ${e instanceof Error ? e.message : String(e)}`)
+          );
         }
 
         // Add custom domain
         const domain = input.domain as string | undefined;
         if (domain) {
-          const res = await vercelFetch(`/v10/projects/${projectName}/domains`, {
-            method: 'POST',
-            body: JSON.stringify({ name: domain }),
-          });
-          if (res.ok) {
-            results.push(`Added domain: ${domain}`);
-          } else {
-            const err = await res.json();
-            results.push(`Domain error: ${err.error?.message || 'Failed to add domain'}`);
-          }
+          ops.push(
+            vercelFetch(`/v10/projects/${ctx.projectName}/domains`, {
+              method: 'POST',
+              body: JSON.stringify({ name: domain }),
+            }).then(async (res) => {
+              if (res.ok) return `Added domain: ${domain}`;
+              const err: any = await res.json();
+              return `Domain error: ${err.error?.message || 'Failed to add domain'}`;
+            })
+          );
         }
 
-        // Update build settings
-        const buildCommand = input.buildCommand as string | undefined;
-        if (buildCommand) {
-          const res = await vercelFetch(`/v9/projects/${projectName}`, {
-            method: 'PATCH',
-            body: JSON.stringify({ buildCommand }),
-          });
-          if (res.ok) {
-            results.push(`Updated build command: ${buildCommand}`);
-          }
+        // Update project settings
+        const projectUpdate = extractProjectOptions(input);
+        if (Object.keys(projectUpdate).length > 0) {
+          ops.push(
+            vercelFetch(`/v9/projects/${ctx.projectName}`, {
+              method: 'PATCH',
+              body: JSON.stringify(projectUpdate),
+            }).then(async (res) => {
+              if (res.ok) return `Updated project settings: ${Object.keys(projectUpdate).join(', ')}`;
+              const err: any = await res.json();
+              return `Settings error: ${err.error?.message || 'Failed to update settings'}`;
+            })
+          );
         }
 
+        if (ops.length === 0) {
+          return { content: 'No configuration changes specified.' };
+        }
+
+        const results = await Promise.all(ops);
         return {
-          content: results.length > 0
-            ? `Vercel configuration updated:\n${results.map(r => `- ${r}`).join('\n')}`
-            : 'No configuration changes specified.',
+          content: `Vercel configuration updated:\n${results.map(r => `- ${r}`).join('\n')}`,
         };
       } catch (error) {
         return {
           content: `Configuration error: ${error instanceof Error ? error.message : String(error)}`,
           isError: true,
+          errorCategory: 'transient' as const,
+          isRetryable: true,
         };
       }
     }
@@ -396,8 +422,9 @@ export function registerDeploymentTools(registry: ToolRegistry): void {
     {
       name: 'vercel_get_deployment',
       description:
-        'Check the latest deployment status. If the build failed, returns the build error logs. ' +
-        'ALWAYS call this after triggering a deployment to verify it succeeded.',
+        'Check deployment status, waiting for the build to finish (up to 5 minutes). ' +
+        'Returns the final status: READY with the live URL, or ERROR with build logs. ' +
+        'Call this ONCE after triggering a deployment — it handles the waiting internally.',
       input_schema: {
         type: 'object',
         properties: {
@@ -406,64 +433,59 @@ export function registerDeploymentTools(registry: ToolRegistry): void {
       },
     },
     async (input, context) => {
-      const token = getVercelToken();
-      if (!token) {
-        return {
-          content: 'VERCEL_TOKEN is not configured.',
-          isError: true,
-          errorCategory: 'business' as const,
-          isRetryable: false,
-        };
-      }
+      const ctx = requireVercelContext(context);
+      if ('error' in ctx) return ctx.error;
 
-      const repoFullName = context.repoFullName;
-      if (!repoFullName) {
-        return { content: 'No GitHub repository linked.', isError: true };
-      }
+      const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      const MAX_POLLS = 6;
+      const POLL_INTERVAL = 20_000; // 20 seconds (max 2 min total, safe for Cloud Run)
+      const { projectName } = ctx;
 
       try {
-        const projectName = repoFullName.split('/')[1];
         const deploymentId = input.deploymentId as string | undefined;
 
-        let depId: string;
-        let depUrl: string;
-        let depState: string;
-        let depCreatedAt: number;
-
-        if (deploymentId) {
-          // Get specific deployment
-          const res = await vercelFetch(`/v13/deployments/${deploymentId}`);
-          if (!res.ok) {
-            return { content: `Deployment ${deploymentId} not found.`, isError: true };
+        async function fetchStatus(): Promise<{ id: string; url: string; state: string; createdAt: number } | null> {
+          if (deploymentId) {
+            const res = await vercelFetch(`/v13/deployments/${deploymentId}`);
+            if (!res.ok) return null;
+            const dep: any = await res.json();
+            return {
+              id: dep.id || dep.uid,
+              url: `https://${dep.url}`,
+              state: dep.readyState || dep.state,
+              createdAt: dep.createdAt || dep.created,
+            };
+          } else {
+            return getLatestDeployment(projectName);
           }
-          const dep = await res.json();
-          depId = dep.id || dep.uid;
-          depUrl = `https://${dep.url}`;
-          depState = dep.readyState || dep.state;
-          depCreatedAt = dep.createdAt || dep.created;
-        } else {
-          // Get latest deployment
-          const deployment = await getLatestDeployment(projectName);
-          if (!deployment) {
-            return { content: 'No deployments found for this project.' };
-          }
-          depId = deployment.id;
-          depUrl = deployment.url;
-          depState = deployment.state;
-          depCreatedAt = deployment.createdAt;
         }
 
-        const age = Math.round((Date.now() - depCreatedAt) / 60000);
-        let result = `Deployment: ${depId}\nURL: ${depUrl}\nStatus: ${depState}\nAge: ${age} minutes ago`;
+        // Poll until build finishes or timeout
+        let dep = await fetchStatus();
+        if (!dep) {
+          return { content: deploymentId ? `Deployment ${deploymentId} not found.` : 'No deployments found for this project.', isError: true };
+        }
 
-        // If build failed, fetch and include build error logs
-        if (depState === 'ERROR' || depState === 'CANCELED') {
+        let polls = 0;
+        while (['BUILDING', 'INITIALIZING', 'QUEUED'].includes(dep.state) && polls < MAX_POLLS) {
+          polls++;
+          console.log(`[vercel_get_deployment] Build in progress (${dep.state}), waiting 30s... (poll ${polls}/${MAX_POLLS})`);
+          await sleep(POLL_INTERVAL);
+          const updated = await fetchStatus();
+          if (updated) dep = updated;
+        }
+
+        const age = Math.round((Date.now() - dep.createdAt) / 60000);
+        let result = `Deployment: ${dep.id}\nURL: ${dep.url}\nStatus: ${dep.state}\nAge: ${age} minutes ago`;
+
+        if (dep.state === 'READY') {
+          result += '\n\nDeployment is live and ready!';
+        } else if (dep.state === 'ERROR' || dep.state === 'CANCELED') {
+          // Fetch build error logs
           try {
-            const eventsRes = await vercelFetch(`/v2/deployments/${depId}/events`);
+            const eventsRes = await vercelFetch(`/v2/deployments/${dep.id}/events`);
             if (eventsRes.ok) {
-              const events: any[] = await eventsRes.json();
-
-              // Extract error lines from build output
+              const events = (await eventsRes.json()) as any[];
               const errorLines = events
                 .filter((ev: any) => {
                   const text = ev?.payload?.text || ev?.text || '';
@@ -475,15 +497,17 @@ export function registerDeploymentTools(registry: ToolRegistry): void {
                 })
                 .map((ev: any) => ev?.payload?.text || ev?.text || '')
                 .filter((t: string) => t.trim())
-                .slice(-15); // Last 15 error lines
+                .slice(-20);
 
               if (errorLines.length > 0) {
-                // Strip ANSI escape codes
                 const cleanLines = errorLines.map((l: string) => l.replace(/\u001b\[[0-9;]*m/g, ''));
                 result += `\n\n## Build Errors\n\`\`\`\n${cleanLines.join('\n')}\n\`\`\``;
               }
             }
-          } catch { /* non-fatal — just skip logs */ }
+          } catch { /* non-fatal */ }
+        } else {
+          // Still building after max polls
+          result += `\n\nBuild still in progress after ${polls * 30}s of waiting. Check the Vercel dashboard for updates.`;
         }
 
         return { content: result };

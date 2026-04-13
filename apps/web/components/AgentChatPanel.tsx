@@ -121,6 +121,7 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
     activeProjectId,
     addAgentToSession,
     updateSessionContext,
+    setProjectPhases,
   } = useShipWithAIStore();
 
   const {
@@ -134,20 +135,23 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
 
   const [input, setInput] = useState('');
   const [isInvoking, setIsInvoking] = useState(false);
-  // Track suggested next agent per source agent (survives agent deselect/reselect)
   const [suggestedHandoffs, setSuggestedHandoffs] = useState<Record<string, string>>({});
+  // Ref mirror so async callbacks (onComplete) always see latest handoff state
+  const handoffsRef = useRef(suggestedHandoffs);
+  handoffsRef.current = suggestedHandoffs;
 
-  // Per-agent streaming state from store
-  const currentStream = activeAgent ? agentStreams[activeAgent.id] : undefined;
+  const streamingAgentId = useMemo(
+    () => Object.keys(agentStreams).find(id => agentStreams[id]?.isActive),
+    [agentStreams]
+  );
+  const streamingAgent = streamingAgentId ? agents.find(a => a.id === streamingAgentId) : undefined;
+  const currentStream = streamingAgentId ? agentStreams[streamingAgentId] : undefined;
   const streamEvents = currentStream?.events || [];
   const hasStreamContent = streamEvents.length > 0;
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pendingAgentRef = useRef<string | null>(null);
 
-  // Only show messages for the currently selected agent
-  const allMessages = activeAgent
-    ? chatMessages.filter((m) => m.agentId === activeAgent.id).slice(-30)
-    : [];
+  const allMessages = useMemo(() => chatMessages.slice(-50), [chatMessages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -287,13 +291,28 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
           // Auto-trigger handoff when PM uses request_handoff tool
           if (event.toolName === 'request_handoff' && event.input?.targetAgent) {
             const targetId = event.input.targetAgent as string;
-            setSuggestedHandoffs((prev) => ({ ...prev, [agent.id]: targetId }));
-            // Mark the target agent as waiting for user input
-            updateAgentStatus(targetId, 'waiting', 'Handoff pending');
             // Dynamically add the target agent to the session if not already involved
             if (activeSession && !activeSession.involvedAgents.includes(targetId)) {
               addAgentToSession(activeSession.id, targetId);
             }
+            // Auto-handoff: add a divider message and switch agent automatically
+            addChatMessage({
+              role: 'system',
+              agentId: targetId,
+              content: `${agents.find(a => a.id === targetId)?.name || targetId} is joining...`,
+            });
+            if (onSwitchAgent) {
+              // Queue the auto-switch after current agent finishes
+              setSuggestedHandoffs((prev) => ({ ...prev, [agent.id]: targetId }));
+            }
+          }
+          // Capture project plan phases when PM submits a plan
+          if (event.toolName === 'submit_plan' && event.input?.phases) {
+            const phases = (event.input.phases as Array<{ name: string }>).map((p, i) => ({
+              name: p.name,
+              status: (i === 0 ? 'active' : 'pending') as 'active' | 'pending' | 'done',
+            }));
+            setProjectPhases(phases);
           }
           const friendlyNames: Record<string, string> = {
             github_write_files: 'Committing to repository',
@@ -359,7 +378,22 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
             const suggested = detectSuggestedAgent(response.output, activeSession.involvedAgents);
             if (suggested && suggested !== agent.id) {
               setSuggestedHandoffs((prev) => ({ ...prev, [agent.id]: suggested }));
-              updateAgentStatus(suggested, 'waiting', 'Handoff pending');
+            }
+          }
+
+          // Auto-execute pending handoff (read from ref to avoid stale closure)
+          const pendingHandoff = handoffsRef.current[agent.id];
+          if (pendingHandoff && onSwitchAgent) {
+            const nextAgent = agents.find((a) => a.id === pendingHandoff);
+            if (nextAgent) {
+              summarizeContext(agent);
+              setSuggestedHandoffs((prev) => { const n = { ...prev }; delete n[agent.id]; return n; });
+              setTimeout(() => {
+                updateAgentStatus(pendingHandoff, 'idle');
+                onSwitchAgent(pendingHandoff, true);
+              }, 1000);
+              setIsInvoking(false);
+              return; // Skip PM auto-invoke — handoff takes priority
             }
           }
 
@@ -387,11 +421,26 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
                 const deliverable = response.toolCalls?.find(
                   (tc) => ['submit_deliverable', 'submit_audit_report', 'submit_test_report'].includes(tc.toolName) && !tc.isError
                 );
-                const deliverableSummary = deliverable?.input?.summary || response.output?.substring(0, 300) || 'Work completed';
+                const deliverableInput = deliverable?.input as Record<string, unknown> | undefined;
+                const deliverableSummary = (deliverableInput?.summary as string) || response.output?.substring(0, 300) || 'Work completed';
+                const deliverableStatus = (deliverableInput?.status as string) || 'completed';
+                const blockers = (deliverableInput?.blockers as string[]) || [];
+                const nextSteps = (deliverableInput?.nextSteps as string[]) || [];
 
-                const pmPrompt = `The **${agent.name}** (${agent.id}) has just completed their work and submitted a deliverable:
+                const isFailed = deliverableStatus === 'failed' || deliverableStatus === 'blocked';
+                const blockersText = blockers.length > 0 ? `\n\n**Blockers:**\n${blockers.map(b => `- ${b}`).join('\n')}` : '';
+                const nextStepsText = nextSteps.length > 0 ? `\n\n**Suggested next steps:**\n${nextSteps.map(s => `- ${s}`).join('\n')}` : '';
 
-**Summary**: ${deliverableSummary}
+                const pmPrompt = isFailed
+                  ? `The **${agent.name}** (${agent.id}) has **FAILED** their task:
+
+**Summary**: ${deliverableSummary}${blockersText}${nextStepsText}
+
+Route this to the right agent to fix the issue. Use \`request_handoff\` with a clear description of what needs to be fixed.
+Keep your response brief — 2-3 sentences max, then the handoff.`
+                  : `The **${agent.name}** (${agent.id}) has just completed their work and submitted a deliverable:
+
+**Summary**: ${deliverableSummary}${nextStepsText}
 
 Based on the project plan and what has been delivered so far, what should happen next?
 Use \`request_handoff\` to assign the next specialist, or let the user know if more input is needed.
@@ -401,7 +450,9 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
                 addChatMessage({
                   role: 'system',
                   agentId: 'pm',
-                  content: `${agent.name} completed their work. PM is deciding next steps...`,
+                  content: isFailed
+                    ? `${agent.name} failed: ${deliverableSummary.substring(0, 150)}. PM is routing the fix...`
+                    : `${agent.name} completed their work. PM is deciding next steps...`,
                 });
                 if (onSwitchAgent) {
                   onSwitchAgent('pm');
@@ -554,17 +605,17 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
               })}
 
               {/* Streaming output */}
-              {hasStreamContent && activeAgent && currentStream?.isActive && (
+              {hasStreamContent && streamingAgent && currentStream?.isActive && (
                 <div className="flex justify-start gap-2.5">
                   <div
                     className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold shrink-0 mt-1"
-                    style={{ backgroundColor: activeAgent.color, color: '#fff' }}
+                    style={{ backgroundColor: streamingAgent.color, color: '#fff' }}
                   >
-                    {activeAgent.avatar}
+                    {streamingAgent.avatar}
                   </div>
                   <div className="max-w-[90%] rounded-lg px-4 py-3 bg-zinc-800/40 text-zinc-300 border border-zinc-700/30">
-                    <p className="text-[11px] font-medium mb-1.5 opacity-70" style={{ color: activeAgent.color }}>
-                      {activeAgent.name}
+                    <p className="text-[11px] font-medium mb-1.5 opacity-70" style={{ color: streamingAgent.color }}>
+                      {streamingAgent.name}
                     </p>
                     {/* Interleaved text and tool events */}
                     <div className="space-y-2">
@@ -610,46 +661,6 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
             </div>
           )}
 
-          {/* Handoff button — shown when current agent suggests talking to another */}
-          {activeAgent && suggestedHandoffs[activeAgent.id] && !isInvoking && onSwitchAgent && (() => {
-            const nextAgentId = suggestedHandoffs[activeAgent.id];
-            const nextAgent = agents.find((a) => a.id === nextAgentId);
-            if (!nextAgent) return null;
-            return (
-              <motion.div
-                className="pt-2"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <button
-                  onClick={() => {
-                    // Trigger summarization before switching
-                    summarizeContext(activeAgent);
-                    // Clear "Handoff pending" status before switching
-                    updateAgentStatus(nextAgentId, 'idle');
-                    onSwitchAgent(nextAgentId, true);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all text-left"
-                >
-                  <div
-                    className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold shrink-0"
-                    style={{ backgroundColor: nextAgent.color, color: '#fff' }}
-                  >
-                    {nextAgent.avatar}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-emerald-400">
-                      Continue with {nextAgent.name}
-                    </p>
-                    <p className="text-[11px] text-zinc-500">{nextAgent.role}</p>
-                  </div>
-                  <svg className="w-4 h-4 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </motion.div>
-            );
-          })()}
 
           <div ref={messagesEndRef} />
         </div>

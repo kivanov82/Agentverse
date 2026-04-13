@@ -116,7 +116,7 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
                   <Globe className="w-3.5 h-3.5 text-zinc-500" />
                   <span className="text-zinc-400">API:</span>
                   <code className="text-zinc-300 bg-zinc-800 px-1.5 py-0.5 rounded font-mono text-[10px]">
-                    {agent.apiEndpoint || `api.shipwith.ai/${agent.id}`}
+                    {agent.apiEndpoint || `api.shipwithai.nl/${agent.id}`}
                   </code>
                 </div>
                 <div className="flex items-center gap-2 text-xs">

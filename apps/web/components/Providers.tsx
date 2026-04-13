@@ -6,6 +6,7 @@ import { WagmiProvider } from 'wagmi';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
 import { getWagmiConfig } from '@/lib/wagmi';
+import { MobileOverlay } from './MobileOverlay';
 
 const wagmiConfig = getWagmiConfig();
 const rkTheme = darkTheme({
@@ -22,6 +23,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={rkTheme}>
+          <MobileOverlay />
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>
