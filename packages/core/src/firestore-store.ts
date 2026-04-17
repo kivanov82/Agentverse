@@ -11,8 +11,12 @@ export type {
   StoredDeliverable,
   StoredDeliverableContent,
   StoredDeliveryRequest,
-  StoredUsage,
   StoredInvocationCost,
+  StoredUser,
+  StoredLinkedIdentity,
+  StoredCreditEntry,
+  IdentityProvider,
+  CreditSource,
 } from './types-stored';
 
 import type {
@@ -22,8 +26,12 @@ import type {
   StoredDeliverable,
   StoredDeliverableContent,
   StoredDeliveryRequest,
-  StoredUsage,
   StoredInvocationCost,
+  StoredUser,
+  StoredLinkedIdentity,
+  StoredCreditEntry,
+  IdentityProvider,
+  CreditSource,
 } from './types-stored';
 
 // ---- Firebase init ----
@@ -256,42 +264,6 @@ export class FirestoreStore {
     await this.db.collection('sessions').doc(sessionId).collection('deliveryRequests').doc(id).update(updates);
   }
 
-  // ---- Usage Tracking ----
-
-  async getOrCreateUsage(sessionToken: string, walletAddress?: string): Promise<StoredUsage> {
-    // Try by wallet first
-    if (walletAddress) {
-      const snap = await this.db.collection('usage').where('walletAddress', '==', walletAddress).limit(1).get();
-      if (!snap.empty) return snap.docs[0].data() as StoredUsage;
-    }
-
-    // Try by session token
-    const snap = await this.db.collection('usage').where('sessionToken', '==', sessionToken).limit(1).get();
-    if (!snap.empty) {
-      const usage = snap.docs[0].data() as StoredUsage;
-      // Link wallet if newly connected
-      if (walletAddress && !usage.walletAddress) {
-        await this.db.collection('usage').doc(usage.id).update({ walletAddress });
-        usage.walletAddress = walletAddress;
-      }
-      return usage;
-    }
-
-    // Create new
-    const id = nanoid();
-    const record: StoredUsage = { id, walletAddress, sessionToken, chatCount: 0, createdAt: Date.now() };
-    await this.db.collection('usage').doc(id).set(record);
-    return record;
-  }
-
-  async incrementChatCount(usageId: string): Promise<number> {
-    const ref = this.db.collection('usage').doc(usageId);
-    const { FieldValue } = await import('firebase-admin/firestore');
-    await ref.update({ chatCount: FieldValue.increment(1), lastChatAt: Date.now() });
-    const doc = await ref.get();
-    return (doc.data() as StoredUsage).chatCount;
-  }
-
   // ---- Invocation Costs ----
 
   async saveInvocationCost(cost: Omit<StoredInvocationCost, 'id' | 'createdAt'> & { id?: string; createdAt?: number }): Promise<StoredInvocationCost> {
@@ -372,6 +344,160 @@ export class FirestoreStore {
 
   async updateWorkflowStatus(workflowId: string, status: string): Promise<void> {
     await this.db.collection('workflows').doc(workflowId).update({ status, updatedAt: Date.now() });
+  }
+
+  // ---- Users & Linked Identities ----
+
+  async getUser(userId: string): Promise<StoredUser | null> {
+    const doc = await this.db.collection('users').doc(userId).get();
+    return doc.exists ? (doc.data() as StoredUser) : null;
+  }
+
+  async findUserByIdentity(provider: IdentityProvider, providerId: string): Promise<StoredUser | null> {
+    const identityId = `${provider}_${providerId}`;
+    const identityDoc = await this.db.collection('linkedIdentities').doc(identityId).get();
+    if (!identityDoc.exists) return null;
+    const identity = identityDoc.data() as StoredLinkedIdentity;
+    return this.getUser(identity.userId);
+  }
+
+  /**
+   * Look up (or create) the user behind a given identity. On first sign-up,
+   * grants $5 of starter credit in the same transaction — so we never
+   * double-grant if the signIn callback races.
+   */
+  async getOrCreateUserByIdentity(
+    provider: IdentityProvider,
+    providerId: string,
+    profile: { email?: string; name?: string; image?: string; walletAddress?: string },
+    starterCredit: number,
+  ): Promise<StoredUser> {
+    const identityId = `${provider}_${providerId}`;
+    const identityRef = this.db.collection('linkedIdentities').doc(identityId);
+
+    return this.db.runTransaction(async (tx) => {
+      const identitySnap = await tx.get(identityRef);
+      if (identitySnap.exists) {
+        const identity = identitySnap.data() as StoredLinkedIdentity;
+        const userRef = this.db.collection('users').doc(identity.userId);
+        const userSnap = await tx.get(userRef);
+        if (userSnap.exists) return userSnap.data() as StoredUser;
+      }
+
+      // New user — create User + grant starter credit + write ledger entry atomically
+      const now = Date.now();
+      const userId = nanoid();
+      const user: StoredUser = {
+        id: userId,
+        email: profile.email,
+        name: profile.name,
+        image: profile.image,
+        walletAddress: provider === 'siwe' ? providerId : profile.walletAddress,
+        creditBalance: starterCredit,
+        starterCreditGranted: true,
+        createdAt: now,
+        updatedAt: now,
+      };
+      tx.set(this.db.collection('users').doc(userId), user);
+
+      const identity: StoredLinkedIdentity = {
+        id: identityId,
+        userId,
+        provider,
+        providerId,
+        linkedAt: now,
+      };
+      tx.set(identityRef, identity);
+
+      if (starterCredit > 0) {
+        const entry: StoredCreditEntry = {
+          id: nanoid(),
+          userId,
+          delta: starterCredit,
+          balanceAfter: starterCredit,
+          source: 'starter_grant',
+          note: 'Welcome bonus',
+          createdAt: now,
+        };
+        tx.set(this.db.collection('creditLedger').doc(entry.id), entry);
+      }
+
+      return user;
+    });
+  }
+
+  async linkIdentity(
+    userId: string,
+    provider: IdentityProvider,
+    providerId: string,
+  ): Promise<void> {
+    const identityId = `${provider}_${providerId}`;
+    const identity: StoredLinkedIdentity = {
+      id: identityId,
+      userId,
+      provider,
+      providerId,
+      linkedAt: Date.now(),
+    };
+    await this.db.collection('linkedIdentities').doc(identityId).set(identity);
+  }
+
+  // ---- Credit Ledger ----
+
+  async getBalance(userId: string): Promise<number> {
+    const doc = await this.db.collection('users').doc(userId).get();
+    return doc.exists ? (doc.data() as StoredUser).creditBalance ?? 0 : 0;
+  }
+
+  /**
+   * Applies a signed delta to the user balance and writes a ledger entry in
+   * the same transaction. Returns the new balance. Throws if debiting below
+   * zero — callers should pre-check balance and surface a paywall.
+   */
+  async applyCreditDelta(
+    userId: string,
+    delta: number,
+    source: CreditSource,
+    meta: { invocationCostId?: string; note?: string } = {},
+  ): Promise<number> {
+    const userRef = this.db.collection('users').doc(userId);
+    const entryRef = this.db.collection('creditLedger').doc();
+
+    return this.db.runTransaction(async (tx) => {
+      const userSnap = await tx.get(userRef);
+      if (!userSnap.exists) throw new Error(`User ${userId} not found`);
+      const user = userSnap.data() as StoredUser;
+      const current = user.creditBalance ?? 0;
+      const next = current + delta;
+      if (next < 0) throw new Error(`Insufficient credit: ${current} + (${delta}) < 0`);
+
+      const now = Date.now();
+      tx.update(userRef, { creditBalance: next, updatedAt: now });
+
+      const entry: StoredCreditEntry = {
+        id: entryRef.id,
+        userId,
+        delta,
+        balanceAfter: next,
+        source,
+        invocationCostId: meta.invocationCostId,
+        note: meta.note,
+        createdAt: now,
+      };
+      tx.set(entryRef, entry);
+
+      return next;
+    });
+  }
+
+  async listLedgerEntries(userId: string, limit: number = 20): Promise<StoredCreditEntry[]> {
+    const snap = await this.db
+      .collection('creditLedger')
+      .where('userId', '==', userId)
+      .orderBy('createdAt', 'desc')
+      .limit(limit)
+      .get();
+    return snap.docs.map((d) => d.data() as StoredCreditEntry);
   }
 }
 

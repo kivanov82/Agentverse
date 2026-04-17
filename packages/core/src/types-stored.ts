@@ -71,15 +71,6 @@ export interface StoredDeliveryRequest {
   createdAt: number;
 }
 
-export interface StoredUsage {
-  id: string;
-  walletAddress?: string;
-  sessionToken: string;
-  chatCount: number;
-  lastChatAt?: number;
-  createdAt: number;
-}
-
 export interface StoredInvocationCost {
   id: string;
   sessionId?: string;
@@ -90,5 +81,49 @@ export interface StoredInvocationCost {
   apiCost: number;
   userCharge: number;
   mode: string;
+  userId?: string;
+  createdAt: number;
+}
+
+// Authenticated user account. Linked identities are stored separately in
+// `linkedIdentities` keyed by `${provider}_${providerId}` so the same user
+// can sign in via Google or SIWE wallet and reach the same balance.
+export interface StoredUser {
+  id: string;
+  email?: string;
+  name?: string;
+  image?: string;
+  walletAddress?: string;
+  creditBalance: number;
+  starterCreditGranted: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type IdentityProvider = 'google' | 'siwe';
+
+export interface StoredLinkedIdentity {
+  id: string;              // `${provider}_${providerId}`
+  userId: string;
+  provider: IdentityProvider;
+  providerId: string;      // sub for OAuth, lowercased address for SIWE
+  linkedAt: number;
+}
+
+export type CreditSource =
+  | 'starter_grant'
+  | 'agent_invocation'
+  | 'stripe'
+  | 'x402'
+  | 'admin_adjustment';
+
+export interface StoredCreditEntry {
+  id: string;
+  userId: string;
+  delta: number;          // positive for credits, negative for debits
+  balanceAfter: number;
+  source: CreditSource;
+  invocationCostId?: string;
+  note?: string;
   createdAt: number;
 }

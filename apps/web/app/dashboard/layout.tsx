@@ -5,7 +5,7 @@ import { useSearchParams, usePathname } from 'next/navigation';
 import { useShipWithAIStore } from '@/lib/store';
 import { runDemoSimulation } from '@/lib/demo';
 import { Logo } from '@/components/Logo';
-import { WalletButton, MobileWalletButton } from '@/components/WalletButton';
+import { UserMenu } from '@/components/UserMenu';
 import { OnboardingOverlay, OnboardingHelpButton } from '@/components/OnboardingOverlay';
 import {
   Play,
@@ -100,9 +100,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           </Link>
         </div>
 
-        {/* Wallet Connection */}
+        {/* Account */}
         <div className="p-3 border-b border-zinc-800/60 wallet-button">
-          <WalletButton compact />
+          <UserMenu compact />
         </div>
 
         {/* Projects */}
@@ -224,7 +224,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             >
               Observatory
             </Link>
-            <MobileWalletButton />
+            <UserMenu />
             <button
               onClick={handleRunDemo}
               disabled={isRunningDemo}

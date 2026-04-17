@@ -9,8 +9,14 @@ import { getDefaultHooks } from '@shipwithai/core/hooks';
 import { listFiles } from '@shipwithai/core/github-repo';
 import { loadAgentSkills, renderSkillsBlock } from '@shipwithai/core/agent-skills';
 import { getFirestoreStore } from '@shipwithai/core/firestore-store';
-import { calculateCost } from '@/lib/pricing';
+import { calculateCost, isServerFreeMode } from '@/lib/pricing';
 import { persistAuditReport } from '@/lib/audit-deliverable';
+import { getSessionUser } from '@/lib/auth-server';
+
+// Conservative estimate blocking new runs when the user clearly can't afford
+// even a short interaction. $0.50 covers ~a cheap Sonnet turn at 5× markup;
+// actual debit after the run may be higher or lower.
+const MIN_BALANCE_USD = 0.5;
 
 // Agent invocation via Anthropic API (streaming or non-streaming)
 export async function POST(
@@ -31,6 +37,23 @@ export async function POST(
     // Check if streaming is requested
     const url = new URL(request.url);
     const stream = url.searchParams.get('stream') === 'true';
+
+    // Auth + credit gate. FREE_MODE bypasses both for local dev.
+    // SSE streaming can't return a clean 402 body, so we emit a fatal SSE event
+    // with the same shape the client shows in the paywall.
+    let userId: string | undefined;
+    if (!isServerFreeMode) {
+      const sessionUser = await getSessionUser();
+      if (!sessionUser) {
+        return paywallResponse(stream, 'unauthenticated', 'Sign in to continue');
+      }
+      const store = getFirestoreStore();
+      const balance = await store.getBalance(sessionUser.id);
+      if (balance < MIN_BALANCE_USD) {
+        return paywallResponse(stream, 'insufficient_credit', 'Out of credits — top up to continue', balance);
+      }
+      userId = sessionUser.id;
+    }
 
     // Validate agent exists
     const agentsDir = path.join(process.cwd(), '..', '..', 'agents');
@@ -146,12 +169,12 @@ export async function POST(
 
     if (stream) {
       // Streaming SSE with agentic loop
-      return invokeViaAgentRunnerStreaming(runConfig, { mode: invocationMode });
+      return invokeViaAgentRunnerStreaming(runConfig, { mode: invocationMode, userId });
     }
 
     // Non-streaming with agentic loop
     const result = await runAgent(runConfig);
-    await recordInvocationCost(runConfig, result, invocationMode);
+    await recordInvocationCost(runConfig, result, { mode: invocationMode, userId });
     const deliverable = await persistAuditReport(runConfig, result);
     return NextResponse.json({
       success: result.success,
@@ -263,19 +286,21 @@ function buildMessages(prompt: string, context?: Record<string, unknown>, histor
 }
 
 
-// Record token cost + 5x markup to Firestore. Fire-and-forget: failures are
-// logged but never break the invocation response.
+// Record token cost + 5x markup to Firestore and debit the signed-in user's
+// credit balance. Cost recording is fire-and-forget (failures logged but
+// never break the response); the ledger debit is best-effort — if it fails
+// we log loudly since it means the user got free work.
 async function recordInvocationCost(
   runConfig: AgentRunConfig,
   result: AgentRunResult,
-  mode: string | undefined,
+  opts: { mode?: string; userId?: string },
 ): Promise<void> {
   try {
     const { inputTokens, outputTokens } = result.usage;
     if (!inputTokens && !outputTokens) return;
     const { apiCost, userCharge } = calculateCost(inputTokens, outputTokens, runConfig.model);
     const store = getFirestoreStore();
-    await store.saveInvocationCost({
+    const saved = await store.saveInvocationCost({
       sessionId: runConfig.sessionId,
       agentId: runConfig.agentId,
       model: runConfig.model,
@@ -283,17 +308,59 @@ async function recordInvocationCost(
       outputTokens,
       apiCost,
       userCharge,
-      mode: mode || 'chat',
+      mode: opts.mode || 'chat',
+      userId: opts.userId,
     });
+
+    if (opts.userId && userCharge > 0) {
+      try {
+        await store.applyCreditDelta(opts.userId, -userCharge, 'agent_invocation', {
+          invocationCostId: saved.id,
+          note: `${runConfig.agentId} · ${runConfig.model}`,
+        });
+      } catch (debitErr) {
+        // Insufficient credit after the fact — we let the work through since
+        // we can't un-run the agent. Logged so we can reconcile if needed.
+        console.error('[invoke] credit debit failed (work already done)', debitErr);
+      }
+    }
   } catch (err) {
     console.error('[invoke] saveInvocationCost failed', err);
   }
 }
 
+function paywallResponse(
+  stream: boolean,
+  code: 'unauthenticated' | 'insufficient_credit',
+  message: string,
+  balance?: number,
+): Response {
+  const payload = { success: false, error: message, errorCode: code, balance };
+  if (!stream) {
+    return NextResponse.json(payload, { status: 402 });
+  }
+  const encoder = new TextEncoder();
+  const body = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`));
+      controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+      controller.close();
+    },
+  });
+  return new Response(body, {
+    status: 402,
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
+  });
+}
+
 // Streaming version using agent runner with SSE bridge
 function invokeViaAgentRunnerStreaming(
   runConfig: AgentRunConfig,
-  opts: { mode?: string } = {},
+  opts: { mode?: string; userId?: string } = {},
 ): Response {
   const encoder = new TextEncoder();
 
@@ -324,7 +391,7 @@ function invokeViaAgentRunnerStreaming(
         };
 
         const result = await runAgentStreaming(runConfig, callbacks);
-        await recordInvocationCost(runConfig, result, opts.mode);
+        await recordInvocationCost(runConfig, result, opts);
         const deliverable = await persistAuditReport(runConfig, result);
 
         // If agent returned an error message (e.g., API error), send it as text

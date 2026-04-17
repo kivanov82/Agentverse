@@ -41,6 +41,9 @@ export function calculateCost(inputTokens: number, outputTokens: number, model?:
 }
 
 export function formatUsdcAmount(amount: number): string {
-  if (amount < 0.01) return `$${amount.toFixed(4)}`;
+  if (amount <= 0) return '$0.00';
+  if (amount < 0.01) return '<$0.01';
   return `$${amount.toFixed(2)}`;
 }
+
+export const isServerFreeMode = process.env.SHIPWITHAI_FREE_MODE === 'true';
