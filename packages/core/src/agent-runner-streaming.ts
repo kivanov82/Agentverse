@@ -158,17 +158,20 @@ export async function runAgentStreaming(
       toolCallsLog: [],
       totalIterations: 0,
       stopReason: 'end_turn',
+      usage: { inputTokens: 0, outputTokens: 0 },
     };
   }
 
   const maxIterations = config.maxIterations ?? DEFAULT_MAX_ITERATIONS;
   const maxTokens = config.maxTokens ?? DEFAULT_MAX_TOKENS;
   const messages: AnthropicMessage[] = [...config.messages];
+
   const toolCallsLog: ToolCallLog[] = [];
 
   let iteration = 0;
   let lastContent: Array<TextBlock | ToolUseBlock> = [];
   let lastStopReason = 'end_turn';
+  const totalUsage = { inputTokens: 0, outputTokens: 0 };
 
   while (iteration < maxIterations) {
     iteration++;
@@ -211,6 +214,7 @@ export async function runAgentStreaming(
         toolCallsLog,
         totalIterations: iteration,
         stopReason: 'end_turn',
+        usage: totalUsage,
       };
     }
 
@@ -218,6 +222,8 @@ export async function runAgentStreaming(
     const result = await parseStreamingResponse(response, callbacks);
     lastContent = result.content;
     lastStopReason = result.stopReason;
+    totalUsage.inputTokens += result.usage.input_tokens;
+    totalUsage.outputTokens += result.usage.output_tokens;
 
     callbacks?.onIteration?.(iteration, result.stopReason);
 
@@ -371,5 +377,6 @@ export async function runAgentStreaming(
     toolCallsLog,
     totalIterations: iteration,
     stopReason,
+    usage: totalUsage,
   };
 }

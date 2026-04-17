@@ -1,4 +1,4 @@
-export type UseCaseId = 'seo' | 'landing-page' | 'app-prototype' | 'ecommerce' | 'demo';
+export type UseCaseId = 'seo' | 'landing-page' | 'app-prototype' | 'ecommerce' | 'solidity-audit' | 'demo';
 
 export interface QuestionStep {
   id: string;
@@ -29,6 +29,8 @@ export interface UseCaseConfig {
   agents: string[];
   questions: QuestionStep[];
   pmBriefTemplate: (answers: Record<string, string | string[] | null>) => string;
+  /** When true, the wizard skips the GITHUB_STEP — use for flows that read an existing repo instead of creating one. */
+  skipGithubStep?: boolean;
 }
 
 export const USE_CASES: Record<UseCaseId, UseCaseConfig> = {
@@ -175,6 +177,47 @@ export const USE_CASES: Record<UseCaseId, UseCaseConfig> = {
     ],
     pmBriefTemplate: (a) =>
       `E-commerce Store Setup project.\n\nProducts: ${a.products}\nCatalog size: ${a.count} products\nProduct photos: ${a.photos}\n\nGoal: Set up a complete online store with product catalog, payment processing, shipping configuration, and SEO optimization. Ready to accept orders.`,
+  },
+
+  'solidity-audit': {
+    id: 'solidity-audit',
+    label: 'Solidity Audit',
+    tagline: 'Audit my smart contracts before launch',
+    icon: 'ShieldCheck',
+    agents: ['pm', 'solidity-auditor'],
+    skipGithubStep: true,
+    questions: [
+      {
+        id: 'repoUrl',
+        question: "What's the GitHub repo with your contracts?",
+        type: 'url',
+        placeholder: 'https://github.com/your-org/your-contracts',
+        required: true,
+      },
+      {
+        id: 'scope',
+        question: 'Anything specific you want us to focus on? (optional)',
+        type: 'textarea',
+        placeholder: 'e.g. the staking contract, the upgrade path, access control...',
+        required: false,
+      },
+      {
+        id: 'brandUrl',
+        question: 'Your website URL — so we can match your brand on the report. (optional)',
+        type: 'url',
+        placeholder: 'https://your-project.com',
+        required: false,
+      },
+    ],
+    pmBriefTemplate: (a) => {
+      const scope = a.scope ? `\nFocus areas: ${a.scope}` : '\nFocus areas: full contract surface';
+      const brand = a.brandUrl ? `\nBrand URL (for report styling): ${a.brandUrl}` : '';
+      return `Solidity Security Audit.
+
+Target repo: ${a.repoUrl}${scope}${brand}
+
+This is a solo-specialist engagement: you (PM) and the Solidity Auditor only — no other agents. Hand off to solidity-auditor immediately with the target repo URL and scope. The auditor runs three methodologies sequentially (Feynman → Nemesis → State-Inconsistency) and returns a structured audit report with severity-rated findings and a Go/No-Go recommendation.`;
+    },
   },
 
   demo: {

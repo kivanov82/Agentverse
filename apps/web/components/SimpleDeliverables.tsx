@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShipWithAIStore } from '@/lib/store';
-import { FileText, Code, Globe, FileCheck, Palette, Download, ExternalLink } from 'lucide-react';
+import { FileText, Code, Globe, FileCheck, Palette, ShieldCheck, Download, ExternalLink } from 'lucide-react';
 
 const typeConfig = {
   document: { icon: FileText, color: 'text-blue-400' },
@@ -10,6 +10,7 @@ const typeConfig = {
   deployment: { icon: Globe, color: 'text-purple-400' },
   report: { icon: FileCheck, color: 'text-orange-400' },
   design: { icon: Palette, color: 'text-pink-400' },
+  audit_report: { icon: ShieldCheck, color: 'text-red-400' },
 };
 
 export function SimpleDeliverables() {

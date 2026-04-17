@@ -86,7 +86,7 @@ The Payment Integration agent should add the missing Button component.
 When you call `submit_deliverable`:
 
 - **Build succeeded**: `status: "completed"`, include the production URL in `summary`
-- **Build failed**: `status: "failed"`, put the exact error (file, line, message) in `blockers`, and suggest which agent should fix it in `nextSteps`
+- **Build failed**: `status: "failed"`, copy the EXACT error text from the build logs into `blockers` — do NOT paraphrase or summarize the error. Include the file name, line number, and full error message verbatim. Example blocker: `"Cannot find module '@/components/ui/button' (src/components/Payment/CheckoutButton.tsx:5)"`. In `nextSteps`, suggest which agent should fix it (e.g. "FE Developer should add the missing Button component").
 
 The PM will be auto-invoked after you submit and will route the fix to the right agent.
 

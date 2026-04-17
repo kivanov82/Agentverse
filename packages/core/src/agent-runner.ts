@@ -53,6 +53,7 @@ export async function runAgent(config: AgentRunConfig): Promise<AgentRunResult> 
       toolCallsLog: [],
       totalIterations: 0,
       stopReason: 'end_turn',
+      usage: { inputTokens: 0, outputTokens: 0 },
     };
   }
 
@@ -60,6 +61,7 @@ export async function runAgent(config: AgentRunConfig): Promise<AgentRunResult> 
   const maxTokens = config.maxTokens ?? DEFAULT_MAX_TOKENS;
   const messages: AnthropicMessage[] = [...config.messages];
   const toolCallsLog: ToolCallLog[] = [];
+  const totalUsage = { inputTokens: 0, outputTokens: 0 };
 
   let iteration = 0;
   let lastResponse: AnthropicResponse | null = null;
@@ -103,10 +105,15 @@ export async function runAgent(config: AgentRunConfig): Promise<AgentRunResult> 
         toolCallsLog,
         totalIterations: iteration,
         stopReason: 'end_turn',
+        usage: totalUsage,
       };
     }
 
     lastResponse = (await response.json()) as AnthropicResponse;
+    if (lastResponse.usage) {
+      totalUsage.inputTokens += lastResponse.usage.input_tokens || 0;
+      totalUsage.outputTokens += lastResponse.usage.output_tokens || 0;
+    }
 
     // Check stop reason
     if (lastResponse.stop_reason !== 'tool_use') {
@@ -244,6 +251,7 @@ export async function runAgent(config: AgentRunConfig): Promise<AgentRunResult> 
       toolCallsLog,
       totalIterations: iteration,
       stopReason: 'end_turn',
+      usage: totalUsage,
     };
   }
 
@@ -297,6 +305,7 @@ export async function runAgent(config: AgentRunConfig): Promise<AgentRunResult> 
     toolCallsLog,
     totalIterations: iteration,
     stopReason,
+    usage: totalUsage,
     escalation,
   };
 }

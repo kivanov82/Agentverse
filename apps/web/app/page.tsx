@@ -9,6 +9,7 @@ import {
   Globe,
   Smartphone,
   ShoppingCart,
+  ShieldCheck,
   Play,
   ArrowRight,
   FolderOpen,
@@ -22,6 +23,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Globe,
   Smartphone,
   ShoppingCart,
+  ShieldCheck,
   Play,
 };
 
@@ -47,6 +49,11 @@ const CARD_COLORS: Record<string, {
     bg: 'bg-amber-500/10', text: 'text-amber-400',
     border: 'border-amber-500/20', hoverBg: 'group-hover:bg-amber-500/15',
     shadow: 'group-hover:shadow-amber-500/10',
+  },
+  'solidity-audit': {
+    bg: 'bg-red-500/10', text: 'text-red-400',
+    border: 'border-red-500/20', hoverBg: 'group-hover:bg-red-500/15',
+    shadow: 'group-hover:shadow-red-500/10',
   },
 };
 

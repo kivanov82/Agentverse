@@ -144,9 +144,21 @@ export function registerProjectTools(registry: ToolRegistry): void {
       },
     },
     async (input, context) => {
-      const { events } = await import('../events');
-
-      const targetAgent = input.targetAgent as string;
+      // Alias common misnames to actual agent IDs
+      const AGENT_ALIASES: Record<string, string> = {
+        'frontend-developer': 'ui-developer',
+        'fe-developer': 'ui-developer',
+        'backend': 'backend-developer',
+        'designer': 'ui-designer',
+        'seo': 'seo-specialist',
+        'ecommerce': 'e-commerce-specialist',
+        'payments': 'payment-integration',
+        'mobile': 'mobile-developer',
+        'security': 'solidity-auditor',
+        'deploy': 'deployer',
+      };
+      const rawTarget = input.targetAgent as string;
+      const targetAgent = AGENT_ALIASES[rawTarget] || rawTarget;
       const contextSummary = input.contextSummary as string;
       const taskDescription = input.taskDescription as string;
 
@@ -155,8 +167,9 @@ export function registerProjectTools(registry: ToolRegistry): void {
       if (context.projectId) {
         try {
           const { createProjectRepo, repoExists } = await import('../github-repo');
+          const repoOwner = process.env.GITHUB_REPO_OWNER;
           const repoName = `shipwithai-${context.projectId}`;
-          const exists = await repoExists(`kivanov82/${repoName}`).catch(() => false);
+          const exists = await repoExists(`${repoOwner}/${repoName}`).catch(() => false);
           if (!exists) {
             const repo = await createProjectRepo(
               context.projectId,
@@ -166,17 +179,21 @@ export function registerProjectTools(registry: ToolRegistry): void {
             repoInfo = `\nGitHub repo created: ${repo.url}`;
           }
         } catch (err) {
-          // Non-fatal — repo creation is optional
-          console.error('Auto repo creation failed (non-fatal):', err);
+          // Non-fatal — repo creation is optional (fails locally without GitHub App keys)
+          console.error('[request_handoff] Auto repo creation failed (non-fatal):', err);
         }
       }
 
-      events.messageSent(
-        context.agentId,
-        targetAgent as any,
-        JSON.stringify({ type: 'handoff', contextSummary, taskDescription }),
-        context.projectId
-      );
+      // Emit event (non-fatal)
+      try {
+        const { events } = await import('../events');
+        events.messageSent(
+          context.agentId,
+          targetAgent as any,
+          JSON.stringify({ type: 'handoff', contextSummary, taskDescription }),
+          context.projectId
+        );
+      } catch { /* non-fatal */ }
 
       return {
         content: `Handoff requested to ${targetAgent}.\nContext: ${contextSummary.substring(0, 100)}...\nTask: ${taskDescription.substring(0, 100)}...${repoInfo}`,

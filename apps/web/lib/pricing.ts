@@ -16,7 +16,9 @@ const MODEL_PRICING: Record<string, { input: number; output: number }> = {
 };
 
 const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
-const MARKUP_MULTIPLIER = 10;
+// ShipWithAI charges 5× the Claude API cost for every agent interaction,
+// deducted from the user's credit balance.
+export const MARKUP_MULTIPLIER = 5;
 
 export function calculateCost(inputTokens: number, outputTokens: number, model?: string) {
   const rates = MODEL_PRICING[model ?? DEFAULT_MODEL] ?? MODEL_PRICING[DEFAULT_MODEL];

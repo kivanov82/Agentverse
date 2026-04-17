@@ -1,10 +1,9 @@
-// Project persistence layer - Firestore-based storage
-// Drop-in replacement for project-store.ts (SQLite)
+// Project persistence layer - Firestore-based storage (the live data layer)
 import { initializeApp, cert, getApps, type App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { nanoid } from 'nanoid';
 
-// Re-export the same public types so API routes don't change
+// Re-export shared persistence types so API routes can import from here directly
 export type {
   StoredProject,
   StoredSession,
@@ -14,7 +13,7 @@ export type {
   StoredDeliveryRequest,
   StoredUsage,
   StoredInvocationCost,
-} from './project-store';
+} from './types-stored';
 
 import type {
   StoredProject,
@@ -25,7 +24,7 @@ import type {
   StoredDeliveryRequest,
   StoredUsage,
   StoredInvocationCost,
-} from './project-store';
+} from './types-stored';
 
 // ---- Firebase init ----
 
@@ -209,6 +208,11 @@ export class FirestoreStore {
     return full;
   }
 
+  async getDeliverable(id: string): Promise<StoredDeliverable | null> {
+    const doc = await this.db.collection('deliverables').doc(id).get();
+    return doc.exists ? (doc.data() as StoredDeliverable) : null;
+  }
+
   async getDeliverables(options: { sessionId?: string; projectId?: string; type?: string } = {}): Promise<StoredDeliverable[]> {
     let q = this.db.collection('deliverables').orderBy('createdAt', 'desc') as FirebaseFirestore.Query;
     if (options.sessionId) q = q.where('sessionId', '==', options.sessionId);
@@ -220,12 +224,12 @@ export class FirestoreStore {
 
   // ---- Deliverable Content ----
 
-  async saveDeliverableContent(content: StoredDeliverableContent): Promise<void> {
-    await this.db.collection('deliverables').doc(content.deliverableId).collection('content').doc('main').set(content);
+  async saveDeliverableContent(content: StoredDeliverableContent, docKey: string = 'main'): Promise<void> {
+    await this.db.collection('deliverables').doc(content.deliverableId).collection('content').doc(docKey).set(content);
   }
 
-  async getDeliverableContent(deliverableId: string): Promise<StoredDeliverableContent | null> {
-    const doc = await this.db.collection('deliverables').doc(deliverableId).collection('content').doc('main').get();
+  async getDeliverableContent(deliverableId: string, docKey: string = 'main'): Promise<StoredDeliverableContent | null> {
+    const doc = await this.db.collection('deliverables').doc(deliverableId).collection('content').doc(docKey).get();
     return doc.exists ? (doc.data() as StoredDeliverableContent) : null;
   }
 

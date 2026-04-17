@@ -11,6 +11,7 @@ import {
   Palette,
   FileCheck,
   Globe,
+  ShieldCheck,
   ExternalLink,
   Download,
   Package,
@@ -22,6 +23,7 @@ const typeIcons: Record<Deliverable['type'], typeof FileText> = {
   design: Palette,
   report: FileCheck,
   deployment: Globe,
+  audit_report: ShieldCheck,
 };
 
 interface AgentGroup {

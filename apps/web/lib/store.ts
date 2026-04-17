@@ -7,6 +7,28 @@ export const isFreeMode = typeof window !== 'undefined'
     process.env.NEXT_PUBLIC_SHIPWITHAI_FREE_MODE === 'true'
   : process.env.NEXT_PUBLIC_SHIPWITHAI_FREE_MODE === 'true';
 
+// Accepts https://github.com/<owner>/<name>(.git)?(/anything)?, git@github.com:<owner>/<name>.git,
+// or a bare "owner/name". Returns null if it can't be parsed.
+export function parseGithubUrl(input: string | null | undefined): { owner: string; name: string; url: string } | null {
+  if (!input) return null;
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+  const patterns = [
+    /^https?:\/\/github\.com\/([^/\s]+)\/([^/\s?#]+?)(?:\.git)?(?:[/?#].*)?$/i,
+    /^git@github\.com:([^/\s]+)\/([^/\s]+?)(?:\.git)?$/i,
+    /^([^/\s]+)\/([^/\s]+?)(?:\.git)?$/,
+  ];
+  for (const re of patterns) {
+    const m = trimmed.match(re);
+    if (m) {
+      const owner = m[1];
+      const name = m[2];
+      return { owner, name, url: `https://github.com/${owner}/${name}` };
+    }
+  }
+  return null;
+}
+
 // Fire-and-forget persistence helpers
 const syncToApi = (url: string, data: unknown) => {
   fetch(url, {
@@ -77,7 +99,7 @@ export interface ChatMessage {
 // Deliverable types
 export interface Deliverable {
   id: string;
-  type: 'document' | 'code' | 'deployment' | 'report' | 'design';
+  type: 'document' | 'code' | 'deployment' | 'report' | 'design' | 'audit_report';
   title: string;
   description: string;
   url?: string;
@@ -752,7 +774,16 @@ export const useShipWithAIStore = create<ShipWithAIState>((set, get) => ({
     const projectId = nanoid();
     const sessionId = nanoid();
     const brief = config.pmBriefTemplate(answers);
-    const githubMode = (answers.github as string) === 'own' ? 'own' : 'shipwithai';
+    const githubMode = config.skipGithubStep
+      ? null
+      : (answers.github as string) === 'own' ? 'own' : 'shipwithai';
+
+    // For use cases that read an existing repo (e.g. solidity-audit), capture the
+    // target so the invoke route can route github_read_files to it instead of the
+    // auto-generated project repo.
+    const auditTargetRepo = useCaseId === 'solidity-audit'
+      ? parseGithubUrl(answers.repoUrl as string | null | undefined)
+      : undefined;
 
     const project: Project = {
       id: projectId,
@@ -798,6 +829,7 @@ export const useShipWithAIStore = create<ShipWithAIState>((set, get) => ({
         answers,
         githubMode,
         agents: config.agents,
+        ...(auditTargetRepo ? { auditTargetRepo } : {}),
       },
     });
 

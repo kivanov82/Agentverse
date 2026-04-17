@@ -28,7 +28,7 @@ interface GitHubAppConfig {
   appId: string;
   privateKey: string;
   installationId: string;
-  repoOwner: string;
+  repoOwner?: string;
 }
 
 function getConfig(): GitHubAppConfig {
@@ -38,7 +38,7 @@ function getConfig(): GitHubAppConfig {
   const privateKey = process.env.GITHUB_APP_PRIVATE_KEY
     || (keyPath ? readFileSync(keyPath, 'utf-8') : undefined);
   const installationId = process.env.GITHUB_APP_INSTALLATION_ID;
-  const repoOwner = process.env.GITHUB_REPO_OWNER || 'kivanov82';
+  const repoOwner = process.env.GITHUB_REPO_OWNER;
 
   if (!appId || !privateKey || !installationId) {
     throw new Error(

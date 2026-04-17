@@ -12,6 +12,7 @@
     "@shipwithai/core": "workspace:*",
     "@shipwithai/x402": "workspace:*",
     "@rainbow-me/rainbowkit": "^2.2.10",
+    "@react-pdf/renderer": "^4.0.0",
     "@tanstack/react-query": "^5.90.21",
     "@xyflow/react": "^12.0.0",
     "clsx": "^2.1.0",

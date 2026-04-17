@@ -139,6 +139,8 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
   // Ref mirror so async callbacks (onComplete) always see latest handoff state
   const handoffsRef = useRef(suggestedHandoffs);
   handoffsRef.current = suggestedHandoffs;
+  // Store handoff task descriptions so the target agent knows what to do
+  const handoffTaskRef = useRef<Record<string, { context: string; task: string }>>({});
 
   const streamingAgentId = useMemo(
     () => Object.keys(agentStreams).find(id => agentStreams[id]?.isActive),
@@ -176,15 +178,23 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
   // Auto-start agent after handoff
   useEffect(() => {
     if (autoStartAgent && activeAgent && activeSession) {
-      const agentMessages = chatMessages.filter((m) => m.agentId === activeAgent.id);
-
-      if (agentMessages.length === 0 && !autoStartedRef.current.has(`${activeSession.id}-${activeAgent.id}`)) {
-        autoStartedRef.current.add(`${activeSession.id}-${activeAgent.id}`);
+      const guardKey = `${activeSession.id}-${activeAgent.id}`;
+      if (!autoStartedRef.current.has(guardKey)) {
+        autoStartedRef.current.add(guardKey);
         addAgentToSession(activeSession.id, activeAgent.id);
 
-        const prompt = `You've been brought in by the Project Manager to help with this project. Review the context from other specialists below and start by asking the USER 1-2 specific questions relevant to your expertise. Be direct and get to the point — the user has already discussed the general vision with the PM.`;
-        addChatMessage({ role: 'user', content: `The PM has brought you in to help with this project.`, agentId: activeAgent.id });
+        // Use the specific task from the handoff if available
+        const handoffInfo = handoffTaskRef.current[activeAgent.id];
+        const prompt = handoffInfo?.task
+          ? `The PM has assigned you this task:\n\n**Task**: ${handoffInfo.task}\n\n**Context**: ${handoffInfo.context}\n\nStart working on this immediately. Do NOT ask questions — act now.`
+          : `You've been brought in by the Project Manager. Review the context and start working immediately.`;
+        const chatMsg = handoffInfo?.task
+          ? `Task: ${handoffInfo.task.substring(0, 150)}${handoffInfo.task.length > 150 ? '...' : ''}`
+          : `PM has handed off to you.`;
+        addChatMessage({ role: 'user', content: chatMsg, agentId: activeAgent.id });
         handleRealInvocation(activeAgent, prompt);
+        // Clean up
+        delete handoffTaskRef.current[activeAgent.id];
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -267,10 +277,23 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
       context.projectFacts = activeSession.projectFacts;
     }
 
-    // Build conversation history for this agent
-    const history = chatMessages
-      .filter((m) => m.agentId === agent.id)
+    // Build conversation history — this agent's messages + recent system messages for context
+    // Cross-agent context comes from the session context system (project facts + agent summaries)
+    const agentMessages = chatMessages
+      .filter((m) => m.agentId === agent.id && (m.role === 'user' || m.role === 'agent'))
+      .slice(-6)
       .map((m) => ({ role: m.role as 'user' | 'agent', content: m.content }));
+
+    // For PM, include recent system messages so it knows what happened between handoffs
+    const history = agent.id === 'pm'
+      ? chatMessages
+          .filter((m) => (m.agentId === 'pm' && (m.role === 'user' || m.role === 'agent')) || m.role === 'system')
+          .slice(-8)
+          .map((m) => m.role === 'system'
+            ? { role: 'user' as const, content: `[System]: ${m.content}` }
+            : { role: m.role as 'user' | 'agent', content: m.content }
+          )
+      : agentMessages;
 
     try {
       await invokeAgent({
@@ -290,21 +313,31 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
         onToolCall: (event) => {
           // Auto-trigger handoff when PM uses request_handoff tool
           if (event.toolName === 'request_handoff' && event.input?.targetAgent) {
-            const targetId = event.input.targetAgent as string;
-            // Dynamically add the target agent to the session if not already involved
+            // Apply same aliases as the server-side tool
+            const AGENT_ALIASES: Record<string, string> = {
+              'frontend-developer': 'ui-developer',
+              'fe-developer': 'ui-developer',
+              'backend': 'backend-developer',
+              'designer': 'ui-designer',
+              'seo': 'seo-specialist',
+              'ecommerce': 'e-commerce-specialist',
+              'payments': 'payment-integration',
+              'mobile': 'mobile-developer',
+              'security': 'solidity-auditor',
+              'deploy': 'deployer',
+            };
+            const rawTarget = event.input.targetAgent as string;
+            const targetId = AGENT_ALIASES[rawTarget] || rawTarget;
             if (activeSession && !activeSession.involvedAgents.includes(targetId)) {
               addAgentToSession(activeSession.id, targetId);
             }
-            // Auto-handoff: add a divider message and switch agent automatically
-            addChatMessage({
-              role: 'system',
-              agentId: targetId,
-              content: `${agents.find(a => a.id === targetId)?.name || targetId} is joining...`,
-            });
-            if (onSwitchAgent) {
-              // Queue the auto-switch after current agent finishes
-              setSuggestedHandoffs((prev) => ({ ...prev, [agent.id]: targetId }));
-            }
+            // Queue the handoff — update both state AND ref immediately so onComplete sees it
+            setSuggestedHandoffs((prev) => ({ ...prev, [agent.id]: targetId }));
+            handoffsRef.current = { ...handoffsRef.current, [agent.id]: targetId };
+            handoffTaskRef.current[targetId] = {
+              context: (event.input.contextSummary as string) || '',
+              task: (event.input.taskDescription as string) || '',
+            };
           }
           // Capture project plan phases when PM submits a plan
           if (event.toolName === 'submit_plan' && event.input?.phases) {
@@ -362,6 +395,16 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
               content: output,
             });
           }
+          // Surface the audit report download as a system message whenever the
+          // solidity-auditor produced a persisted deliverable this turn.
+          if (response.deliverable && agent.id === 'solidity-auditor') {
+            const { pdfUrl, downloadUrl } = response.deliverable;
+            addChatMessage({
+              role: 'system',
+              agentId: agent.id,
+              content: `**📄 Audit report ready**\n\n- [Download PDF](${pdfUrl})\n- [Download Markdown](${downloadUrl})`,
+            });
+          }
           endAgentStream(agent.id);
 
           // Set status based on what the agent did: delivered if it submitted work, idle otherwise
@@ -386,14 +429,22 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
           if (pendingHandoff && onSwitchAgent) {
             const nextAgent = agents.find((a) => a.id === pendingHandoff);
             if (nextAgent) {
+              // Add the "joining" message AFTER the PM's response is in the chat
+              addChatMessage({
+                role: 'system',
+                agentId: pendingHandoff,
+                content: `${nextAgent.name} is joining...`,
+              });
               summarizeContext(agent);
-              setSuggestedHandoffs((prev) => { const n = { ...prev }; delete n[agent.id]; return n; });
+              setSuggestedHandoffs((prev) => { const { [agent.id]: _, ...rest } = prev; return rest; });
+              // Clear auto-start guard so re-handoffs to the same agent work
+              autoStartedRef.current.delete(`${activeSession?.id}-${pendingHandoff}`);
               setTimeout(() => {
                 updateAgentStatus(pendingHandoff, 'idle');
                 onSwitchAgent(pendingHandoff, true);
               }, 1000);
               setIsInvoking(false);
-              return; // Skip PM auto-invoke — handoff takes priority
+              return;
             }
           }
 

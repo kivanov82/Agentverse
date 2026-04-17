@@ -15,8 +15,10 @@ export function UseCaseWizard({ config }: Props) {
   const router = useRouter();
   const initializeFromUseCase = useShipWithAIStore((s) => s.initializeFromUseCase);
 
-  // Build steps: use-case questions + GitHub question
-  const steps: QuestionStep[] = [...config.questions, GITHUB_STEP];
+  // Build steps: use-case questions + optional GitHub question
+  const steps: QuestionStep[] = config.skipGithubStep
+    ? [...config.questions]
+    : [...config.questions, GITHUB_STEP];
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[] | null>>({});
   const [direction, setDirection] = useState(1);

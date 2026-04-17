@@ -8,6 +8,7 @@ import {
   Globe,
   FileCheck,
   Palette,
+  ShieldCheck,
   Download,
   ExternalLink,
   Github,
@@ -20,6 +21,7 @@ const deliverableConfig: Record<Deliverable['type'], { icon: typeof FileText; co
   deployment: { icon: Globe, color: 'text-purple-400' },
   report: { icon: FileCheck, color: 'text-orange-400' },
   design: { icon: Palette, color: 'text-pink-400' },
+  audit_report: { icon: ShieldCheck, color: 'text-red-400' },
 };
 
 function formatDate(timestamp: number) {

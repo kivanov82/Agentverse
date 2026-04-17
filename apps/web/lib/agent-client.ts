@@ -27,6 +27,12 @@ export interface InvokeOptions {
   onError?: (error: Error) => void;
 }
 
+export interface AgentDeliverable {
+  deliverableId: string;
+  pdfUrl: string;
+  downloadUrl: string;
+}
+
 export interface AgentResponse {
   success: boolean;
   output: string;
@@ -34,6 +40,7 @@ export interface AgentResponse {
   toolCalls?: Array<{ toolName: string; input: Record<string, unknown>; output: string; isError: boolean }>;
   iterations?: number;
   stopReason?: string;
+  deliverable?: AgentDeliverable | null;
 }
 
 export interface AgentConfig {
@@ -127,6 +134,7 @@ export async function invokeAgent(options: InvokeOptions): Promise<AgentResponse
                 toolCalls: parsed.toolCalls,
                 iterations: parsed.iterations,
                 stopReason: parsed.stopReason,
+                deliverable: parsed.deliverable ?? null,
               };
               onComplete?.(result);
               return result;
@@ -159,6 +167,10 @@ export async function invokeAgent(options: InvokeOptions): Promise<AgentResponse
         success: data.success,
         output: data.output,
         error: data.error,
+        toolCalls: data.toolCalls,
+        iterations: data.iterations,
+        stopReason: data.stopReason,
+        deliverable: data.deliverable ?? null,
       };
 
       onComplete?.(result);

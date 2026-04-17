@@ -261,7 +261,13 @@ export interface AgentRunResult {
   toolCallsLog: ToolCallLog[];
   totalIterations: number;
   stopReason: 'end_turn' | 'max_tokens' | 'tool_use' | 'max_iterations';
+  usage: AgentRunUsage;            // Accumulated token counts across all iterations
   escalation?: EscalationInfo;     // Present if agent needs human intervention
+}
+
+export interface AgentRunUsage {
+  inputTokens: number;
+  outputTokens: number;
 }
 
 export interface EscalationInfo {

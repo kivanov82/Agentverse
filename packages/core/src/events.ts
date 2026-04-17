@@ -1,38 +1,22 @@
-// Event bus implementation - SQLite-based for portability
-import Database from 'better-sqlite3';
+// In-memory event bus. Persistence lives in Firestore for long-lived data;
+// this bus only exists to wire local pub/sub between tools that still call
+// `getEventBus()`. `dbPath` and the polling helpers are kept for backwards
+// compatibility with legacy call sites but are effectively no-ops.
 import { nanoid } from 'nanoid';
 import type { AgentEvent, EventType, AgentId } from './types';
 
+// Bounded to keep the long-lived server process from growing without limit.
+// Consumers that need durable history should write to Firestore instead.
+const MAX_EVENTS = 1000;
+
 export class EventBus {
-  private db: Database.Database;
+  private events: AgentEvent[] = [];
   private subscribers: Map<string, (event: AgentEvent) => void> = new Map();
   private pollInterval: NodeJS.Timeout | null = null;
   private lastEventId: string | null = null;
 
-  constructor(dbPath: string = './shipwithai-events.db') {
-    this.db = new Database(dbPath);
-    this.init();
-  }
-
-  private init() {
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS events (
-        id TEXT PRIMARY KEY,
-        type TEXT NOT NULL,
-        source TEXT NOT NULL,
-        target TEXT,
-        project_id TEXT,
-        payload TEXT NOT NULL,
-        timestamp INTEGER NOT NULL,
-        created_at INTEGER DEFAULT (strftime('%s', 'now'))
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
-      CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
-      CREATE INDEX IF NOT EXISTS idx_events_source ON events(source);
-      CREATE INDEX IF NOT EXISTS idx_events_target ON events(target);
-      CREATE INDEX IF NOT EXISTS idx_events_project ON events(project_id);
-    `);
+  constructor(_dbPath?: string) {
+    // dbPath is accepted for compatibility; the bus is in-memory.
   }
 
   emit(event: Omit<AgentEvent, 'id' | 'timestamp'>): AgentEvent {
@@ -42,22 +26,10 @@ export class EventBus {
       timestamp: Date.now(),
     };
 
-    const stmt = this.db.prepare(`
-      INSERT INTO events (id, type, source, target, project_id, payload, timestamp)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run(
-      fullEvent.id,
-      fullEvent.type,
-      fullEvent.source,
-      fullEvent.target || null,
-      fullEvent.projectId || null,
-      JSON.stringify(fullEvent.payload),
-      fullEvent.timestamp
-    );
-
-    // Notify local subscribers
+    this.events.push(fullEvent);
+    if (this.events.length > MAX_EVENTS) {
+      this.events.splice(0, this.events.length - MAX_EVENTS);
+    }
     this.subscribers.forEach((callback) => callback(fullEvent));
 
     return fullEvent;
@@ -73,7 +45,6 @@ export class EventBus {
     this.subscribers.delete(subscriptionId);
   }
 
-  // Query events
   getEvents(options: {
     type?: EventType;
     source?: AgentId | 'system' | 'user';
@@ -82,59 +53,19 @@ export class EventBus {
     since?: number;
     limit?: number;
   } = {}): AgentEvent[] {
-    let query = 'SELECT * FROM events WHERE 1=1';
-    const params: unknown[] = [];
+    let filtered = this.events;
 
-    if (options.type) {
-      query += ' AND type = ?';
-      params.push(options.type);
-    }
-    if (options.source) {
-      query += ' AND source = ?';
-      params.push(options.source);
-    }
-    if (options.target) {
-      query += ' AND target = ?';
-      params.push(options.target);
-    }
-    if (options.projectId) {
-      query += ' AND project_id = ?';
-      params.push(options.projectId);
-    }
-    if (options.since) {
-      query += ' AND timestamp > ?';
-      params.push(options.since);
-    }
+    if (options.type) filtered = filtered.filter((e) => e.type === options.type);
+    if (options.source) filtered = filtered.filter((e) => e.source === options.source);
+    if (options.target) filtered = filtered.filter((e) => e.target === options.target);
+    if (options.projectId) filtered = filtered.filter((e) => e.projectId === options.projectId);
+    if (options.since !== undefined) filtered = filtered.filter((e) => e.timestamp > options.since!);
 
-    query += ' ORDER BY timestamp DESC';
-
-    if (options.limit) {
-      query += ' LIMIT ?';
-      params.push(options.limit);
-    }
-
-    const rows = this.db.prepare(query).all(...params) as Array<{
-      id: string;
-      type: EventType;
-      source: string;
-      target: string | null;
-      project_id: string | null;
-      payload: string;
-      timestamp: number;
-    }>;
-
-    return rows.map((row) => ({
-      id: row.id,
-      type: row.type,
-      source: row.source as AgentId | 'system' | 'user',
-      target: row.target as AgentId | undefined,
-      projectId: row.project_id || undefined,
-      payload: JSON.parse(row.payload),
-      timestamp: row.timestamp,
-    }));
+    // Newest first
+    const sorted = [...filtered].sort((a, b) => b.timestamp - a.timestamp);
+    return options.limit ? sorted.slice(0, options.limit) : sorted;
   }
 
-  // For SSE streaming
   startPolling(callback: (events: AgentEvent[]) => void, intervalMs: number = 1000): void {
     this.pollInterval = setInterval(() => {
       const events = this.getEvents({
@@ -144,7 +75,7 @@ export class EventBus {
 
       if (events.length > 0) {
         this.lastEventId = events[0].id;
-        callback(events.reverse()); // Return in chronological order
+        callback(events.reverse());
       }
     }, intervalMs);
   }
@@ -158,11 +89,11 @@ export class EventBus {
 
   close(): void {
     this.stopPolling();
-    this.db.close();
+    this.events = [];
+    this.subscribers.clear();
   }
 }
 
-// Singleton instance
 let eventBusInstance: EventBus | null = null;
 
 export function getEventBus(dbPath?: string): EventBus {
@@ -172,7 +103,6 @@ export function getEventBus(dbPath?: string): EventBus {
   return eventBusInstance;
 }
 
-// Helper to emit common event types
 export const events = {
   taskCreated: (source: AgentId | 'user', projectId: string, task: { id: string; title: string; description: string }) =>
     getEventBus().emit({

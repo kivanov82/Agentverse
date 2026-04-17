@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { spawn } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import { runAgent } from '@shipwithai/core/agent-runner';
 import { runAgentStreaming } from '@shipwithai/core/agent-runner-streaming';
-import type { AgentRunConfig, AgentStreamCallbacks } from '@shipwithai/core/types';
+import type { AgentRunConfig, AgentRunResult, AgentStreamCallbacks } from '@shipwithai/core/types';
 import { getToolRegistry } from '@shipwithai/core/tools';
 import { getDefaultHooks } from '@shipwithai/core/hooks';
 import { listFiles } from '@shipwithai/core/github-repo';
+import { loadAgentSkills, renderSkillsBlock } from '@shipwithai/core/agent-skills';
+import { getFirestoreStore } from '@shipwithai/core/firestore-store';
+import { calculateCost } from '@/lib/pricing';
+import { persistAuditReport } from '@/lib/audit-deliverable';
 
-// Agent invocation via Claude CLI or API
+// Agent invocation via Anthropic API (streaming or non-streaming)
 export async function POST(
   request: NextRequest,
   { params }: { params: { agentId: string } }
@@ -30,7 +33,8 @@ export async function POST(
     const stream = url.searchParams.get('stream') === 'true';
 
     // Validate agent exists
-    const agentDir = path.join(process.cwd(), '..', '..', 'agents', agentId);
+    const agentsDir = path.join(process.cwd(), '..', '..', 'agents');
+    const agentDir = path.join(agentsDir, agentId);
     const configPath = path.join(agentDir, 'config.json');
     const claudeMdPath = path.join(agentDir, 'CLAUDE.md');
 
@@ -42,108 +46,122 @@ export async function POST(
     }
 
     const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-    const systemPrompt = fs.existsSync(claudeMdPath)
+    const baseSystemPrompt = fs.existsSync(claudeMdPath)
       ? fs.readFileSync(claudeMdPath, 'utf-8')
       : '';
 
-    // Determine invocation mode
-    const mode = process.env.SHIPWITHAI_MODE || 'cli';
+    // Load SKILL.md files from agents/{agentId}/skills/*
+    // Optional allowlist via config.json "skills": ["folder-a", "folder-b"]
+    const skillsAllowlist = Array.isArray(config.skills) ? (config.skills as string[]) : undefined;
+    const skills = loadAgentSkills(agentsDir, agentId, { allowlist: skillsAllowlist });
+    const skillsBlock = renderSkillsBlock(skills);
 
-    if (mode === 'api') {
-      const messages = buildMessages(prompt, context, history);
+    const messages = buildMessages(prompt, context, history);
 
-      // Derive repo name from project ID (convention: kivanov82/shipwithai-{projectId})
-      const repoOwner = process.env.GITHUB_REPO_OWNER || 'kivanov82';
-      const repoFullName = projectId ? `${repoOwner}/shipwithai-${projectId.toLowerCase()}` : undefined;
+    // Resolve the repo this agent should read/write. Default is the auto-generated
+    // project repo. Use cases that operate on an existing user repo (e.g. solidity-audit)
+    // override via project.metadata.auditTargetRepo — only fetched for the auditor
+    // since no other agent consumes that metadata today.
+    const repoOwner = process.env.GITHUB_REPO_OWNER;
+    let repoFullName = projectId ? `${repoOwner}/shipwithai-${projectId.toLowerCase()}` : undefined;
+    if (projectId && agentId === 'solidity-auditor') {
+      try {
+        const store = getFirestoreStore();
+        const project = await store.getProject(projectId);
+        const target = (project?.metadata as Record<string, unknown> | undefined)?.auditTargetRepo as
+          | { owner?: string; name?: string }
+          | undefined;
+        if (target?.owner && target?.name) {
+          repoFullName = `${target.owner}/${target.name}`;
+        }
+      } catch { /* non-fatal — fall back to auto-generated name */ }
+    }
 
-      // Load active branch from session metadata (if agent previously committed)
-      const sessionId = body.sessionId as string | undefined;
-      let activeBranch: string | undefined;
-      if (sessionId) {
+    // Load active branch from session metadata (if agent previously committed)
+    const sessionId = body.sessionId as string | undefined;
+    let activeBranch: string | undefined;
+    if (sessionId) {
+      try {
+        const store = getFirestoreStore();
+        const session = await store.getSession(sessionId);
+        const branches = (session as any)?.activeBranches as Record<string, string> | undefined;
+        activeBranch = branches?.[agentId];
+      } catch { /* non-fatal */ }
+    }
+
+    // Fetch repo tree to give agent awareness of the project structure
+    let repoTreeBlock = '';
+    if (repoFullName) {
+      try {
+        const rootFiles = await listFiles(repoFullName, undefined, 'main');
+        const tree = rootFiles.map((f) => `${f.type === 'dir' ? '📁' : '📄'} ${f.path}`).join('\n');
+        repoTreeBlock = `\n\n## Repository Structure (${repoFullName})\n\`\`\`\n${tree}\n\`\`\`\nAlways use these actual paths when reading files. Do NOT guess paths.\n`;
+      } catch { /* non-fatal — agent can still list root manually */ }
+    }
+
+    // Build agent run config
+    const runConfig: AgentRunConfig = {
+      agentId: agentId as AgentRunConfig['agentId'],
+      model: getModel(config),
+      systemPrompt: baseSystemPrompt + skillsBlock + repoTreeBlock,
+      messages,
+      maxTokens: (config.maxTokens as number) || 16000,
+      maxIterations: (config.maxIterations as number) || 10,
+      projectId,
+      sessionId,
+      repoFullName,
+      activeBranch,
+      onBranchCreated: sessionId ? async (branch: string) => {
         try {
-          const { getFirestoreStore } = await import('@shipwithai/core/firestore-store');
           const store = getFirestoreStore();
           const session = await store.getSession(sessionId);
-          const branches = (session as any)?.activeBranches as Record<string, string> | undefined;
-          activeBranch = branches?.[agentId];
+          const branches = (session as any)?.activeBranches || {};
+          branches[agentId] = branch;
+          await store.updateSession(sessionId, { activeBranches: branches } as any);
         } catch { /* non-fatal */ }
-      }
+      } : undefined,
+    };
 
-      // Fetch repo tree to give agent awareness of the project structure
-      let repoTreeBlock = '';
-      if (repoFullName) {
-        try {
-          const rootFiles = await listFiles(repoFullName, undefined, 'main');
-          const tree = rootFiles.map((f) => `${f.type === 'dir' ? '📁' : '📄'} ${f.path}`).join('\n');
-          repoTreeBlock = `\n\n## Repository Structure (${repoFullName})\n\`\`\`\n${tree}\n\`\`\`\nAlways use these actual paths when reading files. Do NOT guess paths.\n`;
-        } catch { /* non-fatal — agent can still list root manually */ }
-      }
-
-      // Build agent run config
-      const runConfig: AgentRunConfig = {
-        agentId: agentId as AgentRunConfig['agentId'],
-        model: getModel(config),
-        systemPrompt: systemPrompt + repoTreeBlock,
-        messages,
-        maxTokens: (config.maxTokens as number) || 16000,
-        maxIterations: (config.maxIterations as number) || 10,
-        projectId,
-        sessionId,
-        repoFullName,
-        activeBranch,
-        onBranchCreated: sessionId ? async (branch: string) => {
-          try {
-            const { getFirestoreStore } = await import('@shipwithai/core/firestore-store');
-            const store = getFirestoreStore();
-            const session = await store.getSession(sessionId);
-            const branches = (session as any)?.activeBranches || {};
-            branches[agentId] = branch;
-            await store.updateSession(sessionId, { activeBranches: branches } as any);
-          } catch { /* non-fatal */ }
-        } : undefined,
-      };
-
-      // Load tools from agent config
-      const toolNames = config.tools as string[] | undefined;
-      const outputTool = config.outputTool as string | undefined;
-      if (toolNames && toolNames.length > 0) {
-        const toolRegistry = getToolRegistry();
-        // Include the output tool in the tools list if not already there
-        const allToolNames = outputTool && !toolNames.includes(outputTool)
-          ? [...toolNames, outputTool]
-          : toolNames;
-        runConfig.tools = toolRegistry.getDefinitions(allToolNames);
-        runConfig.toolExecutor = toolRegistry.createExecutor();
-      }
-
-      // In "job" mode (orchestrator-driven), force structured output via output tool
-      const invocationMode = body.mode as string | undefined;
-      if (invocationMode === 'job' && outputTool) {
-        runConfig.toolChoice = { type: 'tool', name: outputTool };
-      }
-
-      // Apply default execution hooks (branch protection, command safety, output truncation)
-      runConfig.hooks = getDefaultHooks();
-
-      if (stream) {
-        // Streaming API mode with agentic loop
-        return invokeViaAgentRunnerStreaming(runConfig);
-      }
-
-      // Non-streaming with agentic loop
-      const result = await runAgent(runConfig);
-      return NextResponse.json({
-        success: result.success,
-        output: result.output,
-        toolCalls: result.toolCallsLog,
-        iterations: result.totalIterations,
-        stopReason: result.stopReason,
-      });
-    } else {
-      // Use Claude CLI (no streaming support yet)
-      const response = await invokeViaCLI(agentId, prompt, projectId);
-      return NextResponse.json(response);
+    // Load tools from agent config
+    const toolNames = config.tools as string[] | undefined;
+    const outputTool = config.outputTool as string | undefined;
+    if (toolNames && toolNames.length > 0) {
+      const toolRegistry = getToolRegistry();
+      // Include the output tool in the tools list if not already there
+      const allToolNames = outputTool && !toolNames.includes(outputTool)
+        ? [...toolNames, outputTool]
+        : toolNames;
+      runConfig.tools = toolRegistry.getDefinitions(allToolNames);
+      runConfig.toolExecutor = toolRegistry.createExecutor();
     }
+
+    // In "job" mode (orchestrator-driven), force structured output via output tool
+    const invocationMode = body.mode as string | undefined;
+    if (invocationMode === 'job' && outputTool) {
+      runConfig.toolChoice = { type: 'tool', name: outputTool };
+    }
+
+    // Apply default execution hooks (branch protection, command safety, output truncation)
+    runConfig.hooks = getDefaultHooks();
+
+    if (stream) {
+      // Streaming SSE with agentic loop
+      return invokeViaAgentRunnerStreaming(runConfig, { mode: invocationMode });
+    }
+
+    // Non-streaming with agentic loop
+    const result = await runAgent(runConfig);
+    await recordInvocationCost(runConfig, result, invocationMode);
+    const deliverable = await persistAuditReport(runConfig, result);
+    return NextResponse.json({
+      success: result.success,
+      output: result.output,
+      toolCalls: result.toolCallsLog,
+      iterations: result.totalIterations,
+      stopReason: result.stopReason,
+      usage: result.usage,
+      deliverable,
+    });
   } catch (error) {
     console.error('Agent invocation error:', error);
     return NextResponse.json(
@@ -151,56 +169,6 @@ export async function POST(
       { status: 500 }
     );
   }
-}
-
-async function invokeViaCLI(
-  agentId: string,
-  prompt: string,
-  projectId?: string
-): Promise<{ success: boolean; output: string }> {
-  return new Promise((resolve, reject) => {
-    const agentDir = path.join(process.cwd(), '..', '..', 'agents', agentId);
-    const projectDir = projectId
-      ? path.join(process.cwd(), '..', '..', 'projects', projectId)
-      : agentDir;
-
-    // Ensure project directory exists
-    if (projectId && !fs.existsSync(projectDir)) {
-      fs.mkdirSync(projectDir, { recursive: true });
-    }
-
-    // Spawn claude process
-    const proc = spawn('claude', ['--print', prompt], {
-      cwd: projectDir,
-      env: {
-        ...process.env,
-        CLAUDE_PROJECT: agentDir,
-      },
-    });
-
-    let output = '';
-    let error = '';
-
-    proc.stdout.on('data', (data) => {
-      output += data.toString();
-    });
-
-    proc.stderr.on('data', (data) => {
-      error += data.toString();
-    });
-
-    proc.on('close', (code) => {
-      if (code === 0) {
-        resolve({ success: true, output });
-      } else {
-        resolve({ success: false, output: error || output });
-      }
-    });
-
-    proc.on('error', (err) => {
-      reject(err);
-    });
-  });
 }
 
 const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
@@ -295,8 +263,38 @@ function buildMessages(prompt: string, context?: Record<string, unknown>, histor
 }
 
 
+// Record token cost + 5x markup to Firestore. Fire-and-forget: failures are
+// logged but never break the invocation response.
+async function recordInvocationCost(
+  runConfig: AgentRunConfig,
+  result: AgentRunResult,
+  mode: string | undefined,
+): Promise<void> {
+  try {
+    const { inputTokens, outputTokens } = result.usage;
+    if (!inputTokens && !outputTokens) return;
+    const { apiCost, userCharge } = calculateCost(inputTokens, outputTokens, runConfig.model);
+    const store = getFirestoreStore();
+    await store.saveInvocationCost({
+      sessionId: runConfig.sessionId,
+      agentId: runConfig.agentId,
+      model: runConfig.model,
+      inputTokens,
+      outputTokens,
+      apiCost,
+      userCharge,
+      mode: mode || 'chat',
+    });
+  } catch (err) {
+    console.error('[invoke] saveInvocationCost failed', err);
+  }
+}
+
 // Streaming version using agent runner with SSE bridge
-function invokeViaAgentRunnerStreaming(runConfig: AgentRunConfig): Response {
+function invokeViaAgentRunnerStreaming(
+  runConfig: AgentRunConfig,
+  opts: { mode?: string } = {},
+): Response {
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -326,6 +324,8 @@ function invokeViaAgentRunnerStreaming(runConfig: AgentRunConfig): Response {
         };
 
         const result = await runAgentStreaming(runConfig, callbacks);
+        await recordInvocationCost(runConfig, result, opts.mode);
+        const deliverable = await persistAuditReport(runConfig, result);
 
         // If agent returned an error message (e.g., API error), send it as text
         if (!result.success && result.output) {
@@ -334,7 +334,7 @@ function invokeViaAgentRunnerStreaming(runConfig: AgentRunConfig): Response {
           );
         }
 
-        // Send final result summary
+        // Send final result summary (including token usage for UI cost display)
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({
             type: 'done',
@@ -342,6 +342,8 @@ function invokeViaAgentRunnerStreaming(runConfig: AgentRunConfig): Response {
             iterations: result.totalIterations,
             stopReason: result.stopReason,
             toolCalls: result.toolCallsLog,
+            usage: result.usage,
+            deliverable,
           })}\n\n`)
         );
 

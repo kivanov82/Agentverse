@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestoreStore } from '@shipwithai/core/firestore-store';
+import { scrapeBrand } from '@shipwithai/core/brand-scraper';
 
 export async function GET(request: NextRequest) {
   const store = getFirestoreStore();
@@ -31,5 +32,32 @@ export async function POST(request: NextRequest) {
     metadata,
   });
 
+  // Fire-and-forget: scraping the user's site may take seconds. Doing it inline
+  // would block project creation (and the UI redirect) on an external fetch.
+  void enrichWithBrandThemeAsync(id, metadata);
+
   return NextResponse.json({ success: true, project });
+}
+
+async function enrichWithBrandThemeAsync(
+  projectId: string,
+  metadata: Record<string, unknown> | undefined,
+): Promise<void> {
+  const answers = metadata?.answers as Record<string, unknown> | undefined;
+  const brandUrl = typeof answers?.brandUrl === 'string' ? answers.brandUrl : undefined;
+  if (!brandUrl) return;
+
+  try {
+    const theme = await scrapeBrand(brandUrl);
+    if (!theme) return;
+    const store = getFirestoreStore();
+    const current = await store.getProject(projectId);
+    if (!current) return;
+    await store.saveProject({
+      ...current,
+      metadata: { ...(current.metadata ?? {}), brandTheme: theme },
+    });
+  } catch (err) {
+    console.error('[projects] brand enrichment failed', err);
+  }
 }

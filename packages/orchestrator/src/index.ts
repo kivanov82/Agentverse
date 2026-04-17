@@ -28,7 +28,7 @@ export interface Workflow {
   updatedAt: number;
 }
 
-// Persistence interface — implemented by project-store and firestore-store
+// Persistence interface — implemented by firestore-store
 export interface WorkflowStore {
   saveWorkflow(workflow: Workflow): Promise<void>;
   getWorkflow(workflowId: string): Promise<Workflow | null>;

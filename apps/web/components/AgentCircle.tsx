@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useShipWithAIStore, Agent } from '@/lib/store';
 import { USE_CASES } from '@/lib/use-cases';
 import { AgentChatPanel } from './AgentChatPanel';
+import { AuditMethodologyExplainer } from './AuditMethodologyExplainer';
 import { CheckCircle, Loader2, Clock, Circle } from 'lucide-react';
 
 const STATUS_CONFIG: Record<string, { icon: typeof CheckCircle; color: string; label: string }> = {
@@ -181,18 +182,21 @@ export function AgentCircle() {
           </div>
         ) : (
           /* Unified chat — always open, PM selected by default */
-          <div className="w-full h-full max-h-[calc(100vh-64px)] px-4">
-            <AgentChatPanel
-              activeAgent={selectedAgent || agents.find(a => a.id === 'pm') || null}
-              autoStartAgent={shouldAutoStart}
-              onSwitchAgent={(agentId, autoStart) => {
-                const agent = agents.find((a) => a.id === agentId);
-                if (agent) {
-                  setShouldAutoStart(!!autoStart);
-                  setSelectedAgent(agent);
-                }
-              }}
-            />
+          <div className="w-full h-full max-h-[calc(100vh-64px)] px-4 flex flex-col">
+            {activeUseCase === 'solidity-audit' && <AuditMethodologyExplainer />}
+            <div className="flex-1 min-h-0">
+              <AgentChatPanel
+                activeAgent={selectedAgent || agents.find(a => a.id === 'pm') || null}
+                autoStartAgent={shouldAutoStart}
+                onSwitchAgent={(agentId, autoStart) => {
+                  const agent = agents.find((a) => a.id === agentId);
+                  if (agent) {
+                    setShouldAutoStart(!!autoStart);
+                    setSelectedAgent(agent);
+                  }
+                }}
+              />
+            </div>
           </div>
         )}
       </div>
