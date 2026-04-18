@@ -1,5 +1,23 @@
 // Client for invoking agents from the UI
 
+export type PaywallErrorCode = 'unauthenticated' | 'insufficient_credit';
+
+/**
+ * Thrown when the invoke API returns 402. Consumers can `instanceof PaywallError`
+ * to distinguish "user needs to sign in / top up" from generic failures and
+ * surface the paywall overlay instead of dropping the message into chat.
+ */
+export class PaywallError extends Error {
+  readonly code: PaywallErrorCode;
+  readonly balance?: number;
+  constructor(code: PaywallErrorCode, message: string, balance?: number) {
+    super(message);
+    this.name = 'PaywallError';
+    this.code = code;
+    this.balance = balance;
+  }
+}
+
 export interface ToolCallEvent {
   toolName: string;
   input?: Record<string, unknown>;
@@ -75,6 +93,15 @@ export async function invokeAgent(options: InvokeOptions): Promise<AgentResponse
       });
 
       console.log('[agent-client] Response status:', response.status);
+
+      if (response.status === 402) {
+        const data = await safeReadPaywallPayload(response);
+        throw new PaywallError(
+          (data?.errorCode as PaywallErrorCode) ?? 'insufficient_credit',
+          (data?.error as string) ?? 'Payment required',
+          data?.balance as number | undefined,
+        );
+      }
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -159,6 +186,14 @@ export async function invokeAgent(options: InvokeOptions): Promise<AgentResponse
 
       const data = await response.json();
 
+      if (response.status === 402) {
+        throw new PaywallError(
+          (data?.errorCode as PaywallErrorCode) ?? 'insufficient_credit',
+          data?.error ?? 'Payment required',
+          data?.balance,
+        );
+      }
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to invoke agent');
       }
@@ -181,6 +216,23 @@ export async function invokeAgent(options: InvokeOptions): Promise<AgentResponse
     const err = error instanceof Error ? error : new Error(String(error));
     onError?.(err);
     return { success: false, output: '', error: err.message };
+  }
+}
+
+// Tolerant of either SSE (`data: {...}\n\n[DONE]`) or plain JSON, since the
+// paywall route can emit either depending on whether the caller asked for streaming.
+async function safeReadPaywallPayload(response: Response): Promise<Record<string, unknown> | null> {
+  try {
+    const text = await response.text();
+    const trimmed = text.trim();
+    if (trimmed.startsWith('{')) return JSON.parse(trimmed);
+    const firstLine = trimmed.split('\n').find((l) => l.startsWith('data: '));
+    if (!firstLine) return null;
+    const json = firstLine.slice(6).trim();
+    if (!json || json === '[DONE]') return null;
+    return JSON.parse(json);
+  } catch {
+    return null;
   }
 }
 

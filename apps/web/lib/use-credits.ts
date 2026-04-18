@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { MIN_BALANCE_USD } from './pricing';
+
+export type GateState = 'signed_out' | 'out_of_credit' | 'ok';
 
 export interface CreditsUser {
   id: string;
@@ -69,12 +72,21 @@ export function useCredits() {
     refresh();
   }, [refresh]);
 
+  const gateState: GateState = isLoading
+    ? 'ok'
+    : !isAuthenticated
+      ? 'signed_out'
+      : data.balance < MIN_BALANCE_USD
+        ? 'out_of_credit'
+        : 'ok';
+
   return {
     balance: data.balance,
     starterCreditGranted: data.starterCreditGranted,
     user: data.user,
     isAuthenticated,
     isLoading,
+    gateState,
     refresh,
   };
 }

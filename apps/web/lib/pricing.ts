@@ -47,3 +47,8 @@ export function formatUsdcAmount(amount: number): string {
 }
 
 export const isServerFreeMode = process.env.SHIPWITHAI_FREE_MODE === 'true';
+
+// Minimum credit balance needed to start a new agent run. Conservative —
+// $0.50 covers ~one cheap Sonnet turn at 5× markup. Used both to gate the
+// invoke route server-side and to render the paywall overlay client-side.
+export const MIN_BALANCE_USD = 0.5;

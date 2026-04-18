@@ -6,7 +6,7 @@ import { formatUsdcAmount } from '@/lib/pricing';
 import { SignInModal } from './SignInModal';
 
 interface Props {
-  state: 'signed_out' | 'out_of_credit' | 'ok';
+  state: 'signed_out' | 'out_of_credit';
   balance?: number;
 }
 
@@ -18,8 +18,6 @@ interface Props {
  */
 export function PaywallOverlay({ state, balance }: Props) {
   const [signInOpen, setSignInOpen] = useState(false);
-  if (state === 'ok') return null;
-
   const signedOut = state === 'signed_out';
 
   return (

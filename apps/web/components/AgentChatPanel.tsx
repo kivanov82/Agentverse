@@ -4,7 +4,9 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Loader2, MessageSquare } from 'lucide-react';
 import { useShipWithAIStore, Agent } from '@/lib/store';
-import { invokeAgent } from '@/lib/agent-client';
+import { invokeAgent, PaywallError } from '@/lib/agent-client';
+import { useCredits } from '@/lib/use-credits';
+import { PaywallOverlay } from './PaywallOverlay';
 
 /** Render basic markdown: **bold**, *italic*, `code`, and newlines */
 function renderMarkdown(text: string) {
@@ -135,6 +137,7 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
 
   const [input, setInput] = useState('');
   const [isInvoking, setIsInvoking] = useState(false);
+  const [paywallFromApi, setPaywallFromApi] = useState<{ code: 'unauthenticated' | 'insufficient_credit'; balance?: number } | null>(null);
   const [suggestedHandoffs, setSuggestedHandoffs] = useState<Record<string, string>>({});
   // Ref mirror so async callbacks (onComplete) always see latest handoff state
   const handoffsRef = useRef(suggestedHandoffs);
@@ -154,6 +157,18 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
   const pendingAgentRef = useRef<string | null>(null);
 
   const allMessages = useMemo(() => chatMessages.slice(-50), [chatMessages]);
+
+  const credits = useCredits();
+  // Local API-driven paywall (from a runtime 402) overrides the credit-derived
+  // gate so a stale balance read can't hide a fresh "out of credit" response.
+  const apiOverride = paywallFromApi?.code === 'unauthenticated'
+    ? 'signed_out'
+    : paywallFromApi?.code === 'insufficient_credit'
+      ? 'out_of_credit'
+      : null;
+  const gateState = apiOverride ?? credits.gateState;
+  const paywallActive = gateState !== 'ok';
+  const paywallBalance = paywallFromApi?.balance ?? credits.balance;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -384,6 +399,10 @@ export function AgentChatPanel({ activeAgent, autoStartAgent, onSwitchAgent }: A
           }
         },
         onComplete: (response) => {
+          // Refresh balance after the post-run debit and drop any stale paywall.
+          credits.refresh();
+          setPaywallFromApi(null);
+
           const output = response.output || (response.stopReason === 'max_tokens'
             ? 'I ran out of space generating the response. Let me try with a simpler approach — could you ask me to focus on one specific deliverable at a time?'
             : '');
@@ -515,12 +534,18 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
         },
         onError: (error) => {
           failInvocation(invocationId, error.message);
+          endAgentStream(agent.id);
+          if (error instanceof PaywallError) {
+            setPaywallFromApi({ code: error.code, balance: error.balance });
+            updateAgentStatus(agent.id, 'idle');
+            credits.refresh();
+            return;
+          }
           addChatMessage({
             role: 'agent',
             agentId: agent.id,
             content: `Error: ${error.message}`,
           });
-          endAgentStream(agent.id);
           updateAgentStatus(agent.id, 'error');
         },
       });
@@ -535,7 +560,7 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isInvoking || !activeAgent) return;
+    if (!input.trim() || isInvoking || !activeAgent || paywallActive) return;
 
     const prompt = input.trim();
     addChatMessage({ role: 'user', content: prompt, agentId: activeAgent.id });
@@ -555,7 +580,7 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
   };
 
   const handleOptionClick = async (option: string) => {
-    if (!activeAgent) return;
+    if (!activeAgent || paywallActive) return;
     addChatMessage({ role: 'user', content: option, agentId: activeAgent.id });
 
     const sessionContext = activeSession?.context ?? {};
@@ -580,7 +605,13 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
   })();
 
   return (
-    <div className="w-full flex flex-col">
+    <div className="w-full flex flex-col relative">
+      {gateState !== 'ok' && (
+        <PaywallOverlay
+          state={gateState}
+          balance={gateState === 'out_of_credit' ? paywallBalance : undefined}
+        />
+      )}
       <div className="overflow-hidden flex flex-col max-h-full">
         {/* Header */}
         <div className="px-6 py-3 flex items-center gap-3 shrink-0">
@@ -731,17 +762,21 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
               placeholder={
                 !activeAgent
                   ? 'Select an agent first...'
+                  : gateState === 'signed_out'
+                  ? 'Sign in to chat'
+                  : gateState === 'out_of_credit'
+                  ? 'Top up to continue'
                   : isInvoking
                   ? 'Waiting for response...'
                   : `Message ${activeAgent.name.split(' ')[0]}...`
               }
-              disabled={isInvoking || !activeAgent}
+              disabled={isInvoking || !activeAgent || paywallActive}
               rows={1}
               className="flex-1 px-5 py-3.5 bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none disabled:opacity-40 resize-none leading-relaxed"
             />
             <button
               type="submit"
-              disabled={!input.trim() || isInvoking || !activeAgent}
+              disabled={!input.trim() || isInvoking || !activeAgent || paywallActive}
               className="m-2 p-2 rounded-lg bg-zinc-100 hover:bg-white disabled:bg-zinc-700 disabled:text-zinc-500 text-zinc-900 transition-all shrink-0"
             >
               {isInvoking ? (

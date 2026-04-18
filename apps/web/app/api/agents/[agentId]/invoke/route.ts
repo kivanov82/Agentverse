@@ -9,14 +9,9 @@ import { getDefaultHooks } from '@shipwithai/core/hooks';
 import { listFiles } from '@shipwithai/core/github-repo';
 import { loadAgentSkills, renderSkillsBlock } from '@shipwithai/core/agent-skills';
 import { getFirestoreStore } from '@shipwithai/core/firestore-store';
-import { calculateCost, isServerFreeMode } from '@/lib/pricing';
+import { calculateCost, isServerFreeMode, MIN_BALANCE_USD } from '@/lib/pricing';
 import { persistAuditReport } from '@/lib/audit-deliverable';
 import { getSessionUser } from '@/lib/auth-server';
-
-// Conservative estimate blocking new runs when the user clearly can't afford
-// even a short interaction. $0.50 covers ~a cheap Sonnet turn at 5× markup;
-// actual debit after the run may be higher or lower.
-const MIN_BALANCE_USD = 0.5;
 
 // Agent invocation via Anthropic API (streaming or non-streaming)
 export async function POST(
