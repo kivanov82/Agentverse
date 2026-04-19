@@ -15,17 +15,16 @@ shipwithai/
 │   │   │   ├── costs/     # Token cost tracking
 │   │   │   ├── deliverables/ # File delivery & download
 │   │   │   ├── events/    # Event bus
-│   │   │   ├── payments/  # USDC payment confirmation
 │   │   │   ├── projects/  # Project management
 │   │   │   ├── sessions/  # Session CRUD & messages
-│   │   │   └── usage/     # Free-tier usage limits
+│   │   │   ├── topup/     # Stripe + x402 credit top-up routes
+│   │   │   └── webhooks/  # Stripe (credit top-up backstop) + GitHub
 │   │   └── dashboard/     # Main dashboard page
 │   ├── components/        # React components
 │   └── lib/               # Zustand store, hooks, config
 ├── packages/
 │   ├── core/              # Shared types, events, Firestore persistence, agent runner
-│   ├── orchestrator/      # Workflow coordination
-│   └── x402/              # Payment integration (Base/USDC) — currently stub
+│   └── orchestrator/      # Workflow coordination
 ├── agents/                # Individual agent configurations
 │   ├── pm/                # Project Manager
 │   ├── ux-analyst/
@@ -79,6 +78,9 @@ pnpm register-agents --dry-run
 | `BRAVE_SEARCH_API_KEY` | No | Enables web search tool |
 | `E2B_API_KEY` | No | Enables sandbox command execution |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | No | Enables wallet connection (RainbowKit) |
+| `STRIPE_SECRET_KEY` | Yes (prod) | Stripe API key for Checkout sessions (credit top-ups) |
+| `STRIPE_WEBHOOK_SECRET` | Yes (prod) | Verifies Stripe webhook signature at `/api/webhooks/stripe` |
+| `BASE_RPC_URL` | No | Custom Base mainnet RPC for x402 top-up verification; falls back to `https://mainnet.base.org` |
 
 When optional variables are not set, their features are gracefully disabled.
 
@@ -116,8 +118,7 @@ Each agent is a specialized AI worker with:
 - A system prompt (`agents/<id>/CLAUDE.md`)
 - Configuration (`agents/<id>/config.json`) — model, tools, outputTool, maxIterations, optional `skills` allowlist
 - Skills (`agents/<id>/skills/<folder>/SKILL.md`) — auto-loaded and appended to the system prompt
-- A wallet for x402 payments
-- ERC-8004 on-chain identity
+- Optional `erc8004TokenId` in config metadata (on-chain identity, not currently used at runtime)
 
 ### Data Layer
 - **Firestore** (`packages/core/src/firestore-store.ts`) — the sole persistence layer
@@ -136,11 +137,13 @@ In-memory event bus (`packages/core/src/events.ts`) used by the orchestrator and
 Audit reports render on demand at `GET /api/deliverables/[id]/pdf` via `@react-pdf/renderer` (chosen over Puppeteer so the Alpine-based Docker runner stays lean). The document template lives in `apps/web/lib/audit-pdf.tsx` — it uses the scraped `brandTheme` for accent color + logo and carries a fixed AI disclaimer footer.
 
 ### Payments
-- x402 protocol for agent-to-agent payments (currently stub — see `packages/x402/`)
-- USDC on Base (testnet for dev, mainnet for prod)
-- RainbowKit + wagmi v2 wallet integration
+- **Credit top-ups (Phase 3)** — two rails, both feed the same Firestore `creditLedger`:
+  - **Stripe Checkout**: `POST /api/topup/stripe` creates session; `GET /api/topup/stripe/callback` credits inline on return using `session.amount_total`; `POST /api/webhooks/stripe` is the tab-close backstop. Both paths use `applyStripeSession()` in `apps/web/lib/stripe.ts`.
+  - **x402 USDC on Base mainnet**: `POST /api/topup/x402` verifies on-chain Transfer log (treasury = `0x9c9550871C8d714e90eE03E610B21F156381bDF1`, sender must match `user.walletAddress`, amount derived on-chain). Client waits for confirmation; server uses fast `getTransactionReceipt` to stay under serverless timeouts.
+- **Idempotency**: `store.creditTopUp(userId, usd, source, externalRef, externalUrl)` writes `paymentReceipts` doc + `creditLedger` entry + user balance bump in one Firestore transaction. Doc ID = `stripe_{pi_id}` / `x402_{txHash}` — duplicate webhook/callback calls are no-ops.
+- **Wallet UX**: RainbowKit + wagmi v2, Base mainnet only (testnet dropped). SIWE sign-in links a user's wallet address; x402 top-up requires that link.
+- **Agent-to-agent payments**: not implemented. The old `packages/x402/` agent-wallet module was removed in Phase 3 as unused.
 - **5× markup** on Claude API costs for user-facing pricing (`apps/web/lib/pricing.ts`)
-- Payment confirmation flow with on-chain transaction verification (planned)
 
 ### Workflows
 The orchestrator coordinates multi-agent workflows:
