@@ -5,11 +5,13 @@ import { signOut } from 'next-auth/react';
 import { useCredits } from '@/lib/use-credits';
 import { formatUsdcAmount } from '@/lib/pricing';
 import { SignInModal } from './SignInModal';
-import { User as UserIcon, LogOut } from 'lucide-react';
+import { TopUpModal } from './TopUpModal';
+import { User as UserIcon, LogOut, Plus } from 'lucide-react';
 
 export function UserMenu({ compact = false }: { compact?: boolean }) {
-  const { balance, isAuthenticated, isLoading, user } = useCredits();
+  const { balance, isAuthenticated, isLoading, user, refresh } = useCredits();
   const [signInOpen, setSignInOpen] = useState(false);
+  const [topUpOpen, setTopUpOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -84,6 +86,13 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
             <div className="text-sm font-semibold text-emerald-400">{formatUsdcAmount(balance)}</div>
           </div>
           <button
+            onClick={() => { setMenuOpen(false); setTopUpOpen(true); }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800/60 transition-colors border-b border-zinc-800"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Top up credits
+          </button>
+          <button
             onClick={() => signOut()}
             className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800/60 transition-colors"
           >
@@ -92,6 +101,11 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
           </button>
         </div>
       )}
+      <TopUpModal
+        open={topUpOpen}
+        onClose={() => setTopUpOpen(false)}
+        onSuccess={refresh}
+      />
     </div>
   );
 }

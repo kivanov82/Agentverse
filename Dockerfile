@@ -11,7 +11,6 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/web/package.json apps/web/
 COPY packages/core/package.json packages/core/
 COPY packages/orchestrator/package.json packages/orchestrator/
-COPY packages/x402/package.json packages/x402/
 
 RUN pnpm install --frozen-lockfile
 

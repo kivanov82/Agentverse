@@ -1,13 +1,11 @@
 'use client';
 
-import { useAccount, useBalance, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useBalance, useReadContract, useWriteContract } from 'wagmi';
 import { parseUnits, type Address } from 'viem';
-import { useState } from 'react';
+import { USDC_BASE_ADDRESS } from './topup-config';
 
-// USDC contract addresses on Base
 export const USDC_ADDRESS: Record<number, Address> = {
-  8453: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',   // Base mainnet
-  84532: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',  // Base Sepolia
+  8453: USDC_BASE_ADDRESS,
 };
 
 const ERC20_ABI = [
@@ -65,14 +63,14 @@ export function useWallet() {
   };
 }
 
+/**
+ * Submits a USDC transfer on the user's connected chain. Returns the tx hash
+ * as soon as the wallet accepts the signed transaction — the caller is
+ * expected to wait for confirmation separately (e.g. via a publicClient).
+ */
 export function useUsdcTransfer() {
   const { chain } = useAccount();
   const { writeContractAsync } = useWriteContract();
-  const [pendingTxHash, setPendingTxHash] = useState<`0x${string}` | undefined>();
-
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-    hash: pendingTxHash,
-  });
 
   const transfer = async (to: Address, amount: string): Promise<`0x${string}`> => {
     const usdcAddress = chain?.id ? USDC_ADDRESS[chain.id] : undefined;
@@ -80,29 +78,13 @@ export function useUsdcTransfer() {
 
     const amountInUnits = parseUnits(amount, 6); // USDC has 6 decimals
 
-    const hash = await writeContractAsync({
+    return writeContractAsync({
       address: usdcAddress,
       abi: ERC20_ABI,
       functionName: 'transfer',
       args: [to, amountInUnits],
     });
-
-    setPendingTxHash(hash);
-    return hash;
   };
 
-  const getExplorerUrl = (txHash: string) => {
-    const baseUrl = chain?.id === 8453
-      ? 'https://basescan.org'
-      : 'https://sepolia.basescan.org';
-    return `${baseUrl}/tx/${txHash}`;
-  };
-
-  return {
-    transfer,
-    pendingTxHash,
-    isConfirming,
-    isConfirmed,
-    getExplorerUrl,
-  };
+  return { transfer };
 }

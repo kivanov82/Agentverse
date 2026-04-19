@@ -610,6 +610,10 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
         <PaywallOverlay
           state={gateState}
           balance={gateState === 'out_of_credit' ? paywallBalance : undefined}
+          onTopUpSuccess={() => {
+            credits.refresh();
+            setPaywallFromApi(null);
+          }}
         />
       )}
       <div className="overflow-hidden flex flex-col max-h-full">

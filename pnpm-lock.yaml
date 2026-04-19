@@ -39,9 +39,6 @@ importers:
       '@shipwithai/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@shipwithai/x402':
-        specifier: workspace:*
-        version: link:../../packages/x402
       '@tanstack/react-query':
         specifier: ^5.90.21
         version: 5.90.21(react@18.3.1)
@@ -75,6 +72,9 @@ importers:
       siwe:
         specifier: ^3.0.0
         version: 3.0.0(ethers@6.16.0)
+      stripe:
+        specifier: ^22.0.2
+        version: 22.0.2(@types/node@20.19.30)
       tailwind-merge:
         specifier: ^2.2.0
         version: 2.6.1
@@ -127,21 +127,9 @@ importers:
       '@shipwithai/core':
         specifier: workspace:*
         version: link:../core
-      '@shipwithai/x402':
-        specifier: workspace:*
-        version: link:../x402
       nanoid:
         specifier: ^5.0.4
         version: 5.1.6
-
-  packages/x402:
-    dependencies:
-      '@shipwithai/core':
-        specifier: workspace:*
-        version: link:../core
-      viem:
-        specifier: ^2.7.0
-        version: 2.45.1(typescript@5.9.3)
 
 packages:
 
@@ -6949,6 +6937,18 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       ansi-regex: 5.0.1
+    dev: false
+
+  /stripe@22.0.2(@types/node@20.19.30):
+    resolution: {integrity: sha512-2/BLrQ3oB1zlNfeL/LfHFjTGx6EQn0j+ztrrTJHuDjV5VVIpk92oSDaxyKLUr3pG3dnee2LZqhFUv2Bf0G1/3g==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@types/node': '>=18'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+    dependencies:
+      '@types/node': 20.19.30
     dev: false
 
   /strnum@2.2.2:

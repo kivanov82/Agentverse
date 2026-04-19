@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@shipwithai/core": "workspace:*",
-    "@shipwithai/x402": "workspace:*",
     "nanoid": "^5.0.4"
   }
 }

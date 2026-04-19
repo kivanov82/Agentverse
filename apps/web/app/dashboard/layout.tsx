@@ -7,6 +7,7 @@ import { runDemoSimulation } from '@/lib/demo';
 import { Logo } from '@/components/Logo';
 import { UserMenu } from '@/components/UserMenu';
 import { OnboardingOverlay, OnboardingHelpButton } from '@/components/OnboardingOverlay';
+import { TopUpToast } from '@/components/TopUpToast';
 import {
   Play,
   FolderOpen,
@@ -248,6 +249,9 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
       {/* Onboarding overlay */}
       <OnboardingOverlay />
+
+      {/* Top-up redirect feedback */}
+      <TopUpToast />
     </div>
   );
 }

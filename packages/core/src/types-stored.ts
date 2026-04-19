@@ -125,5 +125,21 @@ export interface StoredCreditEntry {
   source: CreditSource;
   invocationCostId?: string;
   note?: string;
+  externalRef?: string;   // e.g. `stripe_pi_xxx` or `x402_0xabc`; doubles as idempotency key
+  externalUrl?: string;   // human link: Stripe dashboard or BaseScan tx
+  createdAt: number;
+}
+
+// One doc per completed top-up, keyed by its external ref (`stripe_{pi_id}` or
+// `x402_{txHash}`). The doc ID is the idempotency key — Firestore `create()`
+// on an existing doc throws, which is how we dedupe webhook retries and
+// simultaneous submits.
+export interface StoredPaymentReceipt {
+  id: string;             // matches the doc ID and externalRef
+  userId: string;
+  source: Extract<CreditSource, 'stripe' | 'x402'>;
+  amountUsd: number;
+  externalRef: string;
+  externalUrl?: string;
   createdAt: number;
 }

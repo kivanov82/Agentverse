@@ -4,20 +4,22 @@ import { useState } from 'react';
 import { Wallet, MessageSquare } from 'lucide-react';
 import { formatUsdcAmount } from '@/lib/pricing';
 import { SignInModal } from './SignInModal';
+import { TopUpModal } from './TopUpModal';
 
 interface Props {
   state: 'signed_out' | 'out_of_credit';
   balance?: number;
+  onTopUpSuccess?: () => void;
 }
 
 /**
  * Credit paywall. Shown as an absolute overlay on the chat panel when the
  * user either isn't signed in, or their credit balance has dropped below the
- * minimum needed to kick off another agent run. Stripe top-up lands in Phase 3
- * — for now the button is disabled with a note.
+ * minimum needed to kick off another agent run.
  */
-export function PaywallOverlay({ state, balance }: Props) {
+export function PaywallOverlay({ state, balance, onTopUpSuccess }: Props) {
   const [signInOpen, setSignInOpen] = useState(false);
+  const [topUpOpen, setTopUpOpen] = useState(false);
   const signedOut = state === 'signed_out';
 
   return (
@@ -49,14 +51,19 @@ export function PaywallOverlay({ state, balance }: Props) {
         </button>
       ) : (
         <button
-          disabled
-          className="px-4 py-2 rounded-xl bg-zinc-800 text-zinc-500 text-xs font-semibold cursor-not-allowed"
+          onClick={() => setTopUpOpen(true)}
+          className="px-4 py-2 rounded-xl bg-white text-zinc-900 text-xs font-semibold hover:bg-zinc-100 transition-colors"
         >
-          Top up (coming soon)
+          Top up
         </button>
       )}
 
       <SignInModal open={signInOpen} onClose={() => setSignInOpen(false)} />
+      <TopUpModal
+        open={topUpOpen}
+        onClose={() => setTopUpOpen(false)}
+        onSuccess={onTopUpSuccess}
+      />
     </div>
   );
 }

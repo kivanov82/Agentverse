@@ -15,6 +15,7 @@ export type {
   StoredUser,
   StoredLinkedIdentity,
   StoredCreditEntry,
+  StoredPaymentReceipt,
   IdentityProvider,
   CreditSource,
 } from './types-stored';
@@ -30,6 +31,7 @@ import type {
   StoredUser,
   StoredLinkedIdentity,
   StoredCreditEntry,
+  StoredPaymentReceipt,
   IdentityProvider,
   CreditSource,
 } from './types-stored';
@@ -498,6 +500,72 @@ export class FirestoreStore {
       .limit(limit)
       .get();
     return snap.docs.map((d) => d.data() as StoredCreditEntry);
+  }
+
+  // ---- Payment Receipts (top-ups) ----
+
+  /**
+   * Atomically record a top-up: writes a `paymentReceipts` doc keyed by
+   * `externalRef`, writes a ledger entry, and bumps the user's balance — all
+   * inside a single Firestore transaction. If a receipt with the same
+   * `externalRef` already exists, returns the current balance without
+   * re-crediting (idempotent by doc ID). Use this for Stripe + x402 top-ups.
+   */
+  async creditTopUp(
+    userId: string,
+    amountUsd: number,
+    source: Extract<CreditSource, 'stripe' | 'x402'>,
+    externalRef: string,
+    externalUrl?: string,
+  ): Promise<{ balance: number; applied: boolean }> {
+    if (amountUsd <= 0) throw new Error(`creditTopUp amount must be positive, got ${amountUsd}`);
+    const userRef = this.db.collection('users').doc(userId);
+    const receiptRef = this.db.collection('paymentReceipts').doc(externalRef);
+    const entryRef = this.db.collection('creditLedger').doc();
+
+    return this.db.runTransaction(async (tx) => {
+      const receiptSnap = await tx.get(receiptRef);
+      const userSnap = await tx.get(userRef);
+      if (!userSnap.exists) throw new Error(`User ${userId} not found`);
+      const user = userSnap.data() as StoredUser;
+
+      if (receiptSnap.exists) {
+        // Already applied — duplicate webhook or double-submit. No-op.
+        return { balance: user.creditBalance ?? 0, applied: false };
+      }
+
+      const now = Date.now();
+      // Round to cents to keep the materialized balance clean across many
+      // top-ups; the underlying usage side can store finer granularity.
+      const next = Math.round(((user.creditBalance ?? 0) + amountUsd) * 100) / 100;
+
+      const receipt: StoredPaymentReceipt = {
+        id: externalRef,
+        userId,
+        source,
+        amountUsd,
+        externalRef,
+        externalUrl,
+        createdAt: now,
+      };
+      tx.set(receiptRef, receipt);
+
+      const entry: StoredCreditEntry = {
+        id: entryRef.id,
+        userId,
+        delta: amountUsd,
+        balanceAfter: next,
+        source,
+        externalRef,
+        externalUrl,
+        createdAt: now,
+      };
+      tx.set(entryRef, entry);
+
+      tx.update(userRef, { creditBalance: next, updatedAt: now });
+
+      return { balance: next, applied: true };
+    });
   }
 }
 
