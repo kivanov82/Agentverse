@@ -1,159 +1,126 @@
-# ShipWith.AI
+# ShipWithAI
 
-Build your business idea with AI. Tell us what you want, our agent team handles the rest.
+> A network of AI agents that audit, build, and ship software for you.
+
+Live at **[shipwithai.nl](https://shipwithai.nl)**.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## What is ShipWith.AI?
+## What it does
 
-ShipWith.AI is a platform where specialized AI agents collaborate to build real projects for you. No coding required — describe your idea, answer a few questions, and watch the team work.
+You drop a GitHub repo URL, our agents read the code and deliver a real work product.
 
-Each agent has:
-- **Specialized skills** (SEO, payments, design, development, marketing)
-- **On-chain identity** via [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004)
-- **Payment capabilities** via USDC on Base
+The public launch is focused on **one** use case:
 
-## Use Cases
+### Solidity Audit
+A two-agent team — Project Manager and Solidity Auditor — runs three independent audit methodologies over your contracts and ships a branded PDF report.
 
-| Use Case | What you get | Agents involved |
-|----------|-------------|-----------------|
-| **SEO Optimization** | Site audit, keyword plan, content strategy, schema markup | PM, Marketing, Tech Writer, UX Analyst, SEO Specialist |
-| **Business Landing Page** | Designed & coded website with Stripe, GA, WhatsApp, social links | PM, UI Designer, UI Developer, Integration Dev, Marketing, SEO Specialist, Payment Integration |
-| **App Prototype** | Interactive mobile-first web prototype, 3-5 screens, shareable link | PM, UX Analyst, UI Designer, UI Developer, Mobile Developer |
-| **E-commerce Store** | Complete Shopify/custom store with products, payments, shipping, SEO | PM, UI Designer, Integration Dev, Marketing, E-commerce Specialist, Payment Integration, SEO Specialist |
+| Methodology | What it does |
+|---|---|
+| **Feynman** | First-principles business-logic sweep. Anything the agent can't explain end-to-end becomes a finding. |
+| **Nemesis** | Adversarial loop — attacks the Feynman output as a malicious actor would, until the finding set converges. |
+| **State-Inconsistency** | Hunts for coupled-state desync: any mutation of one variable that forgets to update its counterpart. |
 
-## How It Works
+You get markdown + structured JSON in the dashboard, plus a downloadable PDF themed with your own brand colors and logo.
+
+Other use cases (landing pages, app prototypes, e-commerce, SEO) remain in the codebase as multi-agent flows but are not the public focus.
+
+## How it works
 
 ```
-1. Pick a use case           →  "What do you want to build?"
-2. Answer 3-5 questions      →  Typeform-style wizard, no jargon
-3. Watch agents collaborate  →  PM assigns tasks, agents work in parallel
-4. Get a GitHub repo         →  Deployable code, reports, designs
+1. Sign in (Google or wallet via SIWE)        $5 starter credit
+2. Pick "Solidity Audit", paste repo URL      Optional: scope + brand URL
+3. Audit runs (Feynman → Nemesis → State)     ~3-8 USD deducted from credit balance
+4. Download markdown + PDF                    Listed in dashboard deliverables
 ```
 
-### Demo
+Need more credits? Top up via Stripe (card) or USDC on Base (x402). Both feed the same balance.
 
-Click **"Watch a Demo"** on the landing page to see agents build a coffee shop website — homepage, menu, online ordering, reservations, Google Maps, Instagram feed, and local SEO.
-
-## Quick Start
+## Quick start
 
 ```bash
-# Install dependencies
 pnpm install
+pnpm dev                 # http://localhost:3000
 
-# Start development server (http://localhost:3000)
-pnpm dev
+# Invoke an agent directly from the CLI
+pnpm invoke pm "Plan a token launchpad project"
 ```
 
-### Environment Variables
+### Required env vars (local dev)
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | Claude API key for agent invocation |
-| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | No | Enables crypto wallet connection |
+See `.env.example` for the full list. The minimum to get a local audit running:
 
-## Agents (16)
-
-| Agent | Role | Specialty |
-|-------|------|-----------|
-| `pm` | Project Manager | Orchestration, task breakdown |
-| `ux-analyst` | UX Analyst | User flows, wireframes |
-| `ui-designer` | UI Designer | Visual design, design systems |
-| `ui-developer` | FE Developer | React/Next.js components |
-| `backend-developer` | Integration Dev | API routes, serverless, data fetching |
-| `solidity-developer` | Solidity Dev | Smart contracts, DeFi |
-| `solidity-auditor` | Security Auditor | Contract audits |
-| `infrastructure` | Infrastructure | DevOps, CI/CD, cloud |
-| `qa-tester` | QA Tester | E2E testing |
-| `unit-tester` | Unit Tester | Unit tests, coverage |
-| `tech-writer` | Tech Writer | Documentation |
-| `marketing` | Marketing | Content, campaigns, social |
-| `seo-specialist` | SEO Specialist | Site audits, keywords, local SEO |
-| `payment-integration` | Payment Integration | Stripe, Shopify, checkout flows |
-| `mobile-developer` | Mobile Developer | Mobile-first, PWA, responsive |
-| `e-commerce-specialist` | E-commerce | Shopify, catalogs, shipping |
-
-## Project Structure
-
-```
-shipwithai/
-├── apps/web/              # Next.js 14 (App Router) dashboard
-│   ├── app/
-│   │   ├── api/           # REST API routes
-│   │   ├── dashboard/     # Main dashboard page
-│   │   └── onboard/       # Use-case wizard
-│   ├── components/        # React components
-│   └── lib/               # Store, hooks, use-case configs
-├── packages/
-│   ├── core/              # Shared types, events, SQLite persistence
-│   ├── orchestrator/      # Workflow coordination
-│   └── x402/              # Payment integration (Base/USDC)
-├── agents/                # 16 agent configurations (config.json + CLAUDE.md)
-├── data/                  # Runtime SQLite database (gitignored)
-└── scripts/               # CLI utilities
-```
+- `ANTHROPIC_API_KEY` — Claude API
+- `FIREBASE_PROJECT_ID` + `FIREBASE_SERVICE_ACCOUNT_KEY` — Firestore
+- `GITHUB_APP_ID` + `GITHUB_APP_INSTALLATION_ID` + `GITHUB_APP_PRIVATE_KEY` + `GITHUB_PAT` + `GITHUB_REPO_OWNER` — repo reads
+- `SHIPWITHAI_FREE_MODE=true` (skips auth + credit gate so you can run without setting up NextAuth locally)
 
 ## Architecture
 
 ```
-  User (browser)
-       │
-       ▼
-  Landing Page  ──→  Wizard (/onboard)  ──→  Dashboard
-  "What do you             │                     │
-   want to build?"    3-5 questions         Agent Circle
-                           │               Session Panel
-                           ▼               Deliverables
-                    GitHub Repo created        │
-                    Agents assigned            ▼
-                    PM starts planning    Project output
-                                         (GitHub repo)
+   apps/web/             Next.js 14 (App Router) dashboard
+   ├── app/api/          REST routes (agents, projects, sessions,
+   │                     credits, topup, webhooks, deliverables)
+   └── components/       Chat panel, paywall overlay, top-up modal, audit explainer
+
+   packages/
+   ├── core/             Firestore store, agent runner, tool registry,
+   │                     agent-skills loader, brand scraper, types
+   └── orchestrator/     Multi-agent workflow coordination
+
+   agents/<id>/
+   ├── CLAUDE.md         System prompt
+   ├── config.json       Model, tools, outputTool, maxIterations, skills allowlist
+   └── skills/<skill>/   Optional SKILL.md files auto-injected into the prompt
 ```
 
-### Tech Stack
+**Stack**
+- Next.js 14 (App Router) · React · Tailwind · Framer Motion
+- Zustand for client state, Firestore as the sole persistence layer
+- NextAuth (JWT) with Google + SIWE providers
+- Stripe Checkout + x402 USDC-on-Base for credit top-ups
+- `@react-pdf/renderer` for branded report rendering (chosen over Puppeteer to keep the Alpine container lean)
+- Claude Opus / Sonnet / Haiku per-agent via the Anthropic API
 
-- **Frontend**: Next.js 14 (App Router), React, Tailwind CSS, Framer Motion
-- **State**: Zustand with API sync
-- **Data**: SQLite (dev) → PostgreSQL (prod)
-- **Wallet**: Coinbase Smart Wallet + RainbowKit/wagmi
-- **Payments**: Coinbase Onramp (card → USDC), direct USDC on Base
-- **Agents**: Claude API with per-agent system prompts
+**Agents** (18 total) — `pm`, `solidity-auditor`, `solidity-developer`, `ui-designer`, `ui-developer`, `backend-developer`, `mobile-developer`, `ux-analyst`, `seo-specialist`, `marketing`, `tech-writer`, `e-commerce-specialist`, `payment-integration`, `infrastructure`, `deployer`, `qa-tester`, `unit-tester`, `code-reviewer`.
 
-### Payment Model
+The Solidity Auditor loads three skill modules (`feynman-auditor`, `nemesis-auditor`, `state-inconsistency-auditor`) auto-discovered from its `skills/` folder.
 
-Users pay progressively as agents deliver work:
+## Credit model
 
-| Phase | Cost | What you get |
-|-------|------|-------------|
-| Explore & Chat | Free | PM breakdown, agent discussions |
-| First Look | ~$5 | Project plan, wireframes |
-| Design | ~$10 | UI mockups, detailed specs |
-| Build | ~$15-25 | Code, integrations, content |
-| Polish & Ship | ~$10-15 | QA, SEO, deployment |
+| | |
+|---|---|
+| **First sign-in** | $5 starter credit, granted atomically with user creation |
+| **Pricing** | Every agent call deducts 5× the Claude API cost from your balance |
+| **Top-up rails** | Stripe (card) → `POST /api/topup/stripe` · x402 USDC on Base → `POST /api/topup/x402` |
+| **Ledger** | Firestore `creditLedger` + materialised `creditBalance` on the user doc, transactional debits |
+| **Gate** | `/api/agents/[id]/invoke` returns HTTP 402 when balance < $0.50 — UI surfaces a paywall overlay |
 
-Payments flow directly to agents on-chain (USDC on Base). No crypto knowledge needed — pay with Apple Pay or card via Coinbase Onramp.
+## Deployment
 
-## Roadmap
+Production runs on Cloud Run (`agentverse` service, `europe-west1`) in the `bright-union` GCP project.
 
-- [x] Core platform (types, events, memory, orchestrator)
-- [x] Interactive dashboard with agent visualization
-- [x] Per-agent chat and deliverables
-- [x] Wallet integration (RainbowKit + wagmi)
-- [x] SQLite persistence layer
-- [x] Use-case-driven UX (4 use cases + wizard)
-- [x] 16 specialized agents
-- [x] Coffee Shop demo scenario
-- [ ] GitHub repo creation per project
-- [ ] Coinbase Smart Wallet + Onramp integration
-- [ ] Progressive billing (pay per milestone)
-- [ ] Real inter-agent task handoff
-- [ ] Vercel auto-deploy previews
-- [ ] Google Cloud deployment
-- [ ] Public API
+```bash
+# Full rebuild + deploy
+./scripts/deploy.sh
 
-## Contributing
+# Redeploy the existing :latest image (no rebuild)
+./scripts/deploy.sh --no-build
+```
 
-Contributions welcome! Fork, branch, PR.
+The script pulls all secrets from Secret Manager and wires the env vars Cloud Run needs. The custom domain `shipwithai.nl` is attached via a Cloud Run domain mapping.
+
+## Repository layout
+
+```
+agent-verse/
+├── apps/web/                   Next.js dashboard
+├── packages/{core,orchestrator}
+├── agents/<id>/                Per-agent config + prompt + skills
+├── memory/                     Long-lived agent context
+├── scripts/                    deploy.sh, invoke-agent.ts, register-agents.ts, …
+└── Dockerfile                  Multi-stage Alpine build → standalone Next output
+```
 
 ## License
 
@@ -161,8 +128,7 @@ MIT — see [LICENSE](LICENSE).
 
 ## Acknowledgments
 
-- [Anthropic](https://anthropic.com) — Claude AI
-- [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) — Agent identity standard
-- [x402](https://www.x402.org/) — HTTP payment protocol
-- [Base](https://base.org) — L2 for payments
-- [Coinbase](https://www.coinbase.com/developer-platform) — Smart Wallet & Onramp
+- [Anthropic](https://anthropic.com) — Claude
+- [ERC-8004](https://eips.ethereum.org/EIPS/eip-8004) — on-chain agent identity
+- [x402](https://www.x402.org/) — HTTP-native USDC payments
+- [Base](https://base.org) — L2 settlement
