@@ -147,9 +147,9 @@ export function AgentChatBubble({ agent, mode, onClose }: AgentChatBubbleProps) 
       exit={{ opacity: 0, x: 20, scale: 0.95 }}
       transition={{ duration: 0.2 }}
     >
-      <div className={`bg-zinc-900 border rounded-xl shadow-2xl overflow-hidden ${mode === 'job' ? 'border-emerald-700' : 'border-zinc-700'}`}>
+      <div className={`bg-zinc-900 border rounded-xl shadow-2xl overflow-hidden ${mode === 'job' ? 'border-brand-700' : 'border-zinc-700'}`}>
         {/* Header */}
-        <div className={`px-3 py-2 border-b flex items-center gap-2 ${mode === 'job' ? 'border-emerald-800 bg-emerald-950/30' : 'border-zinc-800'}`}>
+        <div className={`px-3 py-2 border-b flex items-center gap-2 ${mode === 'job' ? 'border-brand-800 bg-brand-950/30' : 'border-zinc-800'}`}>
           <div
             className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold"
             style={{ backgroundColor: agent.color, color: '#fff' }}
@@ -157,7 +157,7 @@ export function AgentChatBubble({ agent, mode, onClose }: AgentChatBubbleProps) 
             {agent.avatar}
           </div>
           <span className="flex-1 text-xs font-medium text-zinc-200">{agent.name}</span>
-          <span className={`text-[9px] px-1.5 py-0.5 rounded ${mode === 'job' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-zinc-700 text-zinc-400'}`}>
+          <span className={`text-[9px] px-1.5 py-0.5 rounded ${mode === 'job' ? 'bg-brand-500/20 text-brand-400' : 'bg-zinc-700 text-zinc-400'}`}>
             {mode === 'job' ? 'Job' : 'Chat'}
           </span>
           <button
@@ -181,7 +181,7 @@ export function AgentChatBubble({ agent, mode, onClose }: AgentChatBubbleProps) 
             <div className="text-center py-3 text-[11px]">
               {mode === 'job' ? (
                 <div className="space-y-1">
-                  <div className="text-emerald-400 font-medium">Request a Job</div>
+                  <div className="text-brand-400 font-medium">Request a Job</div>
                   <div className="text-zinc-500">Describe what you need built</div>
                   <div className="text-zinc-600 text-[10px]">Cost: {agent.pricing}</div>
                 </div>
@@ -249,7 +249,7 @@ export function AgentChatBubble({ agent, mode, onClose }: AgentChatBubbleProps) 
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className={`p-2 border-t ${mode === 'job' ? 'border-emerald-800' : 'border-zinc-800'}`}>
+        <form onSubmit={handleSubmit} className={`p-2 border-t ${mode === 'job' ? 'border-brand-800' : 'border-zinc-800'}`}>
           <div className="flex gap-2">
             <input
               type="text"
@@ -257,12 +257,12 @@ export function AgentChatBubble({ agent, mode, onClose }: AgentChatBubbleProps) 
               onChange={(e) => setInput(e.target.value)}
               placeholder={isInvoking ? 'Waiting for response...' : mode === 'job' ? 'Describe the job...' : 'Ask a question...'}
               disabled={isInvoking}
-              className={`flex-1 px-2.5 py-1.5 bg-zinc-800 border rounded-lg text-[11px] text-zinc-200 placeholder-zinc-500 focus:outline-none disabled:opacity-50 ${mode === 'job' ? 'border-emerald-700 focus:border-emerald-600' : 'border-zinc-700 focus:border-zinc-600'}`}
+              className={`flex-1 px-2.5 py-1.5 bg-zinc-800 border rounded-lg text-[11px] text-zinc-200 placeholder-zinc-500 focus:outline-none disabled:opacity-50 ${mode === 'job' ? 'border-brand-700 focus:border-brand-600' : 'border-zinc-700 focus:border-zinc-600'}`}
             />
             <button
               type="submit"
               disabled={!input.trim() || isInvoking}
-              className={`px-2.5 py-1.5 rounded-lg transition-colors disabled:bg-zinc-700 disabled:text-zinc-500 ${mode === 'job' ? 'bg-emerald-500 text-white hover:bg-emerald-400' : 'bg-white text-zinc-900 hover:bg-zinc-200'}`}
+              className={`px-2.5 py-1.5 rounded-lg transition-colors disabled:bg-zinc-700 disabled:text-zinc-500 ${mode === 'job' ? 'bg-brand-500 text-white hover:bg-brand-400' : 'bg-white text-zinc-900 hover:bg-zinc-200'}`}
             >
               {isInvoking ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -272,7 +272,7 @@ export function AgentChatBubble({ agent, mode, onClose }: AgentChatBubbleProps) 
             </button>
           </div>
           {mode === 'job' && (
-            <div className="mt-1.5 text-[9px] text-emerald-500 flex items-center gap-1">
+            <div className="mt-1.5 text-[9px] text-brand-500 flex items-center gap-1">
               <Zap className="w-2.5 h-2.5" />
               {isRealMode ? `Payment required: ~${agent.pricing} USDC` : `Job will cost ~${agent.pricing}`}
             </div>

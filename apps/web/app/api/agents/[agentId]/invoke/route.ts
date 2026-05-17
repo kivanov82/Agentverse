@@ -26,6 +26,12 @@ export async function POST(
     // Everything else is in the context system (project facts + agent summaries).
     const rawHistory = body.history as HistoryMessage[] | undefined;
     const history = rawHistory?.slice(-4);
+    // Optional client-supplied skill allowlist for this single invocation
+    // (e.g. solidity-audit wizard picks a subset). Overrides the agent's
+    // config.json default allowlist when present.
+    const requestedSkills = Array.isArray(body.selectedSkills)
+      ? (body.selectedSkills as string[])
+      : undefined;
 
     console.log(`[invoke] Agent: ${agentId}, ProjectId: ${projectId || 'NONE'}, History: ${history?.length || 0}/${rawHistory?.length || 0} msgs`);
 
@@ -33,24 +39,8 @@ export async function POST(
     const url = new URL(request.url);
     const stream = url.searchParams.get('stream') === 'true';
 
-    // Auth + credit gate. FREE_MODE bypasses both for local dev.
-    // SSE streaming can't return a clean 402 body, so we emit a fatal SSE event
-    // with the same shape the client shows in the paywall.
-    let userId: string | undefined;
-    if (!isServerFreeMode) {
-      const sessionUser = await getSessionUser();
-      if (!sessionUser) {
-        return paywallResponse(stream, 'unauthenticated', 'Sign in to continue');
-      }
-      const store = getFirestoreStore();
-      const balance = await store.getBalance(sessionUser.id);
-      if (balance < MIN_BALANCE_USD) {
-        return paywallResponse(stream, 'insufficient_credit', 'Out of credits — top up to continue', balance);
-      }
-      userId = sessionUser.id;
-    }
-
-    // Validate agent exists
+    // Validate agent exists (must happen before credit gate because fixed-price
+    // skills set the required balance, so we need to load skills first).
     const agentsDir = path.join(process.cwd(), '..', '..', 'agents');
     const agentDir = path.join(agentsDir, agentId);
     const configPath = path.join(agentDir, 'config.json');
@@ -69,20 +59,88 @@ export async function POST(
       : '';
 
     // Load SKILL.md files from agents/{agentId}/skills/*
-    // Optional allowlist via config.json "skills": ["folder-a", "folder-b"]
-    const skillsAllowlist = Array.isArray(config.skills) ? (config.skills as string[]) : undefined;
-    const skills = loadAgentSkills(agentsDir, agentId, { allowlist: skillsAllowlist });
+    // Allowlist priority:
+    //   1. body.selectedSkills (per-invocation choice)
+    //   2. project.metadata.answers.selectedAuditSkills (for auditor, wizard-picked)
+    //   3. config.json "skills" field (agent-wide default)
+    const configAllowlist = Array.isArray(config.skills) ? (config.skills as string[]) : undefined;
+    let projectSkills: string[] | undefined;
+    if (!requestedSkills && agentId === 'solidity-auditor' && projectId) {
+      try {
+        const store = getFirestoreStore();
+        const project = await store.getProject(projectId);
+        const answers = (project?.metadata as Record<string, unknown> | undefined)?.answers as
+          | Record<string, unknown>
+          | undefined;
+        const fromProject = answers?.selectedAuditSkills;
+        if (Array.isArray(fromProject) && fromProject.every((s) => typeof s === 'string')) {
+          projectSkills = fromProject as string[];
+        }
+      } catch { /* non-fatal — fall back to config allowlist */ }
+    }
+    const effectiveAllowlist = requestedSkills ?? projectSkills ?? configAllowlist;
+    const skills = loadAgentSkills(agentsDir, agentId, { allowlist: effectiveAllowlist });
     const skillsBlock = renderSkillsBlock(skills);
+
+    // Fixed-price mode: if any loaded skill declares priceUsd, skip token billing
+    // and charge the sum upfront. Refund on run failure.
+    const pricedSkills = skills.filter((s) => typeof s.priceUsd === 'number' && s.priceUsd > 0);
+    const fixedPriceTotal = pricedSkills.reduce((sum, s) => sum + (s.priceUsd ?? 0), 0);
+    const isFixedPriceRun = pricedSkills.length > 0;
+
+    // Auth + credit gate. FREE_MODE bypasses both for local dev.
+    // Required balance is the fixed-price total when known; otherwise fall back
+    // to MIN_BALANCE_USD for token-based runs.
+    // SSE streaming can't return a clean 402 body, so we emit a fatal SSE event
+    // with the same shape the client shows in the paywall.
+    let userId: string | undefined;
+    let fixedPriceDebit: { entryId: string; amount: number; balanceAfter: number } | null = null;
+    if (!isServerFreeMode) {
+      const sessionUser = await getSessionUser();
+      if (!sessionUser) {
+        return paywallResponse(stream, 'unauthenticated', 'Sign in to continue');
+      }
+      const store = getFirestoreStore();
+      const balance = await store.getBalance(sessionUser.id);
+      const requiredBalance = isFixedPriceRun ? fixedPriceTotal : MIN_BALANCE_USD;
+      if (balance < requiredBalance) {
+        return paywallResponse(stream, 'insufficient_credit', 'Out of credits — top up to continue', balance);
+      }
+      userId = sessionUser.id;
+
+      // Upfront debit for fixed-price runs — balance update is atomic inside
+      // applyCreditDelta, so a concurrent run on the same user can't double-spend.
+      if (isFixedPriceRun && userId) {
+        try {
+          const skillList = pricedSkills.map((s) => s.folder).join(', ');
+          const result = await store.applyCreditDelta(
+            userId,
+            -fixedPriceTotal,
+            'fixed_price_action',
+            { note: `${agentId} · ${skillList}` },
+          );
+          fixedPriceDebit = { entryId: result.entryId, amount: fixedPriceTotal, balanceAfter: result.balanceAfter };
+        } catch (debitErr) {
+          console.error('[invoke] fixed-price upfront debit failed', debitErr);
+          return paywallResponse(stream, 'insufficient_credit', 'Out of credits — top up to continue', balance);
+        }
+      }
+    }
 
     const messages = buildMessages(prompt, context, history);
 
-    // Resolve the repo this agent should read/write. Default is the auto-generated
-    // project repo. Use cases that operate on an existing user repo (e.g. solidity-audit)
-    // override via project.metadata.auditTargetRepo — only fetched for the auditor
-    // since no other agent consumes that metadata today.
+    // Resolve the repo this agent should read/write. Priority:
+    //   1. project.metadata.auditTargetRepo — the user's existing repo (e.g.
+    //      solidity-audit reads the user's contracts). Shared across all agents
+    //      on that project so PM doesn't 404 trying to list a scratch repo that
+    //      was never created.
+    //   2. Auto-generated `${owner}/shipwithai-${projectId}` for flows that
+    //      spin up a fresh repo (landing-page, ecommerce, etc.).
+    //   3. `undefined` — agent has no repo context.
     const repoOwner = process.env.GITHUB_REPO_OWNER;
-    let repoFullName = projectId ? `${repoOwner}/shipwithai-${projectId.toLowerCase()}` : undefined;
-    if (projectId && agentId === 'solidity-auditor') {
+    let repoFullName: string | undefined;
+    let hasTargetRepo = false;
+    if (projectId) {
       try {
         const store = getFirestoreStore();
         const project = await store.getProject(projectId);
@@ -91,8 +149,12 @@ export async function POST(
           | undefined;
         if (target?.owner && target?.name) {
           repoFullName = `${target.owner}/${target.name}`;
+          hasTargetRepo = true;
         }
-      } catch { /* non-fatal — fall back to auto-generated name */ }
+      } catch { /* non-fatal */ }
+    }
+    if (!hasTargetRepo && projectId) {
+      repoFullName = `${repoOwner}/shipwithai-${projectId.toLowerCase()}`;
     }
 
     // Load active branch from session metadata (if agent previously committed)
@@ -107,11 +169,13 @@ export async function POST(
       } catch { /* non-fatal */ }
     }
 
-    // Fetch repo tree to give agent awareness of the project structure
+    // Fetch repo tree to give agent awareness of the project structure.
+    // Omit the branch arg so Octokit resolves the repo's actual default branch —
+    // hardcoding "main" 404s on repos that still use "master" (e.g. Kasu).
     let repoTreeBlock = '';
     if (repoFullName) {
       try {
-        const rootFiles = await listFiles(repoFullName, undefined, 'main');
+        const rootFiles = await listFiles(repoFullName);
         const tree = rootFiles.map((f) => `${f.type === 'dir' ? '📁' : '📄'} ${f.path}`).join('\n');
         repoTreeBlock = `\n\n## Repository Structure (${repoFullName})\n\`\`\`\n${tree}\n\`\`\`\nAlways use these actual paths when reading files. Do NOT guess paths.\n`;
       } catch { /* non-fatal — agent can still list root manually */ }
@@ -162,14 +226,20 @@ export async function POST(
     // Apply default execution hooks (branch protection, command safety, output truncation)
     runConfig.hooks = getDefaultHooks();
 
+    // Billing ctx passed through to completion handlers. Fixed-price runs skip
+    // token debit (already debited upfront) and refund on failure.
+    const billing: BillingContext = isFixedPriceRun
+      ? { mode: 'fixed_price', userId, upfrontDebit: fixedPriceDebit, skillIds: pricedSkills.map((s) => s.folder) }
+      : { mode: 'token', userId };
+
     if (stream) {
       // Streaming SSE with agentic loop
-      return invokeViaAgentRunnerStreaming(runConfig, { mode: invocationMode, userId });
+      return invokeViaAgentRunnerStreaming(runConfig, { mode: invocationMode, billing });
     }
 
     // Non-streaming with agentic loop
     const result = await runAgent(runConfig);
-    await recordInvocationCost(runConfig, result, { mode: invocationMode, userId });
+    const balanceAfter = await settleInvocation(runConfig, result, { mode: invocationMode, billing });
     const deliverable = await persistAuditReport(runConfig, result);
     return NextResponse.json({
       success: result.success,
@@ -179,6 +249,7 @@ export async function POST(
       stopReason: result.stopReason,
       usage: result.usage,
       deliverable,
+      balanceAfter,
     });
   } catch (error) {
     console.error('Agent invocation error:', error);
@@ -281,47 +352,90 @@ function buildMessages(prompt: string, context?: Record<string, unknown>, histor
 }
 
 
-// Record token cost + 5x markup to Firestore and debit the signed-in user's
-// credit balance. Cost recording is fire-and-forget (failures logged but
-// never break the response); the ledger debit is best-effort — if it fails
-// we log loudly since it means the user got free work.
-async function recordInvocationCost(
+// Billing strategy for a single invocation. Token mode (default) records +
+// debits actual API cost × 5. Fixed-price mode has already debited a flat fee
+// upfront; here we only refund on failure.
+type BillingContext =
+  | { mode: 'token'; userId?: string }
+  | {
+      mode: 'fixed_price';
+      userId?: string;
+      upfrontDebit: { entryId: string; amount: number; balanceAfter: number } | null;
+      skillIds: string[];
+    };
+
+// Settle the invocation: record the token-usage row for analytics always,
+// then apply the correct credit movement based on the billing mode. Returns
+// the user's post-settle balance so it can be streamed back to the client.
+async function settleInvocation(
   runConfig: AgentRunConfig,
   result: AgentRunResult,
-  opts: { mode?: string; userId?: string },
-): Promise<void> {
-  try {
-    const { inputTokens, outputTokens } = result.usage;
-    if (!inputTokens && !outputTokens) return;
-    const { apiCost, userCharge } = calculateCost(inputTokens, outputTokens, runConfig.model);
-    const store = getFirestoreStore();
-    const saved = await store.saveInvocationCost({
-      sessionId: runConfig.sessionId,
-      agentId: runConfig.agentId,
-      model: runConfig.model,
-      inputTokens,
-      outputTokens,
-      apiCost,
-      userCharge,
-      mode: opts.mode || 'chat',
-      userId: opts.userId,
-    });
+  opts: { mode?: string; billing: BillingContext },
+): Promise<number | undefined> {
+  const { billing } = opts;
+  const { inputTokens, outputTokens } = result.usage;
+  const { apiCost, userCharge } = calculateCost(inputTokens ?? 0, outputTokens ?? 0, runConfig.model);
+  const store = getFirestoreStore();
 
-    if (opts.userId && userCharge > 0) {
-      try {
-        await store.applyCreditDelta(opts.userId, -userCharge, 'agent_invocation', {
-          invocationCostId: saved.id,
-          note: `${runConfig.agentId} · ${runConfig.model}`,
-        });
-      } catch (debitErr) {
-        // Insufficient credit after the fact — we let the work through since
-        // we can't un-run the agent. Logged so we can reconcile if needed.
-        console.error('[invoke] credit debit failed (work already done)', debitErr);
-      }
+  // Always persist the cost row for observability, even when the user pays a
+  // fixed price — we want margin data per skill.
+  let savedId: string | undefined;
+  if (inputTokens || outputTokens) {
+    try {
+      const saved = await store.saveInvocationCost({
+        sessionId: runConfig.sessionId,
+        agentId: runConfig.agentId,
+        model: runConfig.model,
+        inputTokens,
+        outputTokens,
+        apiCost,
+        userCharge,
+        mode: opts.mode || 'chat',
+        userId: billing.userId,
+      });
+      savedId = saved.id;
+    } catch (err) {
+      console.error('[invoke] saveInvocationCost failed', err);
     }
-  } catch (err) {
-    console.error('[invoke] saveInvocationCost failed', err);
   }
+
+  if (!billing.userId) return undefined;
+
+  if (billing.mode === 'token') {
+    if (userCharge <= 0) return undefined;
+    try {
+      const { balanceAfter } = await store.applyCreditDelta(billing.userId, -userCharge, 'agent_invocation', {
+        invocationCostId: savedId,
+        note: `${runConfig.agentId} · ${runConfig.model}`,
+      });
+      return balanceAfter;
+    } catch (debitErr) {
+      // Insufficient credit after the fact — we let the work through since
+      // we can't un-run the agent. Logged so we can reconcile if needed.
+      console.error('[invoke] credit debit failed (work already done)', debitErr);
+      return undefined;
+    }
+  }
+
+  // Fixed-price: we debited upfront. Refund if the run actually failed.
+  if (!result.success && billing.upfrontDebit) {
+    try {
+      const { balanceAfter } = await store.applyCreditDelta(
+        billing.userId,
+        billing.upfrontDebit.amount,
+        'fixed_price_refund',
+        {
+          invocationCostId: savedId,
+          note: `refund: ${runConfig.agentId} · ${billing.skillIds.join(', ')}`,
+        },
+      );
+      return balanceAfter;
+    } catch (refundErr) {
+      console.error('[invoke] fixed-price refund failed', refundErr);
+      return billing.upfrontDebit.balanceAfter;
+    }
+  }
+  return billing.upfrontDebit?.balanceAfter;
 }
 
 function paywallResponse(
@@ -355,7 +469,7 @@ function paywallResponse(
 // Streaming version using agent runner with SSE bridge
 function invokeViaAgentRunnerStreaming(
   runConfig: AgentRunConfig,
-  opts: { mode?: string; userId?: string } = {},
+  opts: { mode?: string; billing: BillingContext },
 ): Response {
   const encoder = new TextEncoder();
 
@@ -386,7 +500,7 @@ function invokeViaAgentRunnerStreaming(
         };
 
         const result = await runAgentStreaming(runConfig, callbacks);
-        await recordInvocationCost(runConfig, result, opts);
+        const balanceAfter = await settleInvocation(runConfig, result, opts);
         const deliverable = await persistAuditReport(runConfig, result);
 
         // If agent returned an error message (e.g., API error), send it as text
@@ -396,7 +510,7 @@ function invokeViaAgentRunnerStreaming(
           );
         }
 
-        // Send final result summary (including token usage for UI cost display)
+        // Send final result summary (including token usage + post-debit balance)
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({
             type: 'done',
@@ -406,6 +520,7 @@ function invokeViaAgentRunnerStreaming(
             toolCalls: result.toolCallsLog,
             usage: result.usage,
             deliverable,
+            balanceAfter,
           })}\n\n`)
         );
 

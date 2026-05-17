@@ -23,7 +23,7 @@ export default function ProjectPage() {
   const getStatusIcon = (status: DeliveryRequest['status']) => {
     switch (status) {
       case 'pending': return <Clock className="w-3 h-3 text-zinc-400" />;
-      case 'paid': return <DollarSign className="w-3 h-3 text-emerald-400" />;
+      case 'paid': return <DollarSign className="w-3 h-3 text-brand-400" />;
       case 'in-progress': return <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><Zap className="w-3 h-3 text-yellow-400" /></motion.div>;
       case 'completed': return <CheckCircle className="w-3 h-3 text-green-400" />;
       case 'failed': return <AlertCircle className="w-3 h-3 text-red-400" />;
@@ -57,7 +57,7 @@ export default function ProjectPage() {
       <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
         {/* Page header */}
         <div>
-          <h1 className="text-lg font-bold text-zinc-100 font-display">Project</h1>
+          <h1 className="text-lg font-semibold text-zinc-100">Project</h1>
           <p className="text-xs text-zinc-500 mt-0.5">Overview, deliverables, and progress</p>
         </div>
 
@@ -73,7 +73,7 @@ export default function ProjectPage() {
           <section className="bg-[#0c0c0f] border border-zinc-800/60 rounded-2xl overflow-hidden">
             <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
               <Users className="w-4 h-4 text-zinc-600" />
-              <span className="text-sm font-semibold text-zinc-200 font-display">Team</span>
+              <span className="text-sm font-semibold text-zinc-200">Team</span>
               <span className="text-[10px] text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full ml-auto">
                 {activeSession.status.replace('-', ' ')}
               </span>
@@ -125,7 +125,7 @@ export default function ProjectPage() {
                             {getStatusIcon(delivery.status)}
                             <span className="text-zinc-300">{agent?.name || delivery.agentId}</span>
                           </div>
-                          <span className="text-emerald-400 font-mono text-[10px]">{delivery.estimatedCost}</span>
+                          <span className="text-brand-400 font-mono text-[10px]">{delivery.estimatedCost}</span>
                         </div>
                       );
                     })}
@@ -137,11 +137,11 @@ export default function ProjectPage() {
               {activeSession.involvedAgents.length > 0 && activeSession.status === 'context-building' && (
                 <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60">
                   <div className="text-xs text-zinc-500">
-                    Est. cost: <span className="text-emerald-400 font-mono font-medium">~${totalEstimatedCost.toFixed(2)}</span>
+                    Est. cost: <span className="text-brand-400 font-mono font-medium">~${totalEstimatedCost.toFixed(2)}</span>
                   </div>
                   <button
                     onClick={() => handleRequestDelivery()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white text-[11px] font-semibold rounded-lg transition-all"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-brand-600 to-brand-600 hover:from-brand-500 hover:to-brand-500 text-white text-[11px] font-semibold rounded-lg transition-all"
                   >
                     <Zap className="w-3 h-3" />
                     Request Deliveries
@@ -156,7 +156,7 @@ export default function ProjectPage() {
         <section className="bg-[#0c0c0f] border border-zinc-800/60 rounded-2xl overflow-hidden">
           <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-zinc-600" />
-            <span className="text-sm font-semibold text-zinc-200 font-display">Summary</span>
+            <span className="text-sm font-semibold text-zinc-200">Summary</span>
           </div>
           <div className="p-4">
             <ProjectSummary />
@@ -167,9 +167,9 @@ export default function ProjectPage() {
         <section className="bg-[#0c0c0f] border border-zinc-800/60 rounded-2xl overflow-hidden">
           <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
             <Package className="w-4 h-4 text-zinc-600" />
-            <span className="text-sm font-semibold text-zinc-200 font-display">Deliverables</span>
+            <span className="text-sm font-semibold text-zinc-200">Deliverables</span>
             {deliverables.length > 0 && (
-              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full ml-auto font-medium">
+              <span className="text-[10px] text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded-full ml-auto font-medium">
                 {deliverables.length}
               </span>
             )}

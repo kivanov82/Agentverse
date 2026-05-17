@@ -95,7 +95,17 @@ export class FirestoreStore {
     return doc.exists ? (doc.data() as StoredProject) : null;
   }
 
-  async listProjects(options: { status?: string; limit?: number } = {}): Promise<StoredProject[]> {
+  async listProjects(options: { status?: string; limit?: number; userId?: string } = {}): Promise<StoredProject[]> {
+    // When userId is set we skip server-side orderBy to avoid needing a
+    // composite Firestore index (userId + updatedAt). Scale is small — sort + slice in memory.
+    if (options.userId) {
+      let q = this.db.collection('projects').where('userId', '==', options.userId) as FirebaseFirestore.Query;
+      if (options.status) q = q.where('status', '==', options.status);
+      const snap = await q.get();
+      const rows = snap.docs.map((d) => d.data() as StoredProject);
+      rows.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+      return options.limit ? rows.slice(0, options.limit) : rows;
+    }
     let q = this.db.collection('projects').orderBy('updatedAt', 'desc') as FirebaseFirestore.Query;
     if (options.status) q = q.where('status', '==', options.status);
     if (options.limit) q = q.limit(options.limit);
@@ -461,7 +471,7 @@ export class FirestoreStore {
     delta: number,
     source: CreditSource,
     meta: { invocationCostId?: string; note?: string } = {},
-  ): Promise<number> {
+  ): Promise<{ entryId: string; balanceAfter: number }> {
     const userRef = this.db.collection('users').doc(userId);
     const entryRef = this.db.collection('creditLedger').doc();
 
@@ -488,7 +498,7 @@ export class FirestoreStore {
       };
       tx.set(entryRef, entry);
 
-      return next;
+      return { entryId: entryRef.id, balanceAfter: next };
     });
   }
 

@@ -162,21 +162,31 @@ export function registerProjectTools(registry: ToolRegistry): void {
       const contextSummary = input.contextSummary as string;
       const taskDescription = input.taskDescription as string;
 
-      // Auto-create GitHub repo if this is the first specialist handoff
+      // Auto-create GitHub repo if this is the first specialist handoff.
+      // Skipped when the project operates on a user-owned target repo (e.g.
+      // solidity-audit sets auditTargetRepo) — creating a scratch repo there
+      // would be wasted infra and also leave a stale, empty repo behind.
       let repoInfo = '';
       if (context.projectId) {
         try {
-          const { createProjectRepo, repoExists } = await import('../github-repo');
-          const repoOwner = process.env.GITHUB_REPO_OWNER;
-          const repoName = `shipwithai-${context.projectId}`;
-          const exists = await repoExists(`${repoOwner}/${repoName}`).catch(() => false);
-          if (!exists) {
-            const repo = await createProjectRepo(
-              context.projectId,
-              context.projectId,
-              `ShipWith.AI project`
-            );
-            repoInfo = `\nGitHub repo created: ${repo.url}`;
+          const { getFirestoreStore } = await import('../firestore-store');
+          const project = await getFirestoreStore().getProject(context.projectId).catch(() => null);
+          const hasTargetRepo = !!(project?.metadata as Record<string, unknown> | undefined)?.auditTargetRepo;
+          if (!hasTargetRepo) {
+            const { createProjectRepo, repoExists } = await import('../github-repo');
+            const repoOwner = process.env.GITHUB_REPO_OWNER;
+            // Lowercased to match how the invoke route resolves repoFullName,
+            // and because GitHub normalizes repo slugs to lowercase anyway.
+            const repoName = `shipwithai-${context.projectId.toLowerCase()}`;
+            const exists = await repoExists(`${repoOwner}/${repoName}`).catch(() => false);
+            if (!exists) {
+              const repo = await createProjectRepo(
+                context.projectId,
+                context.projectId,
+                `ShipWith.AI project`
+              );
+              repoInfo = `\nGitHub repo created: ${repo.url}`;
+            }
           }
         } catch (err) {
           // Non-fatal — repo creation is optional (fails locally without GitHub App keys)

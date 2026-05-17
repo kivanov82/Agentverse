@@ -132,7 +132,7 @@ export function OnboardingOverlay() {
       {/* Spotlight cutout */}
       {targetRect && !isCenter && (
         <div
-          className="absolute border-2 border-emerald-500/50 rounded-lg"
+          className="absolute border-2 border-brand-500/50 rounded-lg"
           style={{
             top: targetRect.top - 4,
             left: targetRect.left - 4,
@@ -176,7 +176,7 @@ export function OnboardingOverlay() {
               </button>
               <button
                 onClick={nextOnboardingStep}
-                className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium rounded-lg transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-medium rounded-lg transition-colors"
               >
                 {onboardingStep === STEPS.length - 1 ? 'Done' : 'Next'}
                 <ChevronRight className="w-3 h-3" />

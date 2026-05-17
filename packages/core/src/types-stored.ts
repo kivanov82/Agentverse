@@ -8,6 +8,7 @@ export interface StoredProject {
   status: string;
   budget?: string;
   metadata?: Record<string, unknown>;
+  userId?: string;                // owner — set on create when a user is signed in
   createdAt: number;
   updatedAt: number;
 }
@@ -113,6 +114,8 @@ export interface StoredLinkedIdentity {
 export type CreditSource =
   | 'starter_grant'
   | 'agent_invocation'
+  | 'fixed_price_action'         // upfront debit for a named skill/action with a declared price
+  | 'fixed_price_refund'         // refund of a fixed_price_action when the run failed
   | 'stripe'
   | 'x402'
   | 'admin_adjustment';

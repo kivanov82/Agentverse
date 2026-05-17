@@ -57,7 +57,7 @@ export function TopUpToast() {
           : AlertCircle;
   const ring =
     msg.tone === 'success'
-      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
+      ? 'border-brand-500/30 bg-brand-500/10 text-brand-200'
       : msg.tone === 'error'
         ? 'border-red-500/30 bg-red-500/10 text-red-200'
         : 'border-zinc-700 bg-zinc-900 text-zinc-200';

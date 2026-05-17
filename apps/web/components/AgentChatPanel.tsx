@@ -33,7 +33,7 @@ function renderMarkdown(text: string) {
         parts.push(<em key={`${lineIdx}-${match.index}`}>{match[3]}</em>);
       } else if (match[4]) {
         // `code`
-        parts.push(<code key={`${lineIdx}-${match.index}`} className="px-1 py-0.5 rounded bg-zinc-700/60 text-emerald-300 text-[12px] font-mono">{match[4]}</code>);
+        parts.push(<code key={`${lineIdx}-${match.index}`} className="px-1 py-0.5 rounded bg-zinc-700/60 text-brand-300 text-[12px] font-mono">{match[4]}</code>);
       }
 
       lastIndex = match.index + match[0].length;
@@ -605,7 +605,7 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
   })();
 
   return (
-    <div className="w-full flex flex-col relative">
+    <div className="w-full h-full min-h-0 flex flex-col relative">
       {gateState !== 'ok' && (
         <PaywallOverlay
           state={gateState}
@@ -618,30 +618,42 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
       )}
       <div className="overflow-hidden flex flex-col max-h-full">
         {/* Header */}
-        <div className="px-6 py-3 flex items-center gap-3 shrink-0">
+        <div className="px-6 py-3.5 flex items-center gap-3 shrink-0 border-b border-white/[0.04]">
           {activeAgent ? (
             <>
               <div
-                className="w-7 h-7 rounded-md flex items-center justify-center text-sm font-bold"
-                style={{ backgroundColor: activeAgent.color, color: '#fff' }}
+                className="w-8 h-8 flex items-center justify-center text-[12px] font-bold border"
+                style={{
+                  backgroundColor: `${activeAgent.color}22`,
+                  color: activeAgent.color,
+                  borderColor: `${activeAgent.color}44`,
+                }}
               >
                 {activeAgent.avatar}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-zinc-200">{activeAgent.name}</div>
-                <div className="text-xs text-zinc-500 truncate">{activeAgent.role}</div>
+                <div className="text-[14px] font-semibold text-zinc-100 leading-tight truncate">
+                  {activeAgent.name.replace(/^ShipWith\.AI:\s*/, '')}
+                </div>
+                <div className="text-[11px] text-zinc-500 truncate leading-tight mt-0.5">
+                  {activeAgent.role}
+                </div>
               </div>
+              <span className="hidden md:flex items-center gap-1.5 text-[11px] text-zinc-500 shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                Online
+              </span>
             </>
           ) : (
             <>
               <MessageSquare className="w-5 h-5 text-zinc-600" />
-              <span className="text-sm font-medium text-zinc-400">Select an agent to chat</span>
+              <span className="text-sm text-zinc-400 font-medium">Select an agent to begin</span>
             </>
           )}
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5 min-h-[160px] max-h-[55vh]">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-6 space-y-6">
           {allMessages.length === 0 && !hasStreamContent ? (
             <div className="text-center py-8">
               <MessageSquare className="w-7 h-7 mx-auto mb-3 text-zinc-700" />
@@ -653,38 +665,63 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
             </div>
           ) : (
             <>
-              {allMessages.map((msg) => {
+              {allMessages.map((msg, idx) => {
                 const isUser = msg.role === 'user';
                 const agent = getAgent(msg.agentId);
+                const prev = idx > 0 ? allMessages[idx - 1] : null;
+                const showHeader = !prev || prev.role !== msg.role || prev.agentId !== msg.agentId;
+                const msgNum = String(idx + 1).padStart(2, '0');
+
+                if (isUser) {
+                  return (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex justify-end"
+                    >
+                      <div className="max-w-[78%] text-[14px] leading-[1.65] text-zinc-100 border-l-2 border-brand-500/60 pl-4 py-0.5">
+                        {renderMarkdown(msg.content)}
+                      </div>
+                    </motion.div>
+                  );
+                }
 
                 return (
                   <motion.div
                     key={msg.id}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`flex ${isUser ? 'justify-end' : 'justify-start'} gap-2.5`}
+                    className="flex gap-3.5"
                   >
-                    {!isUser && agent && (
+                    {agent && showHeader ? (
                       <div
-                        className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold shrink-0 mt-1"
-                        style={{ backgroundColor: agent.color, color: '#fff' }}
+                        className="w-8 h-8 flex items-center justify-center text-[11px] font-bold border shrink-0 mt-0.5"
+                        style={{
+                          backgroundColor: `${agent.color}22`,
+                          color: agent.color,
+                          borderColor: `${agent.color}44`,
+                        }}
                       >
                         {agent.avatar}
                       </div>
+                    ) : (
+                      <div className="w-8 shrink-0" />
                     )}
-                    <div
-                      className={`max-w-[90%] rounded-lg px-4 py-3 ${
-                        isUser
-                          ? 'bg-zinc-700/60 text-zinc-100 border border-zinc-600/30'
-                          : 'bg-zinc-800/40 text-zinc-300 border border-zinc-700/30'
-                      }`}
-                    >
-                      {!isUser && agent && (
-                        <p className="text-[11px] font-medium mb-1.5 opacity-70" style={{ color: agent.color }}>
-                          {agent.name}
-                        </p>
+                    <div className="flex-1 min-w-0">
+                      {showHeader && agent && (
+                        <div className="flex items-baseline gap-2.5 mb-1.5">
+                          <span className="text-[13px] font-semibold" style={{ color: agent.color }}>
+                            {agent.name.replace(/^ShipWith\.AI:\s*/, '')}
+                          </span>
+                          <span className="text-[11px] text-zinc-600 truncate">
+                            {agent.role}
+                          </span>
+                        </div>
                       )}
-                      <div className="text-[13px] leading-[1.7]">{renderMarkdown(msg.content)}</div>
+                      <div className="text-[14px] leading-[1.65] text-zinc-300 max-w-[56rem]">
+                        {renderMarkdown(msg.content)}
+                      </div>
                     </div>
                   </motion.div>
                 );
@@ -692,54 +729,63 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
 
               {/* Streaming output */}
               {hasStreamContent && streamingAgent && currentStream?.isActive && (
-                <div className="flex justify-start gap-2.5">
+                <motion.div
+                  className="flex gap-3.5"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
                   <div
-                    className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold shrink-0 mt-1"
-                    style={{ backgroundColor: streamingAgent.color, color: '#fff' }}
+                    className="w-8 h-8 flex items-center justify-center text-[11px] font-bold border shrink-0 mt-0.5 relative"
+                    style={{
+                      backgroundColor: `${streamingAgent.color}22`,
+                      color: streamingAgent.color,
+                      borderColor: `${streamingAgent.color}66`,
+                      boxShadow: `0 0 20px ${streamingAgent.color}40`,
+                    }}
                   >
                     {streamingAgent.avatar}
                   </div>
-                  <div className="max-w-[90%] rounded-lg px-4 py-3 bg-zinc-800/40 text-zinc-300 border border-zinc-700/30">
-                    <p className="text-[11px] font-medium mb-1.5 opacity-70" style={{ color: streamingAgent.color }}>
-                      {streamingAgent.name}
-                    </p>
-                    {/* Interleaved text and tool events */}
-                    <div className="space-y-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-baseline gap-2.5 mb-1.5">
+                      <span className="text-[13px] font-semibold" style={{ color: streamingAgent.color }}>
+                        {streamingAgent.name.replace(/^ShipWith\.AI:\s*/, '')}
+                      </span>
+                      <span className="text-[11px] text-brand-400">
+                        thinking…
+                      </span>
+                    </div>
+                    <div className="space-y-2 max-w-[56rem]">
                       {streamEvents.map((ev, i) => (
                         ev.type === 'text' ? (
-                          <div key={i} className="text-[13px] leading-[1.7]">{renderMarkdown(ev.content)}</div>
+                          <div key={i} className="text-[14px] leading-[1.65] text-zinc-300">{renderMarkdown(ev.content)}</div>
                         ) : (
-                          <div key={i} className={`flex items-center gap-1.5 text-[11px] font-mono py-0.5 px-2 rounded ${
+                          <div key={i} className={`inline-flex items-center gap-1.5 text-[11px] py-0.5 px-2 rounded ${
                             ev.status === 'calling' ? 'bg-amber-500/10 text-amber-400' :
                             ev.status === 'error' ? 'bg-red-500/10 text-red-400' :
-                            'bg-emerald-500/10 text-emerald-400'
+                            'bg-teal-500/10 text-teal-400'
                           }`}>
-                            {ev.status === 'calling' ? '⚡' : ev.status === 'error' ? '✗' : '✓'}
+                            <span>{ev.status === 'calling' ? '⚡' : ev.status === 'error' ? '✗' : '✓'}</span>
                             <span>{ev.label}</span>
-                            {ev.status === 'calling' && <Loader2 className="w-3 h-3 animate-spin ml-auto" />}
+                            {ev.status === 'calling' && <Loader2 className="w-3 h-3 animate-spin ml-1" />}
                           </div>
                         )
                       ))}
                     </div>
-                    <div className="flex items-center gap-1.5 mt-2 text-zinc-500">
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      <span className="text-[11px]">Working...</span>
-                    </div>
                   </div>
-                </div>
+                </motion.div>
               )}
             </>
           )}
 
           {/* Quick-reply options */}
           {latestQuestion?.options && !isInvoking && (
-            <div className="space-y-1.5 pt-2">
+            <div className="space-y-1.5 pt-3 pl-[2.75rem]">
               {latestQuestion.options.map((opt, i) => (
                 <button
                   key={i}
                   onClick={() => handleOptionClick(opt)}
                   disabled={isInvoking}
-                  className="block w-full text-left text-[13px] px-4 py-2.5 rounded-lg bg-zinc-800/30 border border-zinc-700/30 hover:border-zinc-600/50 hover:bg-zinc-800/50 text-zinc-300 transition-colors disabled:opacity-50"
+                  className="group block w-full text-left text-[13.5px] px-4 py-2.5 border border-white/[0.06] bg-white/[0.01] hover:bg-brand-500/[0.06] hover:border-brand-500/40 text-zinc-300 hover:text-white transition-all disabled:opacity-50"
                 >
                   {opt}
                 </button>
@@ -751,9 +797,9 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input — Grok-style wide bar */}
-        <form onSubmit={handleSubmit} className="px-4 pb-4 pt-2 shrink-0">
-          <div className="relative flex items-end bg-zinc-800/50 border border-zinc-700/40 rounded-xl hover:border-zinc-600/50 focus-within:border-zinc-500/60 transition-colors">
+        {/* Input */}
+        <form onSubmit={handleSubmit} className="px-6 pb-4 pt-2 shrink-0">
+          <div className="relative flex items-end bg-[#0a0a10]/90 backdrop-blur-md border border-white/[0.08] rounded-md hover:border-white/[0.14] focus-within:border-brand-500/50 transition-colors">
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -776,12 +822,13 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
               }
               disabled={isInvoking || !activeAgent || paywallActive}
               rows={1}
-              className="flex-1 px-5 py-3.5 bg-transparent text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none disabled:opacity-40 resize-none leading-relaxed"
+              className="flex-1 px-4 py-3.5 bg-transparent text-[14px] text-zinc-100 placeholder-zinc-600 focus:outline-none disabled:opacity-40 resize-none leading-relaxed"
             />
             <button
               type="submit"
               disabled={!input.trim() || isInvoking || !activeAgent || paywallActive}
-              className="m-2 p-2 rounded-lg bg-zinc-100 hover:bg-white disabled:bg-zinc-700 disabled:text-zinc-500 text-zinc-900 transition-all shrink-0"
+              className="m-1.5 p-2.5 flex items-center justify-center bg-brand-500 hover:bg-brand-400 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 rounded transition-all shrink-0"
+              aria-label="Send"
             >
               {isInvoking ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -790,11 +837,6 @@ Keep your response brief — 2-3 sentences max, then the handoff.`;
               )}
             </button>
           </div>
-          {activeAgent && activeSession && (
-            <div className="mt-2 px-1 text-[11px] text-zinc-600">
-              Building context for &ldquo;{activeSession.name}&rdquo;
-            </div>
-          )}
         </form>
       </div>
     </div>

@@ -6,6 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Upload, Check, X } from 'lucide-react';
 import { type UseCaseConfig, type QuestionStep, GITHUB_STEP } from '@/lib/use-cases';
 import { useShipWithAIStore } from '@/lib/store';
+import { AuditDepthStep } from './AuditDepthStep';
+import { SignInModal } from './SignInModal';
+import { TopUpModal } from './TopUpModal';
+import { useCredits } from '@/lib/use-credits';
 
 interface Props {
   config: UseCaseConfig;
@@ -14,6 +18,7 @@ interface Props {
 export function UseCaseWizard({ config }: Props) {
   const router = useRouter();
   const initializeFromUseCase = useShipWithAIStore((s) => s.initializeFromUseCase);
+  const { balance, isAuthenticated, refresh: refreshCredits } = useCredits();
 
   // Build steps: use-case questions + optional GitHub question
   const steps: QuestionStep[] = config.skipGithubStep
@@ -22,13 +27,19 @@ export function UseCaseWizard({ config }: Props) {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[] | null>>({});
   const [direction, setDirection] = useState(1);
+  // Total cost of any fixed-price selections made during the wizard. Checked
+  // only at the final "Let's go" click — modals don't interrupt exploration.
+  const [fixedPriceTotal, setFixedPriceTotal] = useState(0);
+  const [signInOpen, setSignInOpen] = useState(false);
+  const [topUpOpen, setTopUpOpen] = useState(false);
 
   const step = steps[currentStep];
   const isLast = currentStep === steps.length - 1;
   const isFirst = currentStep === 0;
-  const value = answers[step.id] ?? (step.type === 'checkbox-group' ? [] : '');
+  const isMultiSelectValue = step.type === 'checkbox-group' || step.type === 'audit-depth';
+  const value = answers[step.id] ?? (isMultiSelectValue ? [] : '');
   const canContinue = !step.required || (
-    step.type === 'checkbox-group'
+    isMultiSelectValue
       ? (value as string[]).length > 0
       : typeof value === 'string' && value.trim().length > 0
   );
@@ -39,7 +50,19 @@ export function UseCaseWizard({ config }: Props) {
 
   const next = () => {
     if (isLast) {
-      // Complete — initialize and go to dashboard
+      // Checkout-style gate: if the user selected a fixed-price bundle, they
+      // must be signed in AND have enough balance before we create the project.
+      if (fixedPriceTotal > 0) {
+        if (!isAuthenticated) {
+          setSignInOpen(true);
+          return;
+        }
+        if (balance < fixedPriceTotal) {
+          setTopUpOpen(true);
+          return;
+        }
+      }
+      // All clear — initialize and go to dashboard
       initializeFromUseCase(config.id, answers);
       router.push('/dashboard');
       return;
@@ -92,9 +115,9 @@ export function UseCaseWizard({ config }: Props) {
             key={i}
             className={`h-1.5 rounded-full transition-all duration-300 ${
               i === currentStep
-                ? 'w-8 bg-gradient-to-r from-emerald-400 to-cyan-400'
+                ? 'w-8 bg-gradient-to-r from-brand-400 to-brand-400'
                 : i < currentStep
-                ? 'w-1.5 bg-emerald-600'
+                ? 'w-1.5 bg-brand-600'
                 : 'w-1.5 bg-zinc-800'
             }`}
           />
@@ -117,7 +140,7 @@ export function UseCaseWizard({ config }: Props) {
               <p className="text-xs text-zinc-500 mb-2 uppercase tracking-wider">
                 {config.label}
               </p>
-              <h2 className="text-xl md:text-2xl font-bold text-white mb-6 font-display">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-6">
                 {step.question}
               </h2>
 
@@ -191,6 +214,16 @@ export function UseCaseWizard({ config }: Props) {
                     );
                   })}
                 </div>
+              ) : step.type === 'audit-depth' ? (
+                <AuditDepthStep
+                  skillsAgentId={step.skillsAgentId ?? 'solidity-auditor'}
+                  bundles={step.bundles ?? []}
+                  value={(value as string[]) || null}
+                  onChange={(skills, total) => {
+                    setAnswer(skills);
+                    setFixedPriceTotal(total);
+                  }}
+                />
               ) : step.type === 'radio' ? (
                 <div className="grid grid-cols-1 gap-2">
                   {step.options?.map((opt) => {
@@ -229,7 +262,7 @@ export function UseCaseWizard({ config }: Props) {
             disabled={!canContinue}
             className={`w-full py-3.5 rounded-xl text-sm font-semibold transition-all ${
               canContinue
-                ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white hover:from-emerald-400 hover:to-cyan-400 shadow-lg shadow-emerald-900/20'
+                ? 'bg-gradient-to-r from-brand-500 to-brand-500 text-white hover:from-brand-400 hover:to-brand-400 shadow-lg shadow-brand-900/20'
                 : 'bg-zinc-800 text-zinc-600 cursor-not-allowed'
             }`}
           >
@@ -246,6 +279,17 @@ export function UseCaseWizard({ config }: Props) {
           )}
         </div>
       </div>
+
+      <SignInModal open={signInOpen} onClose={() => setSignInOpen(false)} />
+      <TopUpModal
+        open={topUpOpen}
+        onClose={() => setTopUpOpen(false)}
+        onSuccess={() => {
+          // Pull the fresh balance and retry on the next render cycle — once
+          // useCredits updates, the user can click "Let's go" again.
+          refreshCredits();
+        }}
+      />
     </div>
   );
 }

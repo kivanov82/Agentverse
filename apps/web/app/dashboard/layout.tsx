@@ -6,8 +6,11 @@ import { useShipWithAIStore } from '@/lib/store';
 import { runDemoSimulation } from '@/lib/demo';
 import { Logo } from '@/components/Logo';
 import { UserMenu } from '@/components/UserMenu';
-import { OnboardingOverlay, OnboardingHelpButton } from '@/components/OnboardingOverlay';
+import { OnboardingOverlay } from '@/components/OnboardingOverlay';
 import { TopUpToast } from '@/components/TopUpToast';
+import { ObservatoryModal } from '@/components/ObservatoryModal';
+import { ConstellationBackground } from '@/components/ConstellationBackground';
+import { CursorTrail } from '@/components/CursorTrail';
 import {
   Play,
   FolderOpen,
@@ -27,6 +30,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const mode = searchParams.get('mode');
 
   const [isRunningDemo, setIsRunningDemo] = useState(false);
+  const [observatoryOpen, setObservatoryOpen] = useState(false);
   const {
     projects,
     activeProjectId,
@@ -73,11 +77,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle2 className="w-3 h-3 text-emerald-500" />;
+        return <CheckCircle2 className="w-3 h-3 text-brand-500" />;
       case 'active':
         return <CircleDot className="w-3 h-3 text-white" />;
       case 'review':
-        return <Clock className="w-3 h-3 text-cyan-400" />;
+        return <Clock className="w-3 h-3 text-brand-400" />;
       default:
         return <Clock className="w-3 h-3 text-zinc-600" />;
     }
@@ -85,22 +89,55 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const isAgentsPage = pathname === '/dashboard';
   const isProjectPage = pathname === '/dashboard/project';
-  const isObservatoryPage = pathname === '/dashboard/observatory';
 
   return (
-    <div className="h-screen flex bg-[#060608] relative">
-      {/* Global background texture */}
-      <div className="absolute inset-0 bg-noise pointer-events-none" />
+    <div className="h-screen flex flex-col bg-[#07070a] relative overflow-hidden">
+      {/* Observatory: animated constellation behind everything */}
+      <ConstellationBackground density="high" className="opacity-80 z-0" />
+
+      {/* Ambient mesh wash (sits above constellation, gives color depth) */}
+      <div className="absolute inset-0 pointer-events-none z-[1] bg-observatory opacity-70" />
+
+      {/* Film grain */}
+      <div className="absolute inset-0 bg-noise pointer-events-none z-[2]" />
+
+      {/* Subtle scanlines */}
+      <div className="absolute inset-0 scanlines pointer-events-none z-[2] opacity-60" />
+
+      {/* Vignette */}
+      <div className="absolute inset-0 pointer-events-none z-[2]" style={{ background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%)' }} />
+
+      {/* Global Top Bar */}
+      <header className="border-b border-white/[0.06] bg-[#07070a]/80 backdrop-blur-md grid grid-cols-[1fr_auto_1fr] items-center px-5 relative z-20 shrink-0" style={{ height: '52px' }}>
+        <Link href="/" className="flex items-center justify-self-start">
+          <Logo variant="full" size={28} />
+        </Link>
+        <nav className="flex items-center gap-6 justify-self-center">
+          <button
+            onClick={() => setObservatoryOpen(true)}
+            className={`group relative flex items-center gap-1.5 py-1.5 text-[12px] font-medium transition-colors ${
+              observatoryOpen
+                ? 'text-brand-400'
+                : 'text-zinc-400 hover:text-zinc-100'
+            }`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>Observatory</span>
+            <span className={`absolute -bottom-1 left-0 right-0 h-px bg-brand-500 transition-opacity ${observatoryOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'}`} />
+          </button>
+        </nav>
+        <div className="justify-self-end flex items-center gap-2">
+          <span className="hidden md:flex items-center gap-1.5 text-[11px] text-zinc-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+            Live
+          </span>
+        </div>
+      </header>
+
+      <div className="flex-1 flex min-h-0 relative">
 
       {/* Left Sidebar */}
-      <aside className="w-52 border-r border-zinc-800/60 flex flex-col hidden md:flex relative z-10 bg-[#08080b]/80 backdrop-blur-sm">
-        {/* Logo */}
-        <div className="p-3 border-b border-zinc-800/60">
-          <Link href="/" className="flex items-center gap-2 group">
-            <Logo variant="full" size={24} />
-          </Link>
-        </div>
-
+      <aside className="w-52 border-r border-white/[0.05] flex flex-col hidden md:flex relative z-30 bg-[#08080b]/80 backdrop-blur-md">
         {/* Account */}
         <div className="p-3 border-b border-zinc-800/60 wallet-button">
           <UserMenu compact />
@@ -155,7 +192,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                   : 'hover:bg-zinc-800/40 text-zinc-500'
               }`}
             >
-              <CircuitBoard className={`w-3.5 h-3.5 ${isAgentsPage ? 'text-emerald-400' : 'text-zinc-600'}`} />
+              <CircuitBoard className={`w-3.5 h-3.5 ${isAgentsPage ? 'text-brand-500' : 'text-zinc-600'}`} />
               <span className="text-[11px] font-medium">Agents</span>
             </Link>
             <Link
@@ -166,39 +203,18 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                   : 'hover:bg-zinc-800/40 text-zinc-500'
               }`}
             >
-              <FileText className={`w-3.5 h-3.5 ${isProjectPage ? 'text-emerald-400' : 'text-zinc-600'}`} />
+              <FileText className={`w-3.5 h-3.5 ${isProjectPage ? 'text-brand-500' : 'text-zinc-600'}`} />
               <span className="text-[11px] font-medium">Project</span>
-            </Link>
-            <Link
-              href="/dashboard/observatory"
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors text-left ${
-                isObservatoryPage
-                  ? 'bg-zinc-800/80 text-zinc-100'
-                  : 'hover:bg-zinc-800/40 text-zinc-500'
-              }`}
-            >
-              <Eye className={`w-3.5 h-3.5 ${isObservatoryPage ? 'text-emerald-400' : 'text-zinc-600'}`} />
-              <span className="text-[11px] font-medium">Observatory</span>
             </Link>
           </div>
         </div>
 
-        {/* Bottom actions */}
-        <div className="p-3 border-t border-zinc-800/60 space-y-2">
-          {/* Help / Tour button */}
-          <div className="flex justify-center pt-1">
-            <OnboardingHelpButton />
-          </div>
-        </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 relative z-10">
         {/* Mobile Header */}
-        <header className="md:hidden border-b border-zinc-800/60 p-3 flex items-center justify-between bg-[#08080b]/80 backdrop-blur-sm">
-          <Link href="/">
-            <Logo variant="full" size={20} />
-          </Link>
+        <header className="md:hidden border-b border-zinc-800/60 p-3 flex items-center justify-between bg-[#0a0a0d]/80 backdrop-blur-sm">
           <div className="flex items-center gap-2">
             {/* Mobile nav tabs */}
             <Link
@@ -217,22 +233,16 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
             >
               Project
             </Link>
-            <Link
-              href="/dashboard/observatory"
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-colors ${
-                isObservatoryPage ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500'
-              }`}
-            >
-              Observatory
-            </Link>
+          </div>
+          <div className="flex items-center gap-2">
             <UserMenu />
             <button
               onClick={handleRunDemo}
               disabled={isRunningDemo}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 disabled:from-zinc-700 disabled:to-zinc-700 text-white rounded-xl text-xs font-semibold shadow-lg shadow-emerald-900/20"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-500 hover:bg-brand-400 disabled:bg-zinc-700 text-zinc-950 rounded-sm text-xs font-semibold shadow-lg shadow-brand-900/20"
             >
               {isRunningDemo ? (
-                <div className="w-3.5 h-3.5 border-2 border-zinc-400 border-t-white rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-zinc-700 border-t-zinc-950 rounded-full animate-spin" />
               ) : (
                 <Play className="w-3.5 h-3.5" />
               )}
@@ -247,11 +257,19 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         </div>
       </main>
 
+      </div>
+
       {/* Onboarding overlay */}
       <OnboardingOverlay />
 
       {/* Top-up redirect feedback */}
       <TopUpToast />
+
+      {/* Observatory modal — global overlay from top bar */}
+      <ObservatoryModal open={observatoryOpen} onClose={() => setObservatoryOpen(false)} />
+
+      {/* Ambient cursor trail — signature wow detail */}
+      <CursorTrail />
     </div>
   );
 }

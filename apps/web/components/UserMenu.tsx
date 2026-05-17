@@ -69,34 +69,36 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
           /* eslint-disable-next-line @next/next/no-img-element */
           <img src={user.image} alt="" className="w-5 h-5 rounded-full" />
         ) : (
-          <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-[10px] font-semibold">
+          <div className="w-5 h-5 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center text-[10px] font-semibold">
             {initials}
           </div>
         )}
         <div className="flex-1 min-w-0 text-left">
           <div className="text-[11px] text-zinc-300 truncate">{displayName}</div>
-          {compact && <div className="text-[9px] text-emerald-400">{formatUsdcAmount(balance)}</div>}
+          {compact && <div className="text-[9px] font-mono text-brand-500">{formatUsdcAmount(balance)}</div>}
         </div>
       </button>
 
       {menuOpen && (
-        <div className="absolute bottom-full left-0 mb-2 w-48 rounded-xl border border-zinc-800 bg-[#0c0c0f] shadow-lg z-20 overflow-hidden">
-          <div className="px-3 py-2 border-b border-zinc-800">
-            <div className="text-[10px] uppercase tracking-widest text-zinc-500">Credit balance</div>
-            <div className="text-sm font-semibold text-emerald-400">{formatUsdcAmount(balance)}</div>
+        <div className={`absolute w-56 border border-zinc-700 bg-[#1a1a20] shadow-2xl shadow-black/70 ring-1 ring-brand-500/10 z-50 overflow-hidden ${
+          compact ? 'left-full top-0 ml-3' : 'top-full right-0 mt-2'
+        }`}>
+          <div className="px-3 py-2.5 border-b border-zinc-700 bg-zinc-900/60">
+            <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500">Credit balance</div>
+            <div className="text-sm font-semibold text-brand-500 font-mono mt-0.5">{formatUsdcAmount(balance)}</div>
           </div>
           <button
             onClick={() => { setMenuOpen(false); setTopUpOpen(true); }}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800/60 transition-colors border-b border-zinc-800"
+            className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-zinc-200 hover:bg-zinc-800 hover:text-white transition-colors border-b border-zinc-700"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-3.5 h-3.5 text-zinc-400" />
             Top up credits
           </button>
           <button
             onClick={() => signOut()}
-            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-zinc-300 hover:bg-zinc-800/60 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-zinc-200 hover:bg-zinc-800 hover:text-white transition-colors"
           >
-            <LogOut className="w-3.5 h-3.5" />
+            <LogOut className="w-3.5 h-3.5 text-zinc-400" />
             Sign out
           </button>
         </div>

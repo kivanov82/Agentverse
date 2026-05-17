@@ -27,6 +27,15 @@ interface AgentMeta {
   examples: string[];
   toolCount: number;
   hasOutputTool: boolean;
+  skillCount: number;
+  hasFixedPriceSkills: boolean;
+}
+
+interface SkillDetail {
+  id: string;
+  name: string;
+  description?: string;
+  priceUsd?: number;
 }
 
 interface AgentConfig {
@@ -40,14 +49,15 @@ interface AgentConfig {
   pricing: { baseRate: string; currency: string; perUnit: string };
   inputs: Array<{ name: string; type: string; description: string; required: boolean }>;
   outputs: Array<{ name: string; type: string; description: string; required: boolean }>;
+  skillsDetail?: SkillDetail[];
   _meta: AgentMeta;
 }
 
 // Tool category colors
 const TOOL_CATEGORIES: Record<string, { color: string; icon: string; label: string }> = {
   github: { color: 'text-purple-400 bg-purple-400/10 border-purple-400/20', icon: '{}', label: 'GitHub' },
-  vercel: { color: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20', icon: '{}', label: 'Vercel' },
-  project: { color: 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20', icon: '{}', label: 'Project' },
+  vercel: { color: 'text-brand-400 bg-brand-400/10 border-brand-400/20', icon: '{}', label: 'Vercel' },
+  project: { color: 'text-brand-400 bg-brand-400/10 border-brand-400/20', icon: '{}', label: 'Project' },
   document: { color: 'text-amber-400 bg-amber-400/10 border-amber-400/20', icon: '{}', label: 'Document' },
   command: { color: 'text-red-400 bg-red-400/10 border-red-400/20', icon: '{}', label: 'Command' },
   output: { color: 'text-blue-400 bg-blue-400/10 border-blue-400/20', icon: '{}', label: 'Output' },
@@ -72,6 +82,27 @@ function ToolBadge({ name }: { name: string }) {
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono border ${cat.color}`}>
       {name}
+    </span>
+  );
+}
+
+// Billing summary pill for the agent header row. Token-based when no skill
+// declares a fixed price; otherwise shows the range of declared skill prices.
+function BillingBadge({ skills }: { skills?: SkillDetail[] }) {
+  const priced = (skills ?? []).filter((s) => typeof s.priceUsd === 'number') as Array<SkillDetail & { priceUsd: number }>;
+  if (priced.length === 0) {
+    return (
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-mono border border-zinc-700/60 text-zinc-400 bg-zinc-900/40">
+        token-based
+      </span>
+    );
+  }
+  const min = Math.min(...priced.map((s) => s.priceUsd));
+  const max = Math.max(...priced.map((s) => s.priceUsd));
+  const label = min === max ? `$${min}` : `$${min}–$${max}`;
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-mono border border-brand-500/40 text-brand-300 bg-brand-500/10">
+      flat {label}
     </span>
   );
 }
@@ -114,7 +145,10 @@ function AgentRow({ agent, expanded, onToggle }: { agent: AgentConfig; expanded:
         <div className="flex items-center gap-2 flex-shrink-0">
           <ModelBadge model={agent.model} />
           <span className="text-[10px] text-zinc-600 tabular-nums">{meta.toolCount} tools</span>
-          <span className="text-[10px] text-emerald-500/70">{agent.pricing.baseRate} {agent.pricing.currency}</span>
+          {meta.skillCount > 0 && (
+            <span className="text-[10px] text-zinc-500 tabular-nums">{meta.skillCount} skills</span>
+          )}
+          <BillingBadge skills={agent.skillsDetail} />
         </div>
       </button>
 
@@ -132,6 +166,44 @@ function AgentRow({ agent, expanded, onToggle }: { agent: AgentConfig; expanded:
               )) || <span className="text-zinc-600 text-[11px]">No tools assigned</span>}
             </div>
           </div>
+
+          {/* Skills — auto-loaded into system prompt, optional fixed pricing */}
+          {agent.skillsDetail && agent.skillsDetail.length > 0 && (
+            <div>
+              <h4 className="text-[10px] uppercase tracking-wider text-zinc-500 mb-2 flex items-center gap-1.5">
+                <Brain className="w-3 h-3" /> Skills ({agent.skillsDetail.length})
+              </h4>
+              <div className="space-y-1.5">
+                {agent.skillsDetail.map((skill) => (
+                  <div
+                    key={skill.id}
+                    className="flex items-start justify-between gap-3 px-3 py-2 rounded-md border border-zinc-800/60 bg-zinc-900/30"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-mono text-zinc-200">{skill.name}</span>
+                        <span className="text-[9px] text-zinc-600">{skill.id}</span>
+                      </div>
+                      {skill.description && (
+                        <p className="text-[10px] text-zinc-500 mt-0.5 leading-snug line-clamp-2">
+                          {skill.description}
+                        </p>
+                      )}
+                    </div>
+                    <span
+                      className={`shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-mono border ${
+                        typeof skill.priceUsd === 'number'
+                          ? 'border-brand-500/40 text-brand-300 bg-brand-500/10'
+                          : 'border-zinc-700/60 text-zinc-400 bg-zinc-900/40'
+                      }`}
+                    >
+                      {typeof skill.priceUsd === 'number' ? `$${skill.priceUsd} flat` : 'token-based'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Output Tool */}
           {agent.outputTool && (
@@ -197,7 +269,7 @@ function AgentRow({ agent, expanded, onToggle }: { agent: AgentConfig; expanded:
             <div className="flex items-center gap-1.5 text-[10px]">
               <Brain className="w-3 h-3 text-zinc-600" />
               <span className="text-zinc-500">Examples:</span>
-              <span className={meta.examples.length > 0 ? 'text-emerald-400' : 'text-zinc-600'}>
+              <span className={meta.examples.length > 0 ? 'text-brand-400' : 'text-zinc-600'}>
                 {meta.examples.length > 0 ? meta.examples.join(', ') : 'none'}
               </span>
             </div>
@@ -215,11 +287,11 @@ function ArchitectureOverview({ agents }: { agents: AgentConfig[] }) {
   const withExamples = agents.filter((a) => a._meta.examples.length > 0).length;
 
   const stats = [
-    { label: 'Agents', value: agents.length, icon: CircuitBoard, color: 'text-emerald-400' },
+    { label: 'Agents', value: agents.length, icon: CircuitBoard, color: 'text-brand-400' },
     { label: 'Unique Tools', value: totalTools, icon: Wrench, color: 'text-purple-400' },
     { label: 'Opus Models', value: opusAgents, icon: Cpu, color: 'text-amber-400' },
     { label: 'Sonnet Models', value: sonnetAgents, icon: Cpu, color: 'text-zinc-400' },
-    { label: 'With Examples', value: `${withExamples}/${agents.length}`, icon: Brain, color: 'text-cyan-400' },
+    { label: 'With Examples', value: `${withExamples}/${agents.length}`, icon: Brain, color: 'text-brand-400' },
   ];
 
   return (
@@ -343,14 +415,14 @@ function EscalationInfo() {
   );
 }
 
-export default function ObservatoryPage() {
+export function ObservatoryView() {
   const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
 
   useEffect(() => {
-    fetch('/api/agents/list')
+    fetch('/api/agents/list', { cache: 'no-store' })
       .then((r) => r.json())
       .then((data) => {
         setAgents(data.agents || []);
@@ -385,7 +457,7 @@ export default function ObservatoryPage() {
         {/* Header */}
         <div>
           <div className="flex items-center gap-2.5 mb-1">
-            <Eye className="w-5 h-5 text-emerald-400" />
+            <Eye className="w-5 h-5 text-brand-400" />
             <h1 className="text-lg font-semibold text-zinc-100" style={{ fontFamily: 'Syne, sans-serif' }}>
               Agent Observatory
             </h1>
@@ -411,7 +483,7 @@ export default function ObservatoryPage() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-              <CircuitBoard className="w-4 h-4 text-emerald-400" />
+              <CircuitBoard className="w-4 h-4 text-brand-400" />
               Agent Configurations
             </h2>
             <div className="relative">
@@ -439,4 +511,8 @@ export default function ObservatoryPage() {
       </div>
     </div>
   );
+}
+
+export default function ObservatoryPage() {
+  return <ObservatoryView />;
 }

@@ -24,7 +24,7 @@ export function AgentCard({ agent, isSelected, onClick }: AgentCardProps) {
 
   if (hasDelivered) {
     idleText = 'Delivered';
-    idleStyle = 'bg-emerald-500/15 text-emerald-400';
+    idleStyle = 'bg-brand-500/15 text-brand-400';
     IdleIcon = CheckCircle;
   } else if (wasChatted && hasMessages) {
     idleText = 'Consulted';
@@ -35,9 +35,9 @@ export function AgentCard({ agent, isSelected, onClick }: AgentCardProps) {
   const statusConfig = {
     idle: { color: 'bg-zinc-600', text: idleText, icon: IdleIcon, style: idleStyle },
     thinking: { color: 'bg-amber-500', text: 'Thinking...', icon: Loader2, style: 'bg-amber-500/15 text-amber-400' },
-    working: { color: 'bg-emerald-500', text: 'Working...', icon: Loader2, style: 'bg-emerald-500/15 text-emerald-400' },
-    waiting: { color: 'bg-cyan-500', text: 'Ready for input', icon: ArrowRight, style: 'bg-cyan-500/15 text-cyan-400' },
-    delivered: { color: 'bg-emerald-500', text: 'Delivered', icon: CheckCircle, style: 'bg-emerald-500/15 text-emerald-400' },
+    working: { color: 'bg-brand-500', text: 'Working...', icon: Loader2, style: 'bg-brand-500/15 text-brand-400' },
+    waiting: { color: 'bg-brand-500', text: 'Ready for input', icon: ArrowRight, style: 'bg-brand-500/15 text-brand-400' },
+    delivered: { color: 'bg-brand-500', text: 'Delivered', icon: CheckCircle, style: 'bg-brand-500/15 text-brand-400' },
     error: { color: 'bg-red-500', text: 'Error', icon: null, style: 'bg-red-500/15 text-red-400' },
   }[agent.status];
 

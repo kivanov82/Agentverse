@@ -3,9 +3,13 @@ export type UseCaseId = 'seo' | 'landing-page' | 'app-prototype' | 'ecommerce' |
 export interface QuestionStep {
   id: string;
   question: string;
-  type: 'text' | 'textarea' | 'url' | 'file-upload' | 'checkbox-group' | 'radio';
+  type: 'text' | 'textarea' | 'url' | 'file-upload' | 'checkbox-group' | 'radio' | 'audit-depth';
   placeholder?: string;
   options?: { label: string; value: string }[];
+  /** For audit-depth: bundle presets mapping a choice to a list of skill folder ids. */
+  bundles?: { id: string; label: string; description: string; skills: string[] }[];
+  /** For audit-depth: which agent's skills to fetch prices from (via GET /api/agents/:id/skills). */
+  skillsAgentId?: string;
   required: boolean;
 }
 
@@ -208,15 +212,50 @@ export const USE_CASES: Record<UseCaseId, UseCaseConfig> = {
         placeholder: 'https://your-project.com',
         required: false,
       },
+      {
+        id: 'selectedAuditSkills',
+        question: 'How deep should we audit?',
+        type: 'audit-depth',
+        required: true,
+        skillsAgentId: 'solidity-auditor',
+        bundles: [
+          {
+            id: 'feynman-only',
+            label: 'Quick pass',
+            description: 'Feynman — business-logic sweep',
+            skills: ['feynman-auditor'],
+          },
+          {
+            id: 'feynman-nemesis',
+            label: 'Standard',
+            description: 'Feynman + Nemesis adversarial loop',
+            skills: ['feynman-auditor', 'nemesis-auditor'],
+          },
+          {
+            id: 'full',
+            label: 'Full audit',
+            description: 'All three: Feynman, Nemesis, State-Inconsistency',
+            skills: ['feynman-auditor', 'nemesis-auditor', 'state-inconsistency-auditor'],
+          },
+        ],
+      },
     ],
     pmBriefTemplate: (a) => {
       const scope = a.scope ? `\nFocus areas: ${a.scope}` : '\nFocus areas: full contract surface';
       const brand = a.brandUrl ? `\nBrand URL (for report styling): ${a.brandUrl}` : '';
+      const selected = Array.isArray(a.selectedAuditSkills) ? a.selectedAuditSkills : [];
+      const skillLabels: Record<string, string> = {
+        'feynman-auditor': 'Feynman',
+        'nemesis-auditor': 'Nemesis',
+        'state-inconsistency-auditor': 'State-Inconsistency',
+      };
+      const methodologyList = selected.map((id) => skillLabels[id] ?? id).join(' → ') || 'Feynman → Nemesis → State-Inconsistency';
       return `Solidity Security Audit.
 
 Target repo: ${a.repoUrl}${scope}${brand}
+Selected methodologies: ${methodologyList}
 
-This is a solo-specialist engagement: you (PM) and the Solidity Auditor only — no other agents. Hand off to solidity-auditor immediately with the target repo URL and scope. The auditor runs three methodologies sequentially (Feynman → Nemesis → State-Inconsistency) and returns a structured audit report with severity-rated findings and a Go/No-Go recommendation.`;
+This is a solo-specialist engagement: you (PM) and the Solidity Auditor only — no other agents. Hand off to solidity-auditor immediately with the target repo URL and scope. The auditor runs the selected methodologies (${methodologyList}) and returns a structured audit report with severity-rated findings and a Go/No-Go recommendation.`;
     },
   },
 

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { MIN_BALANCE_USD } from './pricing';
+import { BALANCE_CHANGED_EVENT } from './agent-client';
 
 export type GateState = 'signed_out' | 'out_of_credit' | 'ok';
 
@@ -71,6 +72,21 @@ export function useCredits() {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // Optimistic update whenever an agent invocation reports a new balance.
+  // Avoids polling /api/credits after every message — the server already
+  // knows the debited amount and pushes it back in the SSE `done` event.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    function onBalanceChange(e: Event) {
+      const detail = (e as CustomEvent<{ balance?: number }>).detail;
+      const next = detail?.balance;
+      if (typeof next !== 'number' || !Number.isFinite(next)) return;
+      setData((prev) => (prev.balance === next ? prev : { ...prev, balance: next }));
+    }
+    window.addEventListener(BALANCE_CHANGED_EVENT, onBalanceChange);
+    return () => window.removeEventListener(BALANCE_CHANGED_EVENT, onBalanceChange);
+  }, [isAuthenticated]);
 
   const gateState: GateState = isLoading
     ? 'ok'

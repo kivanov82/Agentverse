@@ -1,6 +1,7 @@
 ---
 name: feynman-auditor
 description: Deep business logic bug finder using the Feynman technique. Language-agnostic — works on Solidity, Move, Rust, Go, C++, or any codebase. Questions every line, every ordering choice, every guard presence/absence, and every implicit assumption to surface logic bugs that pattern-matching misses. Triggers on /feynman, feynman audit, or deep logic review.
+price_usd: 3
 ---
 
 # Feynman Auditor

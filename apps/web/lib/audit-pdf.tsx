@@ -34,6 +34,28 @@ const RECOMMENDATION_COLOR: Record<AuditRecommendation, string> = {
 const BRAND_DEFAULT = '#10b981';
 const SHIPWITHAI_URL = 'https://shipwithai.nl';
 
+// Guards against unusable scraped accents (e.g. Kasu ships theme-color=#ffffff,
+// which would render PDF headings/borders invisible on the white page). We
+// fall back to BRAND_DEFAULT when the color has poor contrast against white.
+function pickAccent(scraped: string | undefined): string {
+  if (!scraped) return BRAND_DEFAULT;
+  const rgb = parseHexColor(scraped);
+  if (!rgb) return BRAND_DEFAULT;
+  const [r, g, b] = rgb;
+  // Relative luminance per WCAG — 0 = black, 1 = white. Reject the extremes.
+  const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  if (luminance > 0.85 || luminance < 0.05) return BRAND_DEFAULT;
+  return scraped;
+}
+
+function parseHexColor(hex: string): [number, number, number] | null {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  const raw = m[1];
+  const full = raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw;
+  return [parseInt(full.slice(0, 2), 16), parseInt(full.slice(2, 4), 16), parseInt(full.slice(4, 6), 16)];
+}
+
 function buildStyles(accent: string) {
   return StyleSheet.create({
     page: {
@@ -195,7 +217,7 @@ function buildStyles(accent: string) {
 }
 
 export function AuditReportDocument({ report, theme, targetRepo, generatedAt }: AuditPdfProps) {
-  const accent = theme?.primaryColor ?? BRAND_DEFAULT;
+  const accent = pickAccent(theme?.primaryColor);
   const styles = buildStyles(accent);
   const bySeverity = groupFindingsBySeverity(report.findings);
 

@@ -1,5 +1,16 @@
 // Client for invoking agents from the UI
 
+// Fired on `window` after any invocation that debits credits, carrying the
+// post-debit balance. `useCredits` listens and updates optimistically so the
+// UI doesn't have to refetch /api/credits after every agent call.
+export const BALANCE_CHANGED_EVENT = 'shipwithai:balance-changed';
+
+function maybeEmitBalanceChanged(balance: unknown): void {
+  if (typeof window === 'undefined') return;
+  if (typeof balance !== 'number' || !Number.isFinite(balance)) return;
+  window.dispatchEvent(new CustomEvent(BALANCE_CHANGED_EVENT, { detail: { balance } }));
+}
+
 export type PaywallErrorCode = 'unauthenticated' | 'insufficient_credit';
 
 /**
@@ -155,6 +166,7 @@ export async function invokeAgent(options: InvokeOptions): Promise<AgentResponse
               onIteration?.(parsed.iteration, parsed.stopReason);
             } else if (parsed.type === 'done') {
               // Final summary from agent runner
+              maybeEmitBalanceChanged(parsed.balanceAfter);
               const result: AgentResponse = {
                 success: parsed.success,
                 output: fullOutput,
@@ -198,6 +210,7 @@ export async function invokeAgent(options: InvokeOptions): Promise<AgentResponse
         throw new Error(data.error || 'Failed to invoke agent');
       }
 
+      maybeEmitBalanceChanged(data.balanceAfter);
       const result: AgentResponse = {
         success: data.success,
         output: data.output,

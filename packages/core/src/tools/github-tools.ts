@@ -37,7 +37,7 @@ export function registerGitHubTools(registry: ToolRegistry): void {
           },
           branch: {
             type: 'string',
-            description: 'Branch name. Defaults to "main".',
+            description: "Branch name. Defaults to the repo's default branch (works for both 'main' and 'master' repos).",
           },
         },
         required: ['path'],
@@ -46,7 +46,9 @@ export function registerGitHubTools(registry: ToolRegistry): void {
     async (input, context) => {
       const repo = getRepoName(context);
       const filePath = (input.path as string) || '';
-      const branch = (input.branch as string) || 'main';
+      // `undefined` branch → Octokit resolves the repo's actual default branch,
+      // so we don't 404 on repos that still use `master`.
+      const branch = (input.branch as string) || undefined;
 
       try {
         // Try as file first

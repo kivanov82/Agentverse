@@ -50,7 +50,7 @@ export function SessionPanel({ onRequestDelivery }: SessionPanelProps) {
   const getStatusIcon = (status: DeliveryRequest['status']) => {
     switch (status) {
       case 'pending': return <Clock className="w-3 h-3 text-zinc-400" />;
-      case 'paid': return <DollarSign className="w-3 h-3 text-emerald-400" />;
+      case 'paid': return <DollarSign className="w-3 h-3 text-brand-400" />;
       case 'in-progress': return <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><Zap className="w-3 h-3 text-yellow-400" /></motion.div>;
       case 'completed': return <CheckCircle className="w-3 h-3 text-green-400" />;
       case 'failed': return <AlertCircle className="w-3 h-3 text-red-400" />;
@@ -84,8 +84,8 @@ export function SessionPanel({ onRequestDelivery }: SessionPanelProps) {
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center gap-2">
-            <Package className="w-4 h-4 text-emerald-400" />
-            <span className="text-sm font-semibold text-zinc-200 font-display">
+            <Package className="w-4 h-4 text-brand-400" />
+            <span className="text-sm font-semibold text-zinc-200">
               {activeSession ? activeSession.name : 'No Active Session'}
             </span>
           </div>
@@ -115,7 +115,7 @@ export function SessionPanel({ onRequestDelivery }: SessionPanelProps) {
                   </p>
                   <button
                     onClick={() => setShowCreateModal(true)}
-                    className="flex items-center gap-2 mx-auto px-4 py-2 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white text-sm rounded-xl transition-all font-semibold shadow-lg shadow-emerald-900/20"
+                    className="flex items-center gap-2 mx-auto px-4 py-2 bg-gradient-to-r from-brand-600 to-brand-600 hover:from-brand-500 hover:to-brand-500 text-white text-sm rounded-xl transition-all font-semibold shadow-lg shadow-brand-900/20"
                   >
                     <Plus className="w-4 h-4" />
                     New Session
@@ -173,7 +173,7 @@ export function SessionPanel({ onRequestDelivery }: SessionPanelProps) {
                               {getStatusIcon(delivery.status)}
                               <span className="text-zinc-300">{getAgentName(delivery.agentId)}</span>
                             </div>
-                            <span className="text-emerald-400 font-mono">{delivery.estimatedCost}</span>
+                            <span className="text-brand-400 font-mono">{delivery.estimatedCost}</span>
                           </div>
                         ))}
                       </div>
@@ -185,7 +185,7 @@ export function SessionPanel({ onRequestDelivery }: SessionPanelProps) {
                     <div className="pt-2 border-t border-zinc-800">
                       <div className="flex items-center justify-between text-xs mb-3">
                         <span className="text-zinc-500">Est. total cost:</span>
-                        <span className="text-emerald-400 font-mono font-medium">
+                        <span className="text-brand-400 font-mono font-medium">
                           ~${totalEstimatedCost.toFixed(2)} USDC
                         </span>
                       </div>
@@ -194,7 +194,7 @@ export function SessionPanel({ onRequestDelivery }: SessionPanelProps) {
                       <div className="space-y-2">
                         <button
                           onClick={() => onRequestDelivery(activeSession.id)}
-                          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white text-xs font-semibold rounded-xl transition-all shadow-lg shadow-emerald-900/20"
+                          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-brand-600 to-brand-600 hover:from-brand-500 hover:to-brand-500 text-white text-xs font-semibold rounded-xl transition-all shadow-lg shadow-brand-900/20"
                         >
                           <Zap className="w-3.5 h-3.5" />
                           Request All Deliveries
@@ -260,7 +260,7 @@ export function SessionPanel({ onRequestDelivery }: SessionPanelProps) {
               exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-lg font-bold text-zinc-100 mb-4 font-display">New Session</h3>
+              <h3 className="text-lg font-bold text-zinc-100 mb-4">New Session</h3>
               <input
                 type="text"
                 value={newSessionName}
@@ -280,7 +280,7 @@ export function SessionPanel({ onRequestDelivery }: SessionPanelProps) {
                 <button
                   onClick={handleCreateSession}
                   disabled={!newSessionName.trim()}
-                  className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white text-sm rounded-xl transition-all font-semibold"
+                  className="px-4 py-2 bg-gradient-to-r from-brand-600 to-brand-600 hover:from-brand-500 hover:to-brand-500 disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-zinc-500 text-white text-sm rounded-xl transition-all font-semibold"
                 >
                   Create
                 </button>

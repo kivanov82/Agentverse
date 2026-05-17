@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import * as path from 'path';
 import * as fs from 'fs';
+import { loadAgentSkills } from '@shipwithai/core/agent-skills';
+
+// Always read straight from disk. The observatory is a live diagnostics view —
+// a cached response would paper over config edits and skill-price changes.
+export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/agents/list
- * Returns all agent configs with full details (tools, outputTool, model, etc.)
- * Used by the Agent Observatory page.
+ * Returns all agent configs with full details (tools, outputTool, model,
+ * skills + prices, etc.). Used by the Agent Observatory page.
  */
 export async function GET() {
   try {
@@ -37,14 +42,26 @@ export async function GET() {
         examples = fs.readdirSync(examplesDir).filter((f) => f.endsWith('.md'));
       }
 
+      // Load skills (honours config.skills allowlist when present)
+      const allowlist = Array.isArray(config.skills) ? (config.skills as string[]) : undefined;
+      const skillsDetail = loadAgentSkills(agentsDir, entry.name, { allowlist }).map((s) => ({
+        id: s.folder,
+        name: s.name,
+        description: s.description,
+        priceUsd: s.priceUsd,
+      }));
+
       agents.push({
         ...config,
+        skillsDetail,
         _meta: {
           hasSystemPrompt,
           systemPromptLines,
           examples,
           toolCount: config.tools?.length || 0,
           hasOutputTool: !!config.outputTool,
+          skillCount: skillsDetail.length,
+          hasFixedPriceSkills: skillsDetail.some((s) => typeof s.priceUsd === 'number'),
         },
       });
     }

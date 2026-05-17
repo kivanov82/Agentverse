@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestoreStore } from '@shipwithai/core/firestore-store';
 import { scrapeBrand } from '@shipwithai/core/brand-scraper';
+import { getSessionUser } from '@/lib/auth-server';
 
 export async function GET(request: NextRequest) {
   const store = getFirestoreStore();
   const { searchParams } = request.nextUrl;
 
+  // Scope listing to the signed-in user. Anonymous callers get an empty list
+  // so the landing page doesn't leak other users' projects.
+  const user = await getSessionUser();
+  if (searchParams.get('scope') === 'mine' && !user) {
+    return NextResponse.json({ success: true, projects: [] });
+  }
+
   const projects = await store.listProjects({
     status: searchParams.get('status') ?? undefined,
     limit: searchParams.has('limit') ? Number(searchParams.get('limit')) : undefined,
+    userId: searchParams.get('scope') === 'mine' && user ? user.id : undefined,
   });
 
   return NextResponse.json({ success: true, projects });
@@ -22,6 +31,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'id and name required' }, { status: 400 });
   }
 
+  const user = await getSessionUser();
   const store = getFirestoreStore();
   const project = await store.saveProject({
     id,
@@ -30,6 +40,7 @@ export async function POST(request: NextRequest) {
     status: status ?? 'planning',
     budget,
     metadata,
+    userId: user?.id,
   });
 
   // Fire-and-forget: scraping the user's site may take seconds. Doing it inline

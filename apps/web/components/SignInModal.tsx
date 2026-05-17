@@ -89,7 +89,7 @@ export function SignInModal({ open, onClose }: Props) {
             <button
               onClick={handleSiwe}
               disabled={isSigning}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-sm font-medium py-2.5 hover:bg-emerald-500/15 transition-colors disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-brand-500/30 bg-brand-500/10 text-brand-300 text-sm font-medium py-2.5 hover:bg-brand-500/15 transition-colors disabled:opacity-60"
             >
               <Wallet className="w-4 h-4" />
               {isSigning ? 'Waiting for signature…' : 'Sign in with Ethereum'}

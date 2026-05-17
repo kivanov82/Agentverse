@@ -8,7 +8,7 @@ const statusColors = {
   thinking: 'bg-yellow-500 animate-pulse',
   working: 'bg-green-500 animate-pulse',
   waiting: 'bg-blue-500',
-  delivered: 'bg-emerald-500',
+  delivered: 'bg-brand-500',
   error: 'bg-red-500',
 };
 

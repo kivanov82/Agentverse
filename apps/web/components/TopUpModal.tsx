@@ -170,7 +170,7 @@ export function TopUpModal({ open, onClose, onSuccess }: Props) {
                 disabled={busy}
                 className={`py-2 text-xs font-medium rounded-lg border transition-colors ${
                   !custom && amount === t.usd
-                    ? 'border-emerald-500/60 bg-emerald-500/10 text-emerald-300'
+                    ? 'border-brand-500/60 bg-brand-500/10 text-brand-300'
                     : 'border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-zinc-700'
                 }`}
               >
@@ -225,7 +225,7 @@ export function TopUpModal({ open, onClose, onSuccess }: Props) {
             <button
               onClick={payWithUsdc}
               disabled={busy || !amountValid}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-sm font-semibold py-2.5 hover:bg-emerald-500/15 transition-colors disabled:opacity-60"
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-brand-500/30 bg-brand-500/10 text-brand-300 text-sm font-semibold py-2.5 hover:bg-brand-500/15 transition-colors disabled:opacity-60"
             >
               {busy ? (
                 <Loader2 className="w-4 h-4 animate-spin" />

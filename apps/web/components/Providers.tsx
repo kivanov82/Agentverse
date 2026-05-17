@@ -8,6 +8,7 @@ import { SessionProvider } from 'next-auth/react';
 import '@rainbow-me/rainbowkit/styles.css';
 import { getWagmiConfig } from '@/lib/wagmi';
 import { MobileOverlay } from './MobileOverlay';
+import { NavigationProgress } from './NavigationProgress';
 
 const wagmiConfig = getWagmiConfig();
 const rkTheme = darkTheme({
@@ -26,6 +27,7 @@ export function Providers({ children }: { children: ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <RainbowKitProvider theme={rkTheme}>
             <MobileOverlay />
+            <NavigationProgress />
             {children}
           </RainbowKitProvider>
         </QueryClientProvider>

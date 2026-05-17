@@ -1,6 +1,7 @@
 ---
 name: state-inconsistency-auditor
 description: Finds state inconsistency bugs where an operation mutates one piece of coupled state without updating its dependent counterpart, causing silent data corruption or reverts in subsequent operations. Triggers on /state-audit, state inconsistency audit, or coupled state audit.
+price_usd: 10
 ---
 
 # State Inconsistency Auditor

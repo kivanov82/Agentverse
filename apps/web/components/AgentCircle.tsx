@@ -6,14 +6,15 @@ import { useShipWithAIStore, Agent } from '@/lib/store';
 import { USE_CASES } from '@/lib/use-cases';
 import { AgentChatPanel } from './AgentChatPanel';
 import { AuditMethodologyExplainer } from './AuditMethodologyExplainer';
+import { ConstellationGlyph } from './ConstellationGlyph';
 import { CheckCircle, Loader2, Clock, Circle } from 'lucide-react';
 
 const STATUS_CONFIG: Record<string, { icon: typeof CheckCircle; color: string; label: string }> = {
   idle: { icon: Circle, color: 'text-zinc-600', label: 'Standing by' },
   thinking: { icon: Loader2, color: 'text-amber-400', label: 'Thinking...' },
-  working: { icon: Loader2, color: 'text-emerald-400', label: 'Working...' },
-  waiting: { icon: Clock, color: 'text-cyan-400', label: 'Waiting for input' },
-  delivered: { icon: CheckCircle, color: 'text-emerald-400', label: 'Finished' },
+  working: { icon: Loader2, color: 'text-brand-400', label: 'Working...' },
+  waiting: { icon: Clock, color: 'text-brand-400', label: 'Waiting for input' },
+  delivered: { icon: CheckCircle, color: 'text-brand-400', label: 'Finished' },
   error: { icon: Circle, color: 'text-red-400', label: 'Error' },
 };
 
@@ -97,16 +98,15 @@ export function AgentCircle() {
   }, [activeUseCase, agents, activeSession?.involvedAgents]);
 
   return (
-    <div className="relative w-full h-full flex flex-col overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 glow-center pointer-events-none" />
-      <div className="absolute inset-0 bg-dots pointer-events-none opacity-40" />
+    <div className="relative w-full h-full flex flex-col" style={{ overflow: 'clip' }}>
+      {/* Background — transparent so constellation shows through */}
+      <div className="absolute inset-0 glow-center pointer-events-none opacity-50" />
 
       {/* Main row: chat + sidebar */}
       <div className="flex-1 relative z-10 flex min-h-0">
 
       {/* Chat area */}
-      <div className="flex-1 flex items-center justify-center">
+      <div className={`flex-1 min-w-0 min-h-0 flex ${!activeSession ? 'items-center justify-center' : 'flex-col'}`}>
         {!activeSession && !isHydrated ? (
           /* Loading — waiting for project hydration */
           <div className="z-20 flex flex-col items-center gap-3">
@@ -118,7 +118,7 @@ export function AgentCircle() {
           <div className="z-20">
             {showSessionInput ? (
               <motion.div
-                className="glass rounded-2xl p-4 shadow-2xl shadow-emerald-900/20 border-emerald-500/30"
+                className="glass rounded-2xl p-4 shadow-2xl shadow-brand-900/20 border-brand-500/30"
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
               >
@@ -127,7 +127,7 @@ export function AgentCircle() {
                   value={sessionName}
                   onChange={(e) => setSessionName(e.target.value)}
                   placeholder="Project name..."
-                  className="w-36 px-3 py-1.5 bg-zinc-800/80 border border-zinc-700 rounded-lg text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500 mb-2"
+                  className="w-36 px-3 py-1.5 bg-zinc-800/80 border border-zinc-700 rounded-lg text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-brand-500 mb-2"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleStartSession();
@@ -144,7 +144,7 @@ export function AgentCircle() {
                   <button
                     onClick={handleStartSession}
                     disabled={!sessionName.trim()}
-                    className="flex-1 text-[10px] bg-emerald-600 hover:bg-emerald-500 disabled:bg-zinc-700 text-white py-1.5 rounded-lg transition-colors font-medium"
+                    className="flex-1 text-[10px] bg-brand-600 hover:bg-brand-500 disabled:bg-zinc-700 text-white py-1.5 rounded-lg transition-colors font-medium"
                   >
                     Start
                   </button>
@@ -169,12 +169,12 @@ export function AgentCircle() {
                 >
                   <div className="w-full h-full rounded-full bg-[#0a0e0c]" />
                 </motion.div>
-                <div className="absolute inset-1 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-700 flex flex-col items-center justify-center shadow-lg shadow-emerald-900/40">
-                  <span className="text-[11px] font-bold text-white uppercase tracking-wider font-display">
-                    Start
+                <div className="absolute inset-1 rounded-full bg-gradient-to-br from-brand-600 to-brand-700 flex flex-col items-center justify-center shadow-lg shadow-brand-900/40">
+                  <span className="text-[11px] font-bold text-white uppercase tracking-wider">
+                    Light
                   </span>
-                  <span className="text-[9px] text-emerald-200/80 font-medium">
-                    Session
+                  <span className="text-[9px] text-brand-200/80 font-medium">
+                    constellation
                   </span>
                 </div>
               </motion.button>
@@ -182,7 +182,7 @@ export function AgentCircle() {
           </div>
         ) : (
           /* Unified chat — always open, PM selected by default */
-          <div className="w-full h-full max-h-[calc(100vh-64px)] px-4 flex flex-col">
+          <div className="w-full h-full min-h-0 px-4 flex flex-col">
             {activeUseCase === 'solidity-audit' && <AuditMethodologyExplainer />}
             <div className="flex-1 min-h-0">
               <AgentChatPanel
@@ -201,20 +201,24 @@ export function AgentCircle() {
         )}
       </div>
 
-      {/* Right sidebar — agent team */}
+      {/* Right sidebar — agent team as observatory roster */}
       {activeSession && (
         <motion.aside
-          className="relative z-10 w-60 border-l border-zinc-800/40 bg-[#08080b]/70 backdrop-blur-md flex flex-col shrink-0"
+          className="relative z-10 w-64 border-l border-white/[0.05] bg-[#08080b]/80 backdrop-blur-md flex flex-col shrink-0"
           initial={{ x: 40, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="px-4 py-3 border-b border-zinc-800/40">
-            <h3 className="text-[10px] text-zinc-500 uppercase tracking-[0.15em] font-semibold font-display">
-              Your Team
+          <div className="px-4 py-3 border-b border-white/[0.05] flex items-center gap-2">
+            <ConstellationGlyph size={13} className="text-zinc-500" />
+            <h3 className="text-[11px] uppercase tracking-[0.15em] font-semibold text-zinc-400">
+              Team
             </h3>
+            <span className="ml-auto text-[10px] text-zinc-600">
+              {visibleAgents.filter(a => activeSession.involvedAgents.includes(a.id)).length}/{visibleAgents.length}
+            </span>
           </div>
-          <div className="flex-1 overflow-y-auto py-1.5 px-1.5">
+          <div className="flex-1 overflow-y-auto py-2 px-1.5">
             {visibleAgents.map((agent, i) => {
               const isInvolved = activeSession.involvedAgents.includes(agent.id);
               const cfg = STATUS_CONFIG[agent.status] || STATUS_CONFIG.idle;
@@ -226,43 +230,41 @@ export function AgentCircle() {
                 <motion.div
                   key={agent.id}
                   initial={{ opacity: 0, x: 12 }}
-                  animate={{ opacity: isInvolved ? 1 : 0.3, x: 0 }}
+                  animate={{ opacity: isInvolved ? 1 : 0.35, x: 0 }}
                   transition={{ delay: i * 0.03, duration: 0.3 }}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg ${!isInvolved ? 'grayscale' : ''}`}
+                  className="flex items-start gap-2.5 px-2.5 py-2 rounded"
                 >
                   <div className="relative shrink-0">
                     <div
-                      className="w-6 h-6 rounded-md flex items-center justify-center text-[9px] font-bold"
-                      style={{ backgroundColor: agent.color, color: '#fff' }}
+                      className="w-7 h-7 rounded flex items-center justify-center text-[10px] font-bold"
+                      style={{
+                        backgroundColor: isInvolved ? agent.color : '#1f1f26',
+                        color: isInvolved ? '#fff' : '#71717a',
+                        boxShadow: isWorking ? `0 0 14px ${agent.color}66` : 'none',
+                      }}
                     >
                       {agent.avatar}
                     </div>
-                    {isWorking && (
-                      <div
-                        className="absolute -inset-1 rounded-lg opacity-30 blur-sm animate-pulse"
-                        style={{ backgroundColor: agent.color }}
-                      />
-                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <p className="text-[11px] font-medium truncate text-zinc-400">
+                      <p className="text-[12px] font-medium truncate text-zinc-200 leading-tight">
                         {agent.name.replace('ShipWith.AI: ', '')}
                       </p>
                       {isInvolved && (
-                        <StatusIcon className={`w-3 h-3 shrink-0 ${cfg.color} ${isWorking ? 'animate-spin' : ''}`} />
+                        <StatusIcon className={`w-2.5 h-2.5 shrink-0 ${cfg.color} ${isWorking ? 'animate-spin' : ''}`} />
                       )}
                     </div>
-                    {isInvolved && (
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className={`text-[10px] truncate ${cfg.color}`}>
-                          {agent.currentTask || cfg.label}
-                        </p>
-                        <span className="text-[9px] text-zinc-600 font-mono shrink-0">
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className={`text-[11px] truncate ${isInvolved ? cfg.color : 'text-zinc-600'}`}>
+                        {isInvolved ? (agent.currentTask || cfg.label) : cfg.label}
+                      </p>
+                      {isInvolved && agentCost !== undefined && (
+                        <span className="text-[10px] text-zinc-500 shrink-0 ml-auto">
                           ${(agentCost || 0).toFixed(2)}
                         </span>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               );
@@ -273,10 +275,10 @@ export function AgentCircle() {
 
       </div>{/* end main row */}
 
-      {/* Bottom timeline — project phases */}
+      {/* Bottom timeline — simple phases */}
       {activeSession && projectPhases.length > 0 && (
         <motion.div
-          className="relative z-10 shrink-0 border-t border-zinc-800/40 bg-[#08080b]/70 backdrop-blur-md px-8 py-4"
+          className="relative z-10 shrink-0 border-t border-white/[0.05] bg-[#07070a]/95 backdrop-blur-md px-6 py-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.4 }}
@@ -287,46 +289,42 @@ export function AgentCircle() {
               const isActive = phase.status === 'active';
               return (
                 <div key={phase.name} className="flex items-start flex-1 min-w-0">
-                  <div className="flex flex-col items-center min-w-[72px]">
-                    {/* Dot */}
-                    <div className={`w-4 h-4 rounded-full border-2 transition-all ${
-                      isDone ? 'bg-emerald-500 border-emerald-500' :
-                      isActive ? 'bg-emerald-500/30 border-emerald-500 animate-pulse' :
+                  <div className="flex flex-col items-center min-w-[90px]">
+                    <div className={`relative w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
+                      isDone ? 'bg-brand-500 border-brand-500' :
+                      isActive ? 'bg-brand-500/20 border-brand-500' :
                       'bg-transparent border-zinc-700'
                     }`}>
-                      {isDone && (
-                        <CheckCircle className="w-3 h-3 text-white m-auto mt-[-1px]" style={{ marginTop: '-0.5px' }} />
-                      )}
+                      {isDone && <CheckCircle className="w-3 h-3 text-white" />}
+                      {isActive && <span className="absolute inset-0 rounded-full bg-brand-500/30 animate-ping" />}
                     </div>
-                    {/* Phase name */}
-                    <span className={`text-[11px] font-semibold mt-1.5 whitespace-nowrap ${
-                      isDone ? 'text-emerald-400' :
+                    <span className={`text-[12px] font-medium mt-1.5 whitespace-nowrap ${
+                      isDone ? 'text-brand-400' :
                       isActive ? 'text-zinc-100' :
                       'text-zinc-600'
                     }`}>
                       {phase.name}
                     </span>
-                    {/* Deliverable link */}
-                    {phase.deliverable && isDone && (
-                      <a
-                        href={phase.deliverable.url || '#'}
-                        className="text-[10px] text-zinc-500 hover:text-emerald-400 transition-colors mt-0.5 truncate max-w-[80px]"
-                        target={phase.deliverable.url ? '_blank' : undefined}
-                        rel="noopener noreferrer"
-                      >
-                        {phase.deliverable.label}
-                      </a>
-                    )}
-                    {phase.deliverable && !isDone && (
-                      <span className="text-[10px] text-zinc-700 mt-0.5 truncate max-w-[80px]">
-                        {phase.deliverable.label}
-                      </span>
+                    {phase.deliverable && (
+                      isDone && phase.deliverable.url ? (
+                        <a
+                          href={phase.deliverable.url}
+                          className="text-[10px] text-zinc-500 hover:text-brand-400 transition-colors mt-0.5 truncate max-w-[86px]"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {phase.deliverable.label}
+                        </a>
+                      ) : (
+                        <span className="text-[10px] text-zinc-600 mt-0.5 truncate max-w-[86px]">
+                          {phase.deliverable.label}
+                        </span>
+                      )
                     )}
                   </div>
-                  {/* Connector line */}
                   {i < projectPhases.length - 1 && (
                     <div className={`flex-1 h-0.5 mt-[7px] mx-1 rounded-full ${
-                      isDone ? 'bg-emerald-500/40' : 'bg-zinc-800/80'
+                      isDone ? 'bg-brand-500/40' : 'bg-zinc-800/80'
                     }`} />
                   )}
                 </div>

@@ -23,6 +23,7 @@ export interface LoadedSkill {
   name: string;                  // from frontmatter
   description?: string;          // from frontmatter
   body: string;                  // SKILL.md content with frontmatter stripped
+  priceUsd?: number;             // fixed price in USD — if set, this skill is billed flat-fee instead of per-token
 }
 
 export interface LoadSkillsOptions {
@@ -60,11 +61,15 @@ function parseSkillFile(absPath: string, folder: string): LoadedSkill | null {
 
   if (!frontmatter.name) return null;
 
+  const rawPrice = frontmatter.price_usd;
+  const priceUsd = rawPrice !== undefined && rawPrice !== '' ? Number(rawPrice) : undefined;
+
   return {
     folder,
     name: frontmatter.name,
     description: frontmatter.description,
     body,
+    priceUsd: priceUsd !== undefined && Number.isFinite(priceUsd) && priceUsd >= 0 ? priceUsd : undefined,
   };
 }
 

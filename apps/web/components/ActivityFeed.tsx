@@ -18,7 +18,7 @@ const activityConfig: Record<Activity['type'], { icon: typeof MessageSquare; col
   payment: { icon: DollarSign, color: 'text-green-400', bg: 'bg-green-500/10' },
   artifact: { icon: Package, color: 'text-orange-400', bg: 'bg-orange-500/10' },
   question: { icon: HelpCircle, color: 'text-yellow-400', bg: 'bg-yellow-500/10' },
-  answer: { icon: CheckCircle, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+  answer: { icon: CheckCircle, color: 'text-brand-400', bg: 'bg-brand-500/10' },
 };
 
 function formatTime(timestamp: number) {
