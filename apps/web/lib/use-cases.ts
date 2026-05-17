@@ -261,4 +261,7 @@ This is a solo-specialist engagement: you (PM) and the Solidity Auditor only —
 
 };
 
-export const USE_CASE_LIST = Object.values(USE_CASES);
+// Surfaced on the landing page at launch. Other use-case configs stay in the
+// map so the wizard still resolves them by id, but they're not advertised.
+const PUBLIC_USE_CASE_IDS: UseCaseId[] = ['solidity-audit', 'seo'];
+export const USE_CASE_LIST = PUBLIC_USE_CASE_IDS.map((id) => USE_CASES[id]);
