@@ -14,13 +14,12 @@ import {
   Smartphone,
   ShoppingCart,
   ShieldCheck,
-  Play,
   ArrowRight,
   FolderOpen,
   Clock,
   LogIn,
 } from 'lucide-react';
-import { USE_CASE_LIST, DEMO_USE_CASE } from '@/lib/use-cases';
+import { USE_CASE_LIST } from '@/lib/use-cases';
 import { useShipWithAIStore } from '@/lib/store';
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -29,7 +28,6 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Smartphone,
   ShoppingCart,
   ShieldCheck,
-  Play,
 };
 
 const CARD_STYLE = {
@@ -189,34 +187,6 @@ export default function WelcomePage() {
             );
           })}
 
-          {/* Demo card */}
-          <motion.button
-            onClick={() => router.push('/dashboard?mode=demo')}
-            className="group relative flex flex-col p-4 border border-dashed border-white/[0.08] bg-transparent hover:border-teal-500/40 hover:bg-[#0a0a10]/40 transition-all text-left overflow-hidden"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.72, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="w-8 h-8 flex items-center justify-center border border-dashed border-white/[0.1] group-hover:border-teal-500/40 transition-colors">
-                <Play className="w-3.5 h-3.5 text-zinc-500 group-hover:text-teal-400 transition-colors" />
-              </div>
-              <span className="font-editorial italic text-lg text-zinc-700 group-hover:text-teal-400 transition-colors leading-none">
-                ★
-              </span>
-            </div>
-            <h2 className="text-lg font-editorial text-zinc-300 group-hover:text-white transition-colors leading-[1.05] mb-1.5">
-              {DEMO_USE_CASE.label}
-            </h2>
-            <p className="text-[11px] text-zinc-500 leading-relaxed mb-3">
-              {DEMO_USE_CASE.tagline}
-            </p>
-            <div className="inline-flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.22em] text-zinc-600 group-hover:text-teal-400 transition-colors">
-              <span className="h-px w-4 bg-current" />
-              <span>Observe</span>
-              <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </motion.button>
         </div>
 
         {/* Continue your project — always visible, CTA varies by auth state */}

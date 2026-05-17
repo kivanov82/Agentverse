@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useShipWithAIStore } from '@/lib/store';
-import { runDemoSimulation } from '@/lib/demo';
 import { Logo } from '@/components/Logo';
 import { UserMenu } from '@/components/UserMenu';
 import { OnboardingOverlay } from '@/components/OnboardingOverlay';
@@ -12,7 +11,6 @@ import { ObservatoryModal } from '@/components/ObservatoryModal';
 import { ConstellationBackground } from '@/components/ConstellationBackground';
 import { CursorTrail } from '@/components/CursorTrail';
 import {
-  Play,
   FolderOpen,
   Plus,
   CheckCircle2,
@@ -25,11 +23,8 @@ import {
 import Link from 'next/link';
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
-  const searchParams = useSearchParams();
   const pathname = usePathname();
-  const mode = searchParams.get('mode');
 
-  const [isRunningDemo, setIsRunningDemo] = useState(false);
   const [observatoryOpen, setObservatoryOpen] = useState(false);
   const {
     projects,
@@ -54,23 +49,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     hydrate();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Auto-run demo if mode=demo
-  useEffect(() => {
-    if (mode === 'demo' && !isRunningDemo) {
-      handleRunDemo();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
-
-  const handleRunDemo = async () => {
-    setIsRunningDemo(true);
-    try {
-      await runDemoSimulation();
-    } finally {
-      setIsRunningDemo(false);
-    }
-  };
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
 
@@ -236,18 +214,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex items-center gap-2">
             <UserMenu />
-            <button
-              onClick={handleRunDemo}
-              disabled={isRunningDemo}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-500 hover:bg-brand-400 disabled:bg-zinc-700 text-zinc-950 rounded-sm text-xs font-semibold shadow-lg shadow-brand-900/20"
-            >
-              {isRunningDemo ? (
-                <div className="w-3.5 h-3.5 border-2 border-zinc-700 border-t-zinc-950 rounded-full animate-spin" />
-              ) : (
-                <Play className="w-3.5 h-3.5" />
-              )}
-              {isRunningDemo ? 'Running' : 'Demo'}
-            </button>
           </div>
         </header>
 

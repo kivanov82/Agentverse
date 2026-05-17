@@ -80,7 +80,7 @@ export function DeliverablesTree() {
       <div className="text-center py-6 text-zinc-600">
         <Package className="w-6 h-6 mx-auto mb-2 opacity-40" />
         <p className="text-xs">No deliverables yet</p>
-        <p className="text-[10px] text-zinc-700 mt-0.5">Run the demo to see outputs</p>
+        <p className="text-[10px] text-zinc-700 mt-0.5">Agents publish files here as they work</p>
       </div>
     );
   }

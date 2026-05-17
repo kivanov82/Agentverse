@@ -90,7 +90,6 @@ Configured in `apps/web/lib/use-cases.ts` and surfaced as tiles on the home page
 
 - **Solidity Audit** (public launch focus) — PM + solidity-auditor only. Intake: public GitHub repo URL + optional scope + optional brand URL. Runs Feynman → Nemesis → State-Inconsistency sequentially. Produces a Firestore `audit_report` deliverable with markdown + structured JSON, rendered to a branded PDF on demand.
 - **Landing Page, App Prototype, E-commerce, SEO** — multi-agent dev flows (PM + designers/devs/etc).
-- **Demo** — pre-scripted coffee shop build.
 
 Use cases may set `skipGithubStep: true` when they operate on an existing user repo (audit does this) — the wizard omits the "where to save" prompt.
 
@@ -109,7 +108,6 @@ The Next.js dashboard (`/dashboard`) provides a unified project interface:
 - **Audit Methodology Explainer**: 3-card banner shown once per user on solidity-audit projects before the audit runs
 - **Onboarding Tour**: 6-step guided overlay for new users
 - **Usage Tiers**: Anonymous (10 free), connected wallet (25 free), funded (unlimited)
-- **Demo Mode**: Click "Run Demo" to see a simulated multi-agent workflow
 
 ## Key Concepts
 

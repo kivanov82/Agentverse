@@ -78,7 +78,7 @@ export function ProjectSummary() {
       <div className="text-center py-6 text-zinc-600">
         <Clock className="w-5 h-5 mx-auto mb-2 opacity-40" />
         <p className="text-xs">Project stats</p>
-        <p className="text-[10px] text-zinc-700 mt-0.5">Run demo to see summary</p>
+        <p className="text-[10px] text-zinc-700 mt-0.5">Stats appear once a project starts</p>
       </div>
     );
   }

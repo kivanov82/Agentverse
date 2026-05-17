@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Eye } from 'lucide-react';
-import { ObservatoryView } from '@/app/dashboard/observatory/page';
+import ObservatoryView from '@/app/dashboard/observatory/page';
 
 interface ObservatoryModalProps {
   open: boolean;

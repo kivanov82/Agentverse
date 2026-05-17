@@ -10,7 +10,7 @@ function OnboardContent() {
   const router = useRouter();
   const ucParam = searchParams.get('uc') as UseCaseId | null;
 
-  if (!ucParam || !USE_CASES[ucParam] || ucParam === 'demo') {
+  if (!ucParam || !USE_CASES[ucParam]) {
     router.replace('/');
     return null;
   }

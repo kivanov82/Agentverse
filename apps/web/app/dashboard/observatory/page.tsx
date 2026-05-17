@@ -415,7 +415,7 @@ function EscalationInfo() {
   );
 }
 
-export function ObservatoryView() {
+function ObservatoryView() {
   const [agents, setAgents] = useState<AgentConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedAgent, setExpandedAgent] = useState<string | null>(null);

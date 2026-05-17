@@ -1,4 +1,4 @@
-export type UseCaseId = 'seo' | 'landing-page' | 'app-prototype' | 'ecommerce' | 'solidity-audit' | 'demo';
+export type UseCaseId = 'seo' | 'landing-page' | 'app-prototype' | 'ecommerce' | 'solidity-audit';
 
 export interface QuestionStep {
   id: string;
@@ -259,17 +259,6 @@ This is a solo-specialist engagement: you (PM) and the Solidity Auditor only —
     },
   },
 
-  demo: {
-    id: 'demo',
-    label: 'Watch a Demo',
-    tagline: 'See our team build a coffee shop website',
-    icon: 'Play',
-    agents: ['pm', 'ui-designer', 'ui-developer', 'backend-developer', 'marketing', 'seo-specialist', 'deployer', 'code-reviewer'],
-    questions: [],
-    pmBriefTemplate: () =>
-      `Demo: Coffee Shop Website.\n\nBuild a complete website for "Bean & Bloom Coffee" — a cozy neighborhood coffee shop. Includes menu page, online ordering, table reservations, Google Maps integration, Instagram feed, and review widget. Optimized for local SEO.`,
-  },
 };
 
-export const USE_CASE_LIST = Object.values(USE_CASES).filter((uc) => uc.id !== 'demo');
-export const DEMO_USE_CASE = USE_CASES.demo;
+export const USE_CASE_LIST = Object.values(USE_CASES);
