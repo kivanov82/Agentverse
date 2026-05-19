@@ -4,9 +4,15 @@ import { useShipWithAIStore } from '@/lib/store';
 import { ProjectBrief } from '@/components/ProjectBrief';
 import { DeliverablesTree } from '@/components/DeliverablesTree';
 import { ProjectSummary } from '@/components/ProjectSummary';
-import { Package, BarChart3, Users, Zap, Clock, DollarSign, CheckCircle, AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
-import type { DeliveryRequest } from '@/lib/store';
+import {
+  FolioHeader,
+  WorkspaceScroll,
+  Composer,
+  Label,
+  Mono,
+  F,
+} from '@/components/foundry';
+import { useState } from 'react';
 
 export default function ProjectPage() {
   const {
@@ -14,171 +20,91 @@ export default function ProjectPage() {
     activeUseCase,
     activeSession,
     agents,
-    requestAllDeliveries,
-    requestDelivery,
-    updateSession,
   } = useShipWithAIStore();
   const isUseCaseMode = !!activeUseCase;
-
-  const getStatusIcon = (status: DeliveryRequest['status']) => {
-    switch (status) {
-      case 'pending': return <Clock className="w-3 h-3 text-zinc-400" />;
-      case 'paid': return <DollarSign className="w-3 h-3 text-brand-400" />;
-      case 'in-progress': return <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}><Zap className="w-3 h-3 text-yellow-400" /></motion.div>;
-      case 'completed': return <CheckCircle className="w-3 h-3 text-green-400" />;
-      case 'failed': return <AlertCircle className="w-3 h-3 text-red-400" />;
-    }
-  };
-
-  const totalEstimatedCost = activeSession?.involvedAgents.reduce((sum, agentId) => {
-    const agent = agents.find(a => a.id === agentId);
-    if (!agent) return sum;
-    const match = agent.pricing.match(/\$?([\d.]+)-?([\d.]+)?/);
-    if (match) {
-      const min = parseFloat(match[1]);
-      const max = match[2] ? parseFloat(match[2]) : min;
-      return sum + (min + max) / 2;
-    }
-    return sum;
-  }, 0) || 0;
-
-  const handleRequestDelivery = (agentId?: string) => {
-    if (!activeSession) return;
-    if (agentId) {
-      const agent = agents.find(a => a.id === agentId);
-      if (agent) requestDelivery(activeSession.id, agentId, 'Deliver based on session context', agent.pricing);
-    } else {
-      requestAllDeliveries(activeSession.id);
-    }
-  };
+  const [input, setInput] = useState('');
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
-        {/* Page header */}
-        <div>
-          <h1 className="text-lg font-semibold text-zinc-100">Project</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Overview, deliverables, and progress</p>
-        </div>
+    <>
+      <WorkspaceScroll>
+        <FolioHeader
+          eyebrow="Folio · The Record"
+          title="Project."
+          lede="The brief, the residents, the deliveries — all in one ledger."
+        />
 
-        {/* Project Brief */}
         {isUseCaseMode && (
-          <section>
+          <Section label="Brief">
             <ProjectBrief />
-          </section>
+          </Section>
         )}
 
-        {/* Session / Team */}
         {activeSession && (
-          <section className="bg-[#0c0c0f] border border-zinc-800/60 rounded-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
-              <Users className="w-4 h-4 text-zinc-600" />
-              <span className="text-sm font-semibold text-zinc-200">Team</span>
-              <span className="text-[10px] text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full ml-auto">
-                {activeSession.status.replace('-', ' ')}
-              </span>
-            </div>
-            <div className="p-4 space-y-4">
-              {/* Involved Agents */}
-              {activeSession.involvedAgents.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {activeSession.involvedAgents.map((agentId) => {
-                    const agent = agents.find(a => a.id === agentId);
-                    if (!agent) return null;
-                    return (
-                      <div
-                        key={agentId}
-                        className="flex items-center gap-1.5 text-[11px] px-2.5 py-1.5 rounded-lg border bg-zinc-900/50"
-                        style={{
-                          borderColor: `${agent.color}40`,
-                          color: agent.color,
-                        }}
-                      >
-                        <span className="text-[10px]">{agent.avatar}</span>
-                        <span className="font-medium">{agent.name}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-xs text-zinc-600 italic">
-                  Chat with agents on the Agents page to involve them
+          <Section label={`Residents · ${activeSession.involvedAgents.length}`}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+              {activeSession.involvedAgents.length === 0 ? (
+                <p style={{
+                  fontFamily: 'var(--font-display)', fontStyle: 'italic',
+                  fontSize: 15, color: F.inkMute, margin: 0,
+                }}>
+                  No residents yet — open correspondence on the workspace to involve agents.
                 </p>
-              )}
-
-              {/* Delivery Requests */}
-              {activeSession.deliveryRequests.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-1 text-[10px] text-zinc-500 mb-2 uppercase tracking-widest">
-                    <Zap className="w-3 h-3" />
-                    Deliveries
-                  </div>
-                  <div className="space-y-1">
-                    {activeSession.deliveryRequests.map((delivery) => {
-                      const agent = agents.find(a => a.id === delivery.agentId);
-                      return (
-                        <div
-                          key={delivery.id}
-                          className="flex items-center justify-between text-[11px] px-3 py-2 bg-zinc-800/50 rounded-lg"
-                        >
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(delivery.status)}
-                            <span className="text-zinc-300">{agent?.name || delivery.agentId}</span>
-                          </div>
-                          <span className="text-brand-400 font-mono text-[10px]">{delivery.estimatedCost}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Cost + Request Delivery */}
-              {activeSession.involvedAgents.length > 0 && activeSession.status === 'context-building' && (
-                <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60">
-                  <div className="text-xs text-zinc-500">
-                    Est. cost: <span className="text-brand-400 font-mono font-medium">~${totalEstimatedCost.toFixed(2)}</span>
-                  </div>
-                  <button
-                    onClick={() => handleRequestDelivery()}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-brand-600 to-brand-600 hover:from-brand-500 hover:to-brand-500 text-white text-[11px] font-semibold rounded-lg transition-all"
-                  >
-                    <Zap className="w-3 h-3" />
-                    Request Deliveries
-                  </button>
-                </div>
+              ) : (
+                activeSession.involvedAgents.map((id) => {
+                  const a = agents.find((x) => x.id === id);
+                  if (!a) return null;
+                  return (
+                    <div
+                      key={id}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '6px 10px',
+                        border: `1px solid ${F.hairline}`,
+                        background: F.surface,
+                      }}
+                    >
+                      <span style={{
+                        width: 22, height: 22, background: F.ink, color: F.surface,
+                        fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.05em',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>{a.avatar}</span>
+                      <span style={{ fontFamily: 'var(--font-display)', fontSize: 14, color: F.ink }}>{a.name}</span>
+                      <Mono size="s" color={F.inkMute}>{a.role}</Mono>
+                    </div>
+                  );
+                })
               )}
             </div>
-          </section>
+          </Section>
         )}
 
-        {/* Summary */}
-        <section className="bg-[#0c0c0f] border border-zinc-800/60 rounded-2xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-zinc-600" />
-            <span className="text-sm font-semibold text-zinc-200">Summary</span>
-          </div>
-          <div className="p-4">
-            <ProjectSummary />
-          </div>
-        </section>
+        <Section label="Summary">
+          <ProjectSummary />
+        </Section>
 
-        {/* Deliverables */}
-        <section className="bg-[#0c0c0f] border border-zinc-800/60 rounded-2xl overflow-hidden">
-          <div className="px-4 py-3 border-b border-zinc-800/60 flex items-center gap-2">
-            <Package className="w-4 h-4 text-zinc-600" />
-            <span className="text-sm font-semibold text-zinc-200">Deliverables</span>
-            {deliverables.length > 0 && (
-              <span className="text-[10px] text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded-full ml-auto font-medium">
-                {deliverables.length}
-              </span>
-            )}
-          </div>
-          <div className="p-4">
-            <DeliverablesTree />
-          </div>
-        </section>
+        <Section label={deliverables.length ? `Deliverables · ${deliverables.length}` : 'Deliverables'}>
+          <DeliverablesTree />
+        </Section>
+      </WorkspaceScroll>
+
+      <Composer value={input} onChange={setInput} onSend={() => setInput('')} disabled />
+    </>
+  );
+}
+
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <section style={{
+      marginTop: 32,
+      borderTop: `1px solid ${F.hairline}`,
+      paddingTop: 18,
+    }}>
+      <div style={{ marginBottom: 16 }}>
+        <Label size="l" color={F.ink}>{label}</Label>
       </div>
-    </div>
+      {children}
+    </section>
   );
 }
