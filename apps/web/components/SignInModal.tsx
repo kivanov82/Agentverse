@@ -5,7 +5,7 @@ import { signIn } from 'next-auth/react';
 import { useAccount, useSignMessage, useChainId } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { SiweMessage } from 'siwe';
-import { X, Wallet } from 'lucide-react';
+import { Label, Mono, Display, F, fonts } from './foundry';
 
 interface Props {
   open: boolean;
@@ -44,11 +44,8 @@ export function SignInModal({ open, onClose }: Props) {
         signature,
         redirect: false,
       });
-      if (result?.error) {
-        setError('Sign-in failed — please try again.');
-      } else {
-        onClose();
-      }
+      if (result?.error) setError('Sign-in failed — please try again.');
+      else onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sign-in cancelled.');
     } finally {
@@ -57,60 +54,122 @@ export function SignInModal({ open, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="relative w-full max-w-sm rounded-2xl border border-zinc-800 bg-[#0c0c0f] p-6 shadow-xl">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="signin-title"
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 50,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(26, 22, 18, 0.40)',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 420,
+          background: F.surface,
+          border: `1px solid ${F.hairline}`,
+          padding: 28,
+          position: 'relative',
+        }}
+      >
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-zinc-500 hover:text-zinc-300"
           aria-label="Close"
-        >
-          <X className="w-4 h-4" />
-        </button>
+          style={{
+            position: 'absolute', top: 14, right: 14,
+            background: 'transparent', border: 'none', padding: 4,
+            fontFamily: fonts.mono, fontSize: 14, color: F.inkMute,
+            cursor: 'pointer',
+          }}
+        >×</button>
 
-        <h2 className="text-base font-semibold text-white">Sign in to ShipWithAI</h2>
-        <p className="mt-1 text-xs text-zinc-400">
-          New accounts get $5 of free credits.
+        <Mono size="s" color={F.accent} uppercase>The Door</Mono>
+        <div id="signin-title" style={{ marginTop: 8 }}>
+          <Display size="xs" as="h2" style={{ fontSize: 28 }}>Sign in.</Display>
+        </div>
+        <p style={{ marginTop: 8, fontFamily: fonts.ui, fontSize: 13, color: F.ink2 }}>
+          New accounts receive a $5 starter credit.
         </p>
 
-        <div className="mt-5 space-y-2">
-          <button
-            onClick={() => signIn('google')}
-            className="w-full rounded-xl border border-zinc-700 bg-white text-zinc-900 text-sm font-medium py-2.5 hover:bg-zinc-100 transition-colors"
-          >
-            Continue with Google
-          </button>
+        <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <ButtonPrimary onClick={() => signIn('google')}>Continue with Google</ButtonPrimary>
 
-          <div className="relative py-1">
-            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-zinc-800" /></div>
-            <div className="relative flex justify-center"><span className="bg-[#0c0c0f] px-2 text-[10px] uppercase tracking-widest text-zinc-600">or</span></div>
-          </div>
+          <Divider />
 
           {isConnected ? (
-            <button
-              onClick={handleSiwe}
-              disabled={isSigning}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-brand-500/30 bg-brand-500/10 text-brand-300 text-sm font-medium py-2.5 hover:bg-brand-500/15 transition-colors disabled:opacity-60"
-            >
-              <Wallet className="w-4 h-4" />
+            <ButtonSecondary onClick={handleSiwe} disabled={isSigning}>
               {isSigning ? 'Waiting for signature…' : 'Sign in with Ethereum'}
-            </button>
+            </ButtonSecondary>
           ) : (
             <ConnectButton.Custom>
               {({ openConnectModal }) => (
-                <button
-                  onClick={openConnectModal}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 text-zinc-300 text-sm font-medium py-2.5 hover:border-zinc-600 transition-colors"
-                >
-                  <Wallet className="w-4 h-4" />
+                <ButtonSecondary onClick={openConnectModal}>
                   Connect wallet to sign in
-                </button>
+                </ButtonSecondary>
               )}
             </ConnectButton.Custom>
           )}
         </div>
 
-        {error && <p className="mt-3 text-[11px] text-red-400">{error}</p>}
+        {error && (
+          <p style={{ marginTop: 12, fontFamily: fonts.ui, fontSize: 12, color: F.accent }}>{error}</p>
+        )}
       </div>
+    </div>
+  );
+}
+
+function ButtonPrimary({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        width: '100%', padding: '12px 16px',
+        background: F.ink, color: F.surface,
+        fontFamily: fonts.ui, fontSize: 14, fontWeight: 500, letterSpacing: '0.02em',
+        border: 'none', borderRadius: 0,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: 'opacity 120ms ease',
+        opacity: disabled ? 0.6 : 1,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ButtonSecondary({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        width: '100%', padding: '12px 16px',
+        background: F.surface, color: F.ink,
+        fontFamily: fonts.ui, fontSize: 14, fontWeight: 500, letterSpacing: '0.02em',
+        border: `1px solid ${F.ink}`, borderRadius: 0,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: 'background-color 120ms ease',
+        opacity: disabled ? 0.6 : 1,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Divider() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0' }}>
+      <span style={{ flex: 1, height: 1, background: F.hairlineFaint }} />
+      <Label size="m" color={F.inkMute}>OR</Label>
+      <span style={{ flex: 1, height: 1, background: F.hairlineFaint }} />
     </div>
   );
 }

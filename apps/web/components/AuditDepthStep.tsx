@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Check, Coins, AlertTriangle, Loader2 } from 'lucide-react';
 import { useCredits } from '@/lib/use-credits';
 import { formatUsdcAmount } from '@/lib/pricing';
+import { F, fonts, Label, Mono } from './foundry';
 
 interface Bundle {
   id: string;
@@ -26,10 +26,6 @@ interface Props {
   onChange: (skills: string[], totalUsd: number) => void;
 }
 
-// Step for picking which audit methodologies to run. Selection is never
-// gated — users can pick anything freely. The wizard checks balance + opens
-// SignIn/TopUp modals only when they hit the final "Let's go" button, so
-// exploring bundles doesn't interrupt them with modals.
 export function AuditDepthStep({ skillsAgentId, bundles, value, onChange }: Props) {
   const { balance, isAuthenticated, isLoading: creditsLoading } = useCredits();
   const [skills, setSkills] = useState<SkillInfo[] | null>(null);
@@ -45,9 +41,7 @@ export function AuditDepthStep({ skillsAgentId, bundles, value, onChange }: Prop
         else setSkillsErr('Could not load pricing.');
       })
       .catch(() => !cancelled && setSkillsErr('Could not load pricing.'));
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [skillsAgentId]);
 
   const priceById = useMemo(() => {
@@ -59,12 +53,11 @@ export function AuditDepthStep({ skillsAgentId, bundles, value, onChange }: Prop
   }, [skills]);
 
   const bundlePrices = useMemo(
-    () =>
-      bundles.map((b) => ({
-        ...b,
-        total: b.skills.reduce((sum, id) => sum + (priceById.get(id) ?? 0), 0),
-      })),
-    [bundles, priceById],
+    () => bundles.map((b) => ({
+      ...b,
+      total: b.skills.reduce((sum, id) => sum + (priceById.get(id) ?? 0), 0),
+    })),
+    [bundles, priceById]
   );
 
   const selectedKey = useMemo(() => {
@@ -81,73 +74,87 @@ export function AuditDepthStep({ skillsAgentId, bundles, value, onChange }: Prop
   }
 
   return (
-    <div className="space-y-2">
+    <div>
       {skillsErr && (
-        <div className="flex items-center gap-2 p-3 rounded-xl border border-red-900/40 bg-red-950/20 text-xs text-red-300">
-          <AlertTriangle className="w-3.5 h-3.5" />
-          {skillsErr}
+        <div style={{ marginBottom: 12, padding: 10, borderLeft: `2px solid ${F.accent}`, background: F.accentSoft }}>
+          <Mono size="s" color={F.accent}>Error</Mono>
+          <p style={{ marginTop: 4, fontFamily: fonts.ui, fontSize: 12, color: F.ink }}>{skillsErr}</p>
         </div>
       )}
       {!skills && !skillsErr && (
-        <div className="flex items-center gap-2 text-xs text-zinc-500">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          Loading pricing…
-        </div>
+        <Mono size="s" color={F.inkMute}>Loading pricing…</Mono>
       )}
 
       {skills && (
         <>
-          <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-[0.18em] text-zinc-500 mb-1">
-            <span>Choose your depth</span>
-            <span className="flex items-center gap-1">
-              <Coins className="w-3 h-3 text-brand-500" />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+            <Label size="m" color={F.inkMute}>Choose your depth</Label>
+            <Mono size="s" color={F.inkMute}>
               {creditsLoading ? '…' : isAuthenticated ? `Balance ${formatUsdcAmount(balance)}` : 'Sign in at checkout'}
-            </span>
+            </Mono>
           </div>
 
-          {bundlePrices.map((b) => {
-            const selected = selectedKey === b.id;
-            const affordable = !isAuthenticated || balance >= b.total;
-            const skillNames = b.skills
-              .map((id) => skills.find((s) => s.id === id)?.name ?? id)
-              .join(', ');
-            return (
-              <button
-                key={b.id}
-                onClick={() => pick(b.id)}
-                className={`w-full text-left p-4 rounded-xl border transition-all flex items-start gap-3 ${
-                  selected
-                    ? 'border-brand-500/50 bg-brand-500/5'
-                    : 'border-zinc-800 bg-zinc-900/50 hover:border-zinc-700'
-                }`}
-              >
-                <div
-                  className={`w-4 h-4 mt-0.5 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                    selected ? 'border-brand-400 bg-brand-500' : 'border-zinc-700'
-                  }`}
+          <div style={{ display: 'flex', flexDirection: 'column', borderTop: `1px solid ${F.ink}`, borderBottom: `1px solid ${F.ink}` }}>
+            {bundlePrices.map((b, i) => {
+              const selected = selectedKey === b.id;
+              const affordable = !isAuthenticated || balance >= b.total;
+              const skillNames = b.skills
+                .map((id) => skills.find((s) => s.id === id)?.name ?? id)
+                .join(' · ');
+              return (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => pick(b.id)}
+                  style={{
+                    padding: '18px 4px',
+                    display: 'grid',
+                    gridTemplateColumns: '24px 1fr auto',
+                    alignItems: 'baseline',
+                    gap: 12,
+                    background: selected ? F.hover : 'transparent',
+                    border: 'none',
+                    borderTop: i === 0 ? 'none' : `1px solid ${F.hairlineFaint}`,
+                    textAlign: 'left',
+                    fontFamily: 'inherit',
+                    color: 'inherit',
+                    cursor: 'pointer',
+                    transition: 'background-color 120ms ease',
+                  }}
                 >
-                  {selected && <Check className="w-2.5 h-2.5 text-white" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className={`text-sm font-semibold ${selected ? 'text-white' : 'text-zinc-200'}`}>
-                      {b.label}
-                    </span>
-                    <span className={`text-sm font-mono font-semibold ${affordable ? 'text-brand-400' : 'text-amber-400'}`}>
-                      ${b.total}
-                    </span>
+                  <span style={{
+                    width: 16, height: 16, borderRadius: '50%',
+                    border: `1px solid ${selected ? F.accent : F.hairline}`,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    marginTop: 4,
+                  }}>
+                    {selected && <span style={{ width: 8, height: 8, borderRadius: '50%', background: F.accent }} />}
+                  </span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: fonts.display, fontSize: 19, color: F.ink, letterSpacing: '-0.01em' }}>{b.label}</div>
+                    <div style={{ fontFamily: fonts.ui, fontSize: 13, color: F.ink2, marginTop: 4 }}>{b.description}</div>
+                    <div style={{ marginTop: 6 }}>
+                      <Mono size="s" color={F.inkMute}>{skillNames}</Mono>
+                    </div>
+                    {isAuthenticated && !affordable && (
+                      <div style={{ marginTop: 6 }}>
+                        <Mono size="s" color={F.accent}>
+                          Needs ${(b.total - balance).toFixed(2)} more — top up at checkout
+                        </Mono>
+                      </div>
+                    )}
                   </div>
-                  <p className="text-xs text-zinc-500 mt-0.5">{b.description}</p>
-                  <p className="text-[10px] text-zinc-600 mt-1 truncate">Skills: {skillNames}</p>
-                  {isAuthenticated && !affordable && (
-                    <p className="text-[10px] text-amber-400/80 mt-1">
-                      Needs ${(b.total - balance).toFixed(2)} more — you&apos;ll top up after you continue
-                    </p>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+                  <span style={{
+                    fontFamily: fonts.mono, fontSize: 14,
+                    color: affordable ? F.ink : F.accent,
+                    letterSpacing: '0.05em',
+                  }}>
+                    ${b.total}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </>
       )}
     </div>

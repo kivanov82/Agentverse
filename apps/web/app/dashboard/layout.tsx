@@ -1,13 +1,14 @@
 'use client';
 
-import { Suspense, useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import { useShipWithAIStore } from '@/lib/store';
 import { USE_CASES, type UseCaseId } from '@/lib/use-cases';
-import { OnboardingOverlay } from '@/components/OnboardingOverlay';
 import { TopUpToast } from '@/components/TopUpToast';
+import { SignInModal } from '@/components/SignInModal';
+import { TopUpModal } from '@/components/TopUpModal';
 import { useCredits } from '@/lib/use-credits';
-import { useSession } from 'next-auth/react';
 import {
   TopBar,
   LeftRail,
@@ -42,16 +43,19 @@ function ago(ts: number): string {
   return `${d}d`;
 }
 
-function initialsFromEmail(email: string | null | undefined): string {
-  if (!email) return '?';
-  return (email[0] ?? '?').toUpperCase();
+function truncate(s: string): string {
+  if (s.length <= 10) return s;
+  return `${s.slice(0, 4)}…${s.slice(-4)}`;
 }
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: session } = useSession();
-  const { balance } = useCredits();
+  const { data: session, status: sessionStatus } = useSession();
+  const isAuthenticated = sessionStatus === 'authenticated';
+  const { balance, refresh: refreshBalance } = useCredits();
+  const [signInOpen, setSignInOpen] = useState(false);
+  const [topUpOpen, setTopUpOpen] = useState(false);
 
   const {
     projects,
@@ -65,8 +69,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     sessionCost,
   } = useShipWithAIStore();
 
-  // Hydrate projects from Firestore on mount; resume the most recent one
-  // if no session is active (page refresh case).
   useEffect(() => {
     async function hydrate() {
       await loadProjectsFromApi();
@@ -79,7 +81,6 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const activeProject = projects.find((p) => p.id === activeProjectId);
   const useCaseConfig = activeUseCase ? USE_CASES[activeUseCase as UseCaseId] : null;
   const folioLabel = useCaseConfig ? `Folio · ${useCaseConfig.label}` : undefined;
 
@@ -131,6 +132,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     }));
   }, [projectPhases, activeUseCase]);
 
+  const accountInitial = (session?.user?.email?.[0] ?? '?').toUpperCase();
+  const accountLabel = !isAuthenticated ? 'Sign in →' : `Account · ${accountInitial}`;
+  const onAccount = !isAuthenticated
+    ? () => setSignInOpen(true)
+    : () => {
+        if (window.confirm('Sign out?')) signOut();
+      };
+
   return (
     <div style={{
       height: '100vh',
@@ -151,10 +160,12 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         minHeight: 0,
       }}>
         <LeftRail
-          accountInitial={initialsFromEmail(session?.user?.email)}
+          accountInitial={accountInitial}
+          accountLabel={accountLabel}
           balanceUSDC={balance ?? 0}
-          walletShort={session?.user?.email ? truncateWallet(session.user.email) : undefined}
-          onTopUp={() => router.push('/dashboard/project#topup')}
+          walletShort={session?.user?.email ? truncate(session.user.email) : undefined}
+          onTopUp={isAuthenticated ? () => setTopUpOpen(true) : () => setSignInOpen(true)}
+          onAccount={onAccount}
           folios={folioEntries}
           onSelectFolio={(id) => resumeProject(id)}
           onNewFolio={() => router.push('/')}
@@ -168,15 +179,11 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
       <PhaseBar phases={phases} />
 
-      <OnboardingOverlay />
       <TopUpToast />
+      <SignInModal open={signInOpen} onClose={() => setSignInOpen(false)} />
+      <TopUpModal open={topUpOpen} onClose={() => setTopUpOpen(false)} onSuccess={refreshBalance} />
     </div>
   );
-}
-
-function truncateWallet(s: string): string {
-  if (s.length <= 10) return s;
-  return `${s.slice(0, 4)}…${s.slice(-4)}`;
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

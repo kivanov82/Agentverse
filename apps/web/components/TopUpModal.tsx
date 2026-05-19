@@ -5,7 +5,6 @@ import { useAccount } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { createPublicClient, http } from 'viem';
 import { base } from 'viem/chains';
-import { X, CreditCard, Wallet, Loader2, ExternalLink, AlertCircle } from 'lucide-react';
 import { useUsdcTransfer } from '@/lib/use-wallet';
 import {
   TOPUP_TIERS,
@@ -14,6 +13,7 @@ import {
   MAX_TOPUP_USD,
   isValidTopUpAmount,
 } from '@/lib/topup-config';
+import { F, fonts, Display, Label, Mono } from './foundry';
 
 interface Props {
   open: boolean;
@@ -23,8 +23,6 @@ interface Props {
 
 type Tab = 'card' | 'usdc';
 
-// Client-side Base mainnet client — used to wait for tx confirmation before
-// asking the server to verify. Keeps the server-side handler fast.
 const basePublicClient = createPublicClient({
   chain: base,
   transport: http('https://mainnet.base.org'),
@@ -46,15 +44,9 @@ export function TopUpModal({ open, onClose, onSuccess }: Props) {
   const activeAmount = custom ? Number(custom) : amount;
   const amountValid = isValidTopUpAmount(activeAmount);
 
-  const reset = () => {
-    setBusy(false);
-    setBusyLabel(null);
-    setError(null);
-  };
-
   const handleClose = () => {
     if (busy) return;
-    reset();
+    setError(null);
     onClose();
   };
 
@@ -70,9 +62,7 @@ export function TopUpModal({ open, onClose, onSuccess }: Props) {
         body: JSON.stringify({ amountUsd: activeAmount }),
       });
       const json = await res.json();
-      if (!res.ok || !json.url) {
-        throw new Error(json.error || 'Could not start checkout');
-      }
+      if (!res.ok || !json.url) throw new Error(json.error || 'Could not start checkout');
       window.location.href = json.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Payment failed');
@@ -89,14 +79,8 @@ export function TopUpModal({ open, onClose, onSuccess }: Props) {
     let txHash: `0x${string}` | undefined;
     try {
       txHash = await transfer(TREASURY_ADDRESS, String(activeAmount));
-
       setBusyLabel('Confirming on Base…');
-      await basePublicClient.waitForTransactionReceipt({
-        hash: txHash,
-        timeout: 120_000,
-        confirmations: 1,
-      });
-
+      await basePublicClient.waitForTransactionReceipt({ hash: txHash, timeout: 120_000, confirmations: 1 });
       setBusyLabel('Crediting your balance…');
       const res = await fetch('/api/topup/x402', {
         method: 'POST',
@@ -104,82 +88,115 @@ export function TopUpModal({ open, onClose, onSuccess }: Props) {
         body: JSON.stringify({ txHash }),
       });
       const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Verification failed');
-      }
-
+      if (!res.ok || !json.success) throw new Error(json.error || 'Verification failed');
       setBusy(false);
       setBusyLabel(null);
       onSuccess?.();
       onClose();
     } catch (err) {
-      const base = err instanceof Error ? err.message : 'Payment failed';
-      const withTx = txHash ? `${base} (tx: ${txHash.slice(0, 10)}…)` : base;
-      setError(withTx);
+      const baseMsg = err instanceof Error ? err.message : 'Payment failed';
+      setError(txHash ? `${baseMsg} (tx: ${txHash.slice(0, 10)}…)` : baseMsg);
       setBusy(false);
       setBusyLabel(null);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="relative w-full max-w-sm rounded-2xl border border-zinc-800 bg-[#0c0c0f] p-6 shadow-xl">
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={handleClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 50,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(26, 22, 18, 0.40)',
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 440,
+          background: F.surface,
+          border: `1px solid ${F.hairline}`,
+          padding: 28,
+          position: 'relative',
+        }}
+      >
         <button
           onClick={handleClose}
           disabled={busy}
-          className="absolute top-3 right-3 text-zinc-500 hover:text-zinc-300 disabled:opacity-40"
           aria-label="Close"
-        >
-          <X className="w-4 h-4" />
-        </button>
+          style={{
+            position: 'absolute', top: 14, right: 14,
+            background: 'transparent', border: 'none', padding: 4,
+            fontFamily: fonts.mono, fontSize: 14, color: F.inkMute,
+            cursor: busy ? 'not-allowed' : 'pointer',
+            opacity: busy ? 0.4 : 1,
+          }}
+        >×</button>
 
-        <h2 className="text-base font-semibold text-white">Top up credits</h2>
-        <p className="mt-1 text-xs text-zinc-400">
+        <Mono size="s" color={F.accent} uppercase>The Ledger</Mono>
+        <div style={{ marginTop: 8 }}>
+          <Display size="xs" as="h2" style={{ fontSize: 28 }}>Top up.</Display>
+        </div>
+        <p style={{ marginTop: 8, fontFamily: fonts.ui, fontSize: 13, color: F.ink2 }}>
           Credits power every agent run. No subscription, pay as you go.
         </p>
 
-        {/* Tabs */}
-        <div className="mt-4 flex rounded-lg bg-zinc-900 p-1 text-xs">
-          <button
-            onClick={() => { setTab('card'); setError(null); }}
-            disabled={busy}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md transition-colors ${
-              tab === 'card' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <CreditCard className="w-3.5 h-3.5" /> Card
-          </button>
-          <button
-            onClick={() => { setTab('usdc'); setError(null); }}
-            disabled={busy}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md transition-colors ${
-              tab === 'usdc' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-          >
-            <Wallet className="w-3.5 h-3.5" /> USDC
-          </button>
+        {/* Tabs — flat hairline */}
+        <div style={{ marginTop: 18, display: 'flex', borderTop: `1px solid ${F.hairline}`, borderBottom: `1px solid ${F.hairline}` }}>
+          {(['card', 'usdc'] as const).map((t, i) => (
+            <button
+              key={t}
+              onClick={() => { setTab(t); setError(null); }}
+              disabled={busy}
+              style={{
+                flex: 1, padding: '10px 0',
+                background: tab === t ? F.hover : 'transparent',
+                color: tab === t ? F.ink : F.ink2,
+                fontFamily: fonts.ui, fontSize: 13, fontWeight: tab === t ? 500 : 400,
+                border: 'none',
+                borderRight: i === 0 ? `1px solid ${F.hairlineFaint}` : 'none',
+                cursor: busy ? 'not-allowed' : 'pointer',
+                transition: 'background-color 120ms ease',
+              }}
+            >
+              {t === 'card' ? 'Card' : 'USDC'}
+            </button>
+          ))}
         </div>
 
-        {/* Amount picker (shared) */}
-        <div className="mt-4">
-          <div className="grid grid-cols-4 gap-1.5">
-            {TOPUP_TIERS.map((t) => (
-              <button
-                key={t.usd}
-                onClick={() => { setAmount(t.usd); setCustom(''); }}
-                disabled={busy}
-                className={`py-2 text-xs font-medium rounded-lg border transition-colors ${
-                  !custom && amount === t.usd
-                    ? 'border-brand-500/60 bg-brand-500/10 text-brand-300'
-                    : 'border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-zinc-700'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
+        {/* Amount picker */}
+        <div style={{ marginTop: 18 }}>
+          <Label size="m" color={F.inkMute}>Amount</Label>
+          <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
+            {TOPUP_TIERS.map((t) => {
+              const selected = !custom && amount === t.usd;
+              return (
+                <button
+                  key={t.usd}
+                  onClick={() => { setAmount(t.usd); setCustom(''); }}
+                  disabled={busy}
+                  style={{
+                    padding: '10px 0',
+                    background: selected ? F.ink : F.surface,
+                    color: selected ? F.surface : F.ink,
+                    border: `1px solid ${selected ? F.ink : F.hairline}`,
+                    fontFamily: fonts.ui, fontSize: 13, fontWeight: 500,
+                    cursor: busy ? 'not-allowed' : 'pointer',
+                    transition: 'background-color 120ms ease',
+                  }}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
           </div>
-          <div className="mt-2 relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500">$</span>
+          <div style={{ marginTop: 8, position: 'relative' }}>
+            <span style={{
+              position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+              fontFamily: fonts.mono, fontSize: 12, color: F.inkMute,
+            }}>$</span>
             <input
               type="number"
               min={MIN_TOPUP_USD}
@@ -189,76 +206,95 @@ export function TopUpModal({ open, onClose, onSuccess }: Props) {
               value={custom}
               onChange={(e) => setCustom(e.target.value)}
               disabled={busy}
-              className="w-full pl-6 pr-3 py-2 text-xs rounded-lg border border-zinc-800 bg-zinc-900 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-zinc-700"
+              style={{
+                width: '100%', padding: '10px 12px 10px 22px',
+                background: F.surface, color: F.ink,
+                border: `1px solid ${F.hairline}`, borderRadius: 0,
+                fontFamily: fonts.ui, fontSize: 13, outline: 'none',
+              }}
             />
           </div>
         </div>
 
-        {/* Tab bodies */}
-        <div className="mt-4">
+        <div style={{ marginTop: 18 }}>
           {tab === 'card' ? (
-            <button
-              onClick={payWithCard}
-              disabled={busy || !amountValid}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-white text-zinc-900 text-sm font-semibold py-2.5 hover:bg-zinc-100 transition-colors disabled:opacity-60"
-            >
-              {busy ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <CreditCard className="w-4 h-4" />
-              )}
+            <PrimaryButton onClick={payWithCard} disabled={busy || !amountValid}>
               {busy ? (busyLabel ?? 'Processing…') : `Pay $${amountValid ? activeAmount.toFixed(2) : '—'} with card`}
-            </button>
+            </PrimaryButton>
           ) : !isConnected ? (
             <ConnectButton.Custom>
               {({ openConnectModal }) => (
-                <button
-                  onClick={openConnectModal}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900 text-zinc-300 text-sm font-medium py-2.5 hover:border-zinc-600 transition-colors"
-                >
-                  <Wallet className="w-4 h-4" />
-                  Connect wallet to pay with USDC
-                </button>
+                <SecondaryButton onClick={openConnectModal}>Connect wallet to pay with USDC</SecondaryButton>
               )}
             </ConnectButton.Custom>
           ) : (
-            <button
-              onClick={payWithUsdc}
-              disabled={busy || !amountValid}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-brand-500/30 bg-brand-500/10 text-brand-300 text-sm font-semibold py-2.5 hover:bg-brand-500/15 transition-colors disabled:opacity-60"
-            >
-              {busy ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Wallet className="w-4 h-4" />
-              )}
+            <PrimaryButton onClick={payWithUsdc} disabled={busy || !amountValid}>
               {busy ? (busyLabel ?? 'Processing…') : `Pay $${amountValid ? activeAmount.toFixed(2) : '—'} in USDC`}
-            </button>
+            </PrimaryButton>
           )}
         </div>
 
         {error && (
-          <div className="mt-3 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/5 p-2.5">
-            <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
-            <p className="text-[11px] text-red-300 leading-relaxed">{error}</p>
+          <div style={{ marginTop: 12, padding: 10, borderLeft: `2px solid ${F.accent}`, background: F.accentSoft }}>
+            <Mono size="s" color={F.accent}>Error</Mono>
+            <p style={{ marginTop: 4, fontFamily: fonts.ui, fontSize: 12, color: F.ink, lineHeight: 1.5 }}>{error}</p>
           </div>
         )}
 
         {tab === 'usdc' && !busy && !error && (
-          <p className="mt-3 text-[10px] text-zinc-500 leading-relaxed">
+          <p style={{ marginTop: 12, fontFamily: fonts.ui, fontSize: 11, color: F.inkMute, lineHeight: 1.6 }}>
             USDC on Base. Sent to{' '}
             <a
               href={`https://basescan.org/address/${TREASURY_ADDRESS}`}
               target="_blank"
               rel="noreferrer"
-              className="text-zinc-400 hover:text-zinc-200 underline-offset-2 hover:underline inline-flex items-center gap-0.5"
+              style={{ color: F.accent, borderBottom: `1px solid ${F.accent}`, textDecoration: 'none' }}
             >
-              ShipWithAI treasury <ExternalLink className="w-2.5 h-2.5" />
+              ShipWithAI treasury
             </a>
             . Credits apply automatically once the transaction confirms.
           </p>
         )}
       </div>
     </div>
+  );
+}
+
+function PrimaryButton({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        width: '100%', padding: '12px 16px',
+        background: F.ink, color: F.surface,
+        fontFamily: fonts.ui, fontSize: 14, fontWeight: 500, letterSpacing: '0.02em',
+        border: 'none', borderRadius: 0,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.6 : 1,
+        transition: 'opacity 120ms ease',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SecondaryButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        width: '100%', padding: '12px 16px',
+        background: F.surface, color: F.ink,
+        fontFamily: fonts.ui, fontSize: 14, fontWeight: 500, letterSpacing: '0.02em',
+        border: `1px solid ${F.ink}`, borderRadius: 0, cursor: 'pointer',
+        transition: 'background-color 120ms ease',
+      }}
+    >
+      {children}
+    </button>
   );
 }

@@ -20,7 +20,7 @@ function OnboardContent() {
 
 export default function OnboardPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a]" />}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--surface)' }} />}>
       <OnboardContent />
     </Suspense>
   );

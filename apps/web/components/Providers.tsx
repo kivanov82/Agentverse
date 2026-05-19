@@ -3,19 +3,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { type ReactNode, useState } from 'react';
 import { WagmiProvider } from 'wagmi';
-import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
+import { RainbowKitProvider, lightTheme } from '@rainbow-me/rainbowkit';
 import { SessionProvider } from 'next-auth/react';
 import '@rainbow-me/rainbowkit/styles.css';
 import { getWagmiConfig } from '@/lib/wagmi';
-import { MobileOverlay } from './MobileOverlay';
-import { NavigationProgress } from './NavigationProgress';
 
 const wagmiConfig = getWagmiConfig();
-const rkTheme = darkTheme({
-  accentColor: '#22c55e',
-  accentColorForeground: 'white',
-  borderRadius: 'medium',
-  overlayBlur: 'small',
+const rkTheme = lightTheme({
+  accentColor: '#A8311C',
+  accentColorForeground: '#F1ECE2',
+  borderRadius: 'none',
+  overlayBlur: 'none',
 });
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -26,8 +24,6 @@ export function Providers({ children }: { children: ReactNode }) {
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
           <RainbowKitProvider theme={rkTheme}>
-            <MobileOverlay />
-            <NavigationProgress />
             {children}
           </RainbowKitProvider>
         </QueryClientProvider>

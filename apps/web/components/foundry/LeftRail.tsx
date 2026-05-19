@@ -23,6 +23,8 @@ interface LeftRailProps {
   balanceUSDC: number | string;
   walletShort?: string;
   onTopUp?: () => void;
+  onAccount?: () => void;
+  accountLabel?: string;
   folios: FolioEntry[];
   onSelectFolio: (id: string) => void;
   onNewFolio?: () => void;
@@ -34,6 +36,8 @@ export function LeftRail({
   balanceUSDC,
   walletShort,
   onTopUp,
+  onAccount,
+  accountLabel,
   folios,
   onSelectFolio,
   onNewFolio,
@@ -52,7 +56,20 @@ export function LeftRail({
     }}>
       {/* Account */}
       <div>
-        <Label size="m" color={F.inkMute}>Account · {accountInitial}</Label>
+        <button
+          type="button"
+          onClick={onAccount}
+          disabled={!onAccount}
+          style={{
+            background: 'transparent', border: 'none', padding: 0,
+            cursor: onAccount ? 'pointer' : 'default',
+            fontFamily: fonts.ui, fontSize: 10, fontWeight: 500,
+            letterSpacing: '0.22em', textTransform: 'uppercase',
+            color: F.inkMute, display: 'inline-flex', alignItems: 'baseline', gap: 6,
+          }}
+        >
+          {accountLabel ?? `Account · ${accountInitial}`}
+        </button>
         <div style={{ marginTop: 10, display: 'flex', alignItems: 'baseline', gap: 8 }}>
           <Display size="m" as="span" style={{ fontSize: 30, letterSpacing: '-0.02em' }}>{balance}</Display>
           <Mono size="s" color={F.inkMute}>USDC</Mono>
