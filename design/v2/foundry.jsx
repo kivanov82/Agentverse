@@ -58,80 +58,117 @@ const FoundryLanding = () => {
     }}>
       <FoundryMasthead />
 
-      {/* HERO */}
-      <div style={{ padding: '88px 96px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64 }}>
+      {/* HERO — v2: shrunk so offerings visible above fold */}
+      <div style={{ padding: '48px 96px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64 }}>
         {/* Left — headline */}
         <div>
-          <div style={{ marginBottom: 28, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
             <F_Asterism size={10} color={F.accent} />
             <F_SmallCaps color={F.ink2} size={11} tracking={0.24}>The Commission · 01</F_SmallCaps>
           </div>
           <h1 style={{
             fontFamily: F_fonts.display,
             fontWeight: 300,
-            fontSize: 220,
-            lineHeight: 0.86,
-            letterSpacing: '-0.045em',
+            fontSize: 144,
+            lineHeight: 0.88,
+            letterSpacing: '-0.04em',
             color: F.ink,
             margin: 0,
           }}>
-            Ship<br />
-            <span style={{ fontStyle: 'italic', fontWeight: 300 }}>it</span>
-            <span style={{ color: F.accent }}>.</span>
+            Ship <span style={{ fontStyle: 'italic', fontWeight: 300 }}>it</span><span style={{ color: F.accent }}>.</span>
           </h1>
+          <p style={{
+            fontFamily: F_fonts.display,
+            fontSize: 22,
+            lineHeight: 1.4,
+            fontWeight: 400,
+            color: F.ink,
+            margin: '24px 0 0',
+            maxWidth: 520,
+            textWrap: 'pretty',
+          }}>
+            A studio of specialist agents — auditors, analysts, engineers — held on retainer.
+            <em> State the work.</em> We deliver.
+          </p>
         </div>
 
-        {/* Right — standfirst */}
-        <div style={{ paddingTop: 32, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        {/* Right — action panel */}
+        <div style={{ paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 28 }}>
+          {/* How it works */}
           <div>
-            <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
               <F_Rule color={F.ink} length={32} weight={1.5} />
-              <F_SmallCaps color={F.ink} size={11} tracking={0.24} weight={600}>Standfirst</F_SmallCaps>
+              <F_SmallCaps color={F.ink} size={11} tracking={0.24} weight={600}>How a commission works</F_SmallCaps>
             </div>
-            <p style={{
-              fontFamily: F_fonts.display,
-              fontSize: 24,
-              lineHeight: 1.35,
-              fontWeight: 400,
-              color: F.ink,
-              margin: 0,
-              maxWidth: 460,
-              textWrap: 'pretty',
-            }}>
-              A studio of specialist agents — auditors, analysts,
-              engineers — held on retainer. <em>State the work.</em> We deliver
-              the audit, the rewrite, the deploy.
-            </p>
+            <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 0, border: `1px solid ${F.hairline}` }}>
+              {[
+                ['I.', 'Brief', 'Tell the studio what you need, in plain language.'],
+                ['II.', 'Commission', 'Top up your account. Agents go to work.'],
+                ['III.', 'Receive', 'Audit, rewrite, or deploy — delivered to your inbox.'],
+              ].map(([r, n, d], idx) => (
+                <li key={r} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '40px 1fr',
+                  alignItems: 'baseline',
+                  padding: '12px 16px',
+                  borderTop: idx === 0 ? 'none' : `1px solid ${F.hairlineFaint}`,
+                }}>
+                  <span style={{ fontFamily: F_fonts.display, fontStyle: 'italic', fontSize: 16, color: F.accent }}>{r}</span>
+                  <div>
+                    <div style={{ fontFamily: F_fonts.display, fontSize: 17, color: F.ink, lineHeight: 1.2 }}>{n}</div>
+                    <div style={{ fontFamily: F_fonts.ui, fontSize: 13, color: F.ink2, marginTop: 2 }}>{d}</div>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
 
-          <div style={{ marginTop: 48, display: 'flex', alignItems: 'baseline', gap: 24 }}>
+          {/* PRIMARY CTA + secondary */}
+          <div style={{ display: 'flex', alignItems: 'stretch', gap: 12 }}>
             <button style={{
               fontFamily: F_fonts.ui,
-              fontSize: 14,
+              fontSize: 15,
               fontWeight: 500,
-              letterSpacing: '0.02em',
-              padding: '14px 22px',
+              letterSpacing: '0.01em',
+              padding: '16px 24px',
               background: F.ink,
               color: F.surface,
-              border: 'none',
+              border: `1px solid ${F.ink}`,
               borderRadius: 0,
               cursor: 'pointer',
               display: 'inline-flex',
               alignItems: 'center',
               gap: 12,
+              flex: '0 1 auto',
             }}>
-              Brief a project
+              Brief a new project
               <span style={{ fontSize: 18, lineHeight: 1 }}>→</span>
             </button>
-            <span style={{ fontFamily: F_fonts.ui, fontSize: 13, color: F.ink2 }}>
-              or pick a ready commission below
-            </span>
+            <button style={{
+              fontFamily: F_fonts.ui,
+              fontSize: 15,
+              fontWeight: 500,
+              letterSpacing: '0.01em',
+              padding: '16px 24px',
+              background: 'transparent',
+              color: F.ink,
+              border: `1px solid ${F.ink}`,
+              borderRadius: 0,
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 12,
+              flex: '0 1 auto',
+            }}>
+              Browse commissions
+              <span style={{ fontSize: 16, lineHeight: 1 }}>↓</span>
+            </button>
           </div>
         </div>
       </div>
 
       {/* RULE */}
-      <div style={{ padding: '88px 96px 0' }}>
+      <div style={{ padding: '48px 96px 0' }}>
         <F_Rule color={F.hairline} />
       </div>
 
@@ -165,12 +202,19 @@ const FoundryLanding = () => {
               ],
             },
           ].map((c, i) => (
-            <div key={c.roman} style={{
-              padding: '28px 32px 32px',
+            <a key={c.roman} href="#" style={{
+              padding: '24px 28px 28px',
               borderRight: i === 0 ? `1px solid ${F.hairline}` : 'none',
               cursor: 'pointer',
+              textDecoration: 'none',
+              color: 'inherit',
+              display: 'block',
+              position: 'relative',
+              background: i === 0 ? F.hover : 'transparent',
             }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
+              {/* hover indicator strip on top */}
+              {i === 0 && <div style={{ position: 'absolute', top: -1, left: 0, right: 0, height: 2, background: F.accent }} />}
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
                 <span style={{
                   fontFamily: F_fonts.display,
                   fontStyle: 'italic',
@@ -199,12 +243,12 @@ const FoundryLanding = () => {
                 textWrap: 'pretty',
               }}>{c.dek}</p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginBottom: 28 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginBottom: 20 }}>
                 {c.meta.map(([k, v], j) => (
                   <div key={k} style={{
                     display: 'grid',
-                    gridTemplateColumns: '110px 1fr',
-                    padding: '10px 0',
+                    gridTemplateColumns: '100px 1fr',
+                    padding: '8px 0',
                     borderTop: j === 0 ? 'none' : `1px solid ${F.hairlineFaint}`,
                     alignItems: 'baseline',
                   }}>
@@ -219,45 +263,75 @@ const FoundryLanding = () => {
                 ))}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: F.accent }}>
-                <F_Rule color={F.accent} length={24} weight={1.5} />
-                <F_SmallCaps color={F.accent} size={11} tracking={0.22} weight={600}>Commission</F_SmallCaps>
-                <span style={{ fontSize: 14, marginLeft: 'auto', color: F.accent }}>→</span>
+              {/* Real button — visible primary action */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                background: i === 0 ? F.accent : 'transparent',
+                border: i === 0 ? `1px solid ${F.accent}` : `1px solid ${F.ink}`,
+                color: i === 0 ? F.surface : F.ink,
+              }}>
+                <span style={{
+                  fontFamily: F_fonts.ui,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                }}>Commission this</span>
+                <span style={{ fontSize: 16 }}>→</span>
               </div>
-            </div>
+            </a>
           ))}
         </div>
 
         <F_Rule color={F.ink} weight={1} />
       </div>
 
-      {/* IN PROGRESS */}
-      <div style={{ padding: '56px 96px 0' }}>
+      {/* IN PROGRESS — now a clear continuation hook */}
+      <div style={{ padding: '40px 96px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 16 }}>
           <F_SmallCaps color={F.ink} size={11} tracking={0.24} weight={600}>In Progress · Your Folios</F_SmallCaps>
           <F_Mono color={F.ink2} size={11} tracking={0.18}>01 · OPEN</F_Mono>
         </div>
         <F_Rule color={F.hairline} />
         {[
-          { name: 'Solidity Audit', status: 'design phase', when: 'opened 28d ago', amt: '$1.35' },
+          { name: 'Solidity Audit', status: 'awaiting your reply', when: 'opened 28d ago', amt: '$1.35', urgent: true },
         ].map((p) => (
-          <div key={p.name} style={{
+          <a key={p.name} href="#" style={{
             display: 'grid',
-            gridTemplateColumns: '24px 1fr 1fr 140px 80px',
+            gridTemplateColumns: '24px 1fr 1fr 140px 1fr auto',
             alignItems: 'center',
-            padding: '18px 0',
+            padding: '16px 0',
             borderBottom: `1px solid ${F.hairlineFaint}`,
             gap: 16,
+            textDecoration: 'none',
+            color: 'inherit',
+            cursor: 'pointer',
           }}>
             <F_Mono color={F.inkMute} size={11}>01</F_Mono>
             <span style={{ fontFamily: F_fonts.display, fontSize: 20, color: F.ink, letterSpacing: '-0.01em' }}>{p.name}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: F.signal }} />
-              <F_SmallCaps color={F.ink2} size={10} tracking={0.18}>{p.status}</F_SmallCaps>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.urgent ? F.accent : F.signal }} />
+              <F_SmallCaps color={p.urgent ? F.accent : F.ink2} size={10} tracking={0.18} weight={p.urgent ? 600 : 500}>{p.status}</F_SmallCaps>
             </div>
             <F_Mono color={F.inkMute} size={11} tracking={0.12}>{p.when}</F_Mono>
             <F_Mono color={F.ink} size={12} tracking={0.05} style={{ textAlign: 'right' }}>{p.amt}</F_Mono>
-          </div>
+            <span style={{
+              fontFamily: F_fonts.ui,
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              padding: '8px 14px',
+              border: `1px solid ${F.ink}`,
+              color: F.ink,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+            }}>Resume <span style={{ fontSize: 14 }}>→</span></span>
+          </a>
         ))}
       </div>
 
@@ -334,9 +408,34 @@ const FoundryWorkspace = () => {
               <span style={{ fontFamily: F_fonts.display, fontSize: 30, fontWeight: 400, color: F.ink, letterSpacing: '-0.02em' }}>$1.35</span>
               <F_Mono color={F.inkMute} size={10}>USDC</F_Mono>
             </div>
-            <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between' }}>
-              <F_Mono color={F.ink2} size={10} tracking={0.14}>+ TOP UP</F_Mono>
-              <F_Mono color={F.inkMute} size={10}>0x4f…2a91</F_Mono>
+            <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+              <button style={{
+                flex: 1,
+                fontFamily: F_fonts.ui,
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                padding: '8px 10px',
+                background: F.ink,
+                color: F.surface,
+                border: `1px solid ${F.ink}`,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+              }}>+ Top up</button>
+              <button style={{
+                fontFamily: F_fonts.mono,
+                fontSize: 10,
+                letterSpacing: '0.05em',
+                padding: '8px 10px',
+                background: 'transparent',
+                color: F.ink2,
+                border: `1px solid ${F.hairline}`,
+                cursor: 'pointer',
+              }}>0x4f…2a91</button>
             </div>
           </div>
 
@@ -348,20 +447,22 @@ const FoundryWorkspace = () => {
               <span style={{ fontFamily: F_fonts.ui, color: F.inkMute, fontSize: 15, lineHeight: 1 }}>+</span>
             </div>
             {[
-              { n: 'Solidity Audit', when: '28d', active: true },
-              { n: 'Landing Refresh', when: '4d', active: false },
+              { n: 'Solidity Audit', when: '28d', active: true, urgent: true },
+              { n: 'Landing Refresh', when: '4d', active: false, urgent: false },
             ].map((p) => (
               <div key={p.n} style={{
                 padding: '10px 12px',
                 margin: '0 -12px',
                 background: p.active ? F.hover : 'transparent',
                 borderLeft: p.active ? `2px solid ${F.accent}` : '2px solid transparent',
-                display: 'flex',
-                justifyContent: 'space-between',
+                display: 'grid',
+                gridTemplateColumns: '1fr auto auto',
                 alignItems: 'baseline',
+                gap: 8,
                 cursor: 'pointer',
               }}>
-                <span style={{ fontFamily: F_fonts.display, fontSize: 15, color: F.ink, fontStyle: p.active ? 'normal' : 'italic' }}>{p.n}</span>
+                <span style={{ fontFamily: F_fonts.display, fontSize: 15, color: F.ink, fontStyle: p.active ? 'normal' : 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.n}</span>
+                {p.urgent && <span style={{ width: 6, height: 6, borderRadius: '50%', background: F.accent }} />}
                 <F_Mono color={F.inkMute} size={10}>{p.when}</F_Mono>
               </div>
             ))}
@@ -395,16 +496,49 @@ const FoundryWorkspace = () => {
 
         {/* CENTER — the workshop */}
         <div style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ flex: 1, overflow: 'auto', padding: '28px 56px' }}>
-            {/* Folio header */}
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+          {/* Next-action banner pinned at top of column */}
+          <div style={{
+            padding: '12px 56px',
+            background: F.accentSoft,
+            borderBottom: `1px solid ${F.accent}`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+          }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: F.accent }} />
+            <div style={{ flex: 1 }}>
+              <F_SmallCaps color={F.accent} size={10} tracking={0.22} weight={600}>Next — Awaiting your reply</F_SmallCaps>
+              <div style={{ fontFamily: F_fonts.display, fontSize: 15, color: F.ink, marginTop: 2 }}>
+                Pick a direction to begin the audit.
+              </div>
+            </div>
+            <button style={{
+              fontFamily: F_fonts.ui,
+              fontSize: 11,
+              fontWeight: 600,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              padding: '8px 14px',
+              background: F.accent,
+              color: F.surface,
+              border: 'none',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+            }}>Jump to reply <span style={{ fontSize: 14 }}>↓</span></button>
+          </div>
+
+          <div style={{ flex: 1, overflow: 'auto', padding: '24px 56px' }}>
+            {/* Folio header — condensed */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
                 <F_Asterism size={9} color={F.accent} />
                 <F_SmallCaps color={F.ink2} size={10} tracking={0.24}>Folio I · The Method</F_SmallCaps>
               </div>
               <h2 style={{
                 fontFamily: F_fonts.display,
-                fontSize: 34,
+                fontSize: 26,
                 fontWeight: 400,
                 letterSpacing: '-0.02em',
                 margin: 0,
@@ -413,51 +547,27 @@ const FoundryWorkspace = () => {
               }}>
                 How we audit.
               </h2>
-              <p style={{
-                fontFamily: F_fonts.display,
-                fontSize: 17,
-                lineHeight: 1.5,
-                color: F.ink2,
-                margin: '12px 0 0',
-                maxWidth: 640,
-                textWrap: 'pretty',
-              }}>
-                Every contract runs through three methodologies, in order — each one
-                surfaces a different class of bug.
-              </p>
             </div>
 
-            {/* Three methodologies — newspaper columns */}
+            {/* Three methodologies — condensed newspaper columns */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderTop: `1px solid ${F.ink}`, borderBottom: `1px solid ${F.hairline}` }}>
               {[
-                {
-                  r: 'I',
-                  name: 'Feynman',
-                  body: 'Business-logic sweep. We explain each contract as if teaching a peer — any step we can\'t justify becomes a finding.',
-                },
-                {
-                  r: 'II',
-                  name: 'Nemesis',
-                  body: 'Adversarial loop. We attack our own findings, feed the counter-findings back, and iterate until nothing new surfaces.',
-                },
-                {
-                  r: 'III',
-                  name: 'State Inconsistency',
-                  body: 'Coupled-state desync hunt. Any op that mutates one variable without updating its partner is a bug waiting to ship.',
-                },
+                { r: 'I', name: 'Feynman', body: 'Business-logic sweep. Any step we can\'t justify becomes a finding.' },
+                { r: 'II', name: 'Nemesis', body: 'Adversarial loop. We attack our own findings until nothing new surfaces.' },
+                { r: 'III', name: 'State Inconsistency', body: 'Coupled-state desync hunt. Any unupdated partner is a bug waiting to ship.' },
               ].map((m, i) => (
                 <div key={m.r} style={{
-                  padding: '20px 22px 22px',
+                  padding: '14px 18px 16px',
                   borderRight: i < 2 ? `1px solid ${F.hairlineFaint}` : 'none',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
-                    <span style={{ fontFamily: F_fonts.display, fontStyle: 'italic', fontSize: 15, color: F.accent }}>{m.r}.</span>
-                    <span style={{ fontFamily: F_fonts.display, fontSize: 19, color: F.ink, letterSpacing: '-0.01em', lineHeight: 1.15 }}>{m.name}</span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, minHeight: '2.4em' }}>
+                    <span style={{ fontFamily: F_fonts.display, fontStyle: 'italic', fontSize: 14, color: F.accent, flexShrink: 0 }}>{m.r}.</span>
+                    <span style={{ fontFamily: F_fonts.display, fontSize: 17, color: F.ink, letterSpacing: '-0.01em', lineHeight: 1.15 }}>{m.name}</span>
                   </div>
                   <p style={{
                     fontFamily: F_fonts.ui,
-                    fontSize: 13,
-                    lineHeight: 1.55,
+                    fontSize: 12,
+                    lineHeight: 1.5,
                     color: F.ink2,
                     margin: 0,
                     textWrap: 'pretty',
@@ -530,27 +640,45 @@ const FoundryWorkspace = () => {
             </div>
           </div>
 
-          {/* Composer */}
-          <div style={{ borderTop: `1px solid ${F.hairline}`, padding: '16px 56px 20px' }}>
+          {/* Composer — v2: full bordered input field, not just a hairline */}
+          <div style={{ borderTop: `1px solid ${F.hairline}`, padding: '14px 56px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <F_SmallCaps color={F.ink} size={10} tracking={0.24} weight={600}>Your reply</F_SmallCaps>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                <span style={{ fontFamily: F_fonts.ui, fontSize: 11, color: F.inkMute, cursor: 'pointer' }}>¶ Attach</span>
+                <F_Mono color={F.inkMute} size={10}>⌘ ↵ to send</F_Mono>
+              </div>
+            </div>
             <div style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              padding: '0 4px',
-              borderBottom: `1px solid ${F.ink}`,
-              paddingBottom: 10,
+              alignItems: 'stretch',
+              border: `1px solid ${F.ink}`,
+              background: F.card,
             }}>
-              <F_SmallCaps color={F.inkMute} size={10} tracking={0.22}>Reply —</F_SmallCaps>
-              <span style={{ flex: 1, fontFamily: F_fonts.display, fontSize: 17, color: F.inkMute, fontStyle: 'italic' }}>
-                Type a direction, ask a question, or attach a file…
-              </span>
-              <F_Mono color={F.inkMute} size={10}>⌘ ↵</F_Mono>
+              <span style={{
+                flex: 1,
+                padding: '14px 16px',
+                fontFamily: F_fonts.display,
+                fontSize: 17,
+                color: F.inkMute,
+                fontStyle: 'italic',
+              }}>Type a direction, ask a question, or attach a file…</span>
               <button style={{
-                width: 32, height: 32, border: `1px solid ${F.ink}`, background: F.ink,
-                color: F.surface, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="square" /></svg>
-              </button>
+                padding: '0 20px',
+                border: 'none',
+                borderLeft: `1px solid ${F.ink}`,
+                background: F.ink,
+                color: F.surface,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontFamily: F_fonts.ui,
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+              }}>Send <span style={{ fontSize: 14 }}>→</span></button>
             </div>
           </div>
         </div>
@@ -567,20 +695,34 @@ const FoundryWorkspace = () => {
             { i: 'SA', n: 'Security Auditor', role: 'Audit lead', state: 'standing by' },
           ].map((a) => (
             <div key={a.i} style={{ paddingBottom: 16, borderBottom: `1px solid ${F.hairlineFaint}` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <div style={{
                   width: 32, height: 32, background: F.ink, color: F.surface,
                   fontFamily: F_fonts.mono, fontSize: 11,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '0.05em',
                 }}>{a.i}</div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: F_fonts.display, fontSize: 16, color: F.ink, lineHeight: 1.1 }}>{a.n}</div>
                   <F_SmallCaps color={F.inkMute} size={9} tracking={0.2}>{a.role}</F_SmallCaps>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 42 }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: a.state === 'online' ? F.signal : F.inkMute }} />
-                <F_Mono color={F.ink2} size={10} tracking={0.12}>{a.state}</F_Mono>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 42 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: a.state === 'online' ? F.signal : F.inkMute }} />
+                  <F_Mono color={F.ink2} size={10} tracking={0.12}>{a.state}</F_Mono>
+                </div>
+                <button style={{
+                  fontFamily: F_fonts.ui,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                  padding: '4px 10px',
+                  background: 'transparent',
+                  color: F.ink,
+                  border: `1px solid ${F.hairline}`,
+                  cursor: 'pointer',
+                }}>Ask</button>
               </div>
             </div>
           ))}

@@ -21,21 +21,40 @@ import {
   type SessionRow,
 } from '@/components/foundry';
 
-const DEFAULT_PHASES: Phase[] = [
-  { name: 'Discovery',   sub: 'Project brief', state: 'pending' },
-  { name: 'Design',      sub: 'Direction',     state: 'pending' },
-  { name: 'Development', sub: 'GitHub repo',   state: 'pending' },
-  { name: 'Review',      sub: 'Sign-off',      state: 'pending' },
-  { name: 'Go Live',     sub: 'Live site',     state: 'pending' },
-];
+const DEFAULT_PHASE_NAMES = ['Discovery', 'Design', 'Development', 'Review', 'Go Live'];
+const DEFAULT_PHASE_SUBS  = ['Project brief', 'Direction', 'GitHub repo', 'Sign-off', 'Live site'];
 
-const AUDIT_PHASES: Phase[] = [
-  { name: 'Discovery',   sub: 'Project brief',  state: 'pending' },
-  { name: 'Methodology', sub: 'Auditor passes', state: 'pending' },
-  { name: 'Report',      sub: 'Findings',       state: 'pending' },
-  { name: 'Review',      sub: 'Sign-off',       state: 'pending' },
-  { name: 'Delivered',   sub: 'PDF & repo',     state: 'pending' },
-];
+const AUDIT_PHASE_NAMES = ['Discovery', 'Methodology', 'Report', 'Review', 'Delivered'];
+const AUDIT_PHASE_SUBS  = ['Project brief', 'Auditor passes', 'Findings', 'Sign-off', 'PDF & repo'];
+
+type ProjectStatus = 'planning' | 'active' | 'review' | 'completed' | string;
+
+/**
+ * When the PM hasn't emitted a submit_plan yet, derive a useful phase
+ * progression from `project.status`. This stops the bar from rendering as
+ * five lifeless 'pending' circles even when the folio is actively in work.
+ */
+function derivePhases(useCase: string | null, status: ProjectStatus | undefined): Phase[] {
+  const isAudit = useCase === 'solidity-audit';
+  const names = isAudit ? AUDIT_PHASE_NAMES : DEFAULT_PHASE_NAMES;
+  const subs  = isAudit ? AUDIT_PHASE_SUBS  : DEFAULT_PHASE_SUBS;
+
+  // Index of the currently-active phase. -1 = no project, all pending.
+  let activeIdx = -1;
+  switch (status) {
+    case 'planning':  activeIdx = 0; break;          // Discovery
+    case 'active':    activeIdx = 1; break;          // Methodology / Design
+    case 'review':    activeIdx = 3; break;          // Review
+    case 'completed': activeIdx = names.length; break; // everything done
+    default:          activeIdx = status ? 0 : -1;
+  }
+
+  return names.map((name, i) => ({
+    name,
+    sub: subs[i],
+    state: i < activeIdx ? 'done' : i === activeIdx ? 'active' : 'pending',
+  }));
+}
 
 function ago(ts: number): string {
   const d = Math.floor((Date.now() - ts) / 86400000);
@@ -81,6 +100,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const activeProject = projects.find((p) => p.id === activeProjectId);
   const useCaseConfig = activeUseCase ? USE_CASES[activeUseCase as UseCaseId] : null;
   const folioLabel = useCaseConfig ? `Folio · ${useCaseConfig.label}` : undefined;
 
@@ -90,6 +110,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
       name: p.name,
       ago: ago(p.createdAt),
       active: p.id === activeProjectId,
+      awaitingReply: (p.status === 'planning' || p.status === 'active') && p.id !== activeProjectId,
     })),
     [projects, activeProjectId]
   );
@@ -122,15 +143,15 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   ];
 
   const phases: Phase[] = useMemo(() => {
-    if (!projectPhases.length) {
-      return activeUseCase === 'solidity-audit' ? AUDIT_PHASES : DEFAULT_PHASES;
+    if (projectPhases.length) {
+      return projectPhases.map((p) => ({
+        name: p.name,
+        sub: p.deliverable?.label ?? '',
+        state: p.status,
+      }));
     }
-    return projectPhases.map((p) => ({
-      name: p.name,
-      sub: p.deliverable?.label ?? '',
-      state: p.status,
-    }));
-  }, [projectPhases, activeUseCase]);
+    return derivePhases(activeUseCase, activeProject?.status);
+  }, [projectPhases, activeUseCase, activeProject?.status]);
 
   const accountInitial = (session?.user?.email?.[0] ?? '?').toUpperCase();
   const accountLabel = !isAuthenticated ? 'Sign in →' : `Account · ${accountInitial}`;
@@ -139,6 +160,15 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     : () => {
         if (window.confirm('Sign out?')) signOut();
       };
+
+  /** Cross-pane dispatch: RightRail "Ask" button → workspace composer.
+   *  Keeps the layout and the workspace center loosely coupled — the
+   *  workspace page listens for `shipwithai:ask` on `window`. */
+  const onAsk = (agentId: string) => {
+    const agent = agents.find((a) => a.id === agentId);
+    if (!agent) return;
+    window.dispatchEvent(new CustomEvent('shipwithai:ask', { detail: { agentId, agentName: agent.name } }));
+  };
 
   return (
     <div style={{
@@ -174,7 +204,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
         <div id="workspace" style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           {children}
         </div>
-        <RightRail agents={residents} session={sessionRows} />
+        <RightRail agents={residents} session={sessionRows} onAsk={onAsk} />
       </div>
 
       <PhaseBar phases={phases} />

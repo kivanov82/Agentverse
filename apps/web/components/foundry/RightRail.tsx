@@ -17,9 +17,10 @@ export interface SessionRow { label: string; value: string }
 interface RightRailProps {
   agents: ResidentAgent[];
   session: SessionRow[];
+  onAsk?: (agentId: string) => void;
 }
 
-export function RightRail({ agents, session }: RightRailProps) {
+export function RightRail({ agents, session, onAsk }: RightRailProps) {
   return (
     <aside style={{
       borderLeft: `1px solid ${F.hairline}`,
@@ -36,7 +37,7 @@ export function RightRail({ agents, session }: RightRailProps) {
       </div>
 
       {agents.map((a) => (
-        <AgentBlock key={a.id} a={a} />
+        <AgentBlock key={a.id} a={a} onAsk={onAsk ? () => onAsk(a.id) : undefined} />
       ))}
 
       <div style={{ marginTop: 'auto' }}>
@@ -54,24 +55,65 @@ export function RightRail({ agents, session }: RightRailProps) {
   );
 }
 
-function AgentBlock({ a }: { a: ResidentAgent }) {
+function AgentBlock({ a, onAsk }: { a: ResidentAgent; onAsk?: () => void }) {
   return (
     <div style={{ paddingBottom: 16, borderBottom: `1px solid ${F.hairlineFaint}` }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
         <AvatarTile size={32} initials={a.initials} />
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <Display size="meta-m" as="div">{a.name}</Display>
           <Label size="xs" color={F.inkMute}>{a.role}</Label>
         </div>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: 42 }}>
-        <span
-          className={a.online ? 'live-pulse' : ''}
-          style={{ width: 5, height: 5, borderRadius: '50%', background: a.online ? F.signal : F.inkMute }}
-        />
-        <Mono size="s" color={F.ink2} style={{ letterSpacing: '0.12em' }}>{a.state}</Mono>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingLeft: 42,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span
+            className={a.online ? 'live-pulse' : ''}
+            style={{ width: 5, height: 5, borderRadius: '50%', background: a.online ? F.signal : F.inkMute }}
+          />
+          <Mono size="s" color={F.ink2} style={{ letterSpacing: '0.12em' }}>{a.state}</Mono>
+        </div>
+        {onAsk && <AskButton onClick={onAsk} />}
       </div>
     </div>
+  );
+}
+
+function AskButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        padding: '4px 10px',
+        background: 'transparent',
+        color: F.ink,
+        border: `1px solid ${F.hairline}`,
+        borderRadius: 0,
+        fontFamily: fonts.ui,
+        fontSize: 10,
+        fontWeight: 600,
+        letterSpacing: '0.16em',
+        textTransform: 'uppercase',
+        cursor: 'pointer',
+        transition: 'background-color 120ms ease, border-color 120ms ease',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = F.hover;
+        e.currentTarget.style.borderColor = F.ink;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'transparent';
+        e.currentTarget.style.borderColor = F.hairline;
+      }}
+    >
+      Ask
+    </button>
   );
 }
 

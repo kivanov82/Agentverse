@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { F, fonts } from './tokens';
-import { Body } from './type';
 
 export interface MethodEntry {
   roman: string;
@@ -20,19 +19,28 @@ export function Methodology({ entries }: { entries: MethodEntry[] }) {
         <div
           key={m.roman}
           style={{
-            padding: '20px 22px 22px',
+            padding: '14px 18px 16px',
             borderRight: i < entries.length - 1 ? `1px solid ${F.hairlineFaint}` : 'none',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
-            <span style={{ fontFamily: fonts.display, fontStyle: 'italic', fontSize: 15, color: F.accent }}>
+            <span style={{ fontFamily: fonts.display, fontStyle: 'italic', fontSize: 14, color: F.accent }}>
               {m.roman}.
             </span>
-            <span style={{ fontFamily: fonts.display, fontSize: 19, color: F.ink, letterSpacing: '-0.01em', lineHeight: 1.15 }}>
+            <span style={{ fontFamily: fonts.display, fontSize: 17, color: F.ink, letterSpacing: '-0.01em', lineHeight: 1.15 }}>
               {m.name}
             </span>
           </div>
-          <Body size="xs" as="p" color={F.ink2}>{m.body}</Body>
+          <p style={{
+            fontFamily: fonts.ui,
+            fontSize: 12,
+            lineHeight: 1.5,
+            color: F.ink2,
+            margin: 0,
+            textWrap: 'pretty' as any,
+          }}>
+            {m.body}
+          </p>
         </div>
       ))}
     </div>

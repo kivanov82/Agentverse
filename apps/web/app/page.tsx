@@ -20,6 +20,7 @@ import { useShipWithAIStore } from '@/lib/store';
 const COMMISSIONS: Commission[] = [
   {
     id: 'solidity-audit',
+    href: '/onboard?uc=solidity-audit',
     roman: 'I',
     title: USE_CASES['solidity-audit'].label,
     description: 'Three methodologies; one verdict. Audit your smart contracts before they ship.',
@@ -29,6 +30,7 @@ const COMMISSIONS: Commission[] = [
   },
   {
     id: 'seo',
+    href: '/onboard?uc=seo',
     roman: 'II',
     title: USE_CASES['seo'].label,
     description: "Technical sweep, content rewrite, schema. Earn page one — or learn why you can't.",
@@ -102,13 +104,19 @@ export default function LandingPage() {
   const folios: Folio[] = recentProjects.map((p) => ({
     id: p.id,
     name: p.name,
-    status: statusLabel(p.status),
+    status: p.status === 'planning' || p.status === 'active' ? 'awaiting your reply' : statusLabel(p.status),
     opened: timeAgo(p.updatedAt),
     amount: typeof p.metadata?.totalSpentUSD === 'number'
       ? `$${p.metadata.totalSpentUSD.toFixed(2)}`
       : '—',
     signal: statusSignal(p.status),
+    awaitingReply: p.status === 'planning' || p.status === 'active',
   }));
+
+  const scrollToCommissions = () => {
+    const el = document.getElementById('commissions');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <div style={{
@@ -121,10 +129,11 @@ export default function LandingPage() {
       <a href="#commissions" className="skip-link">Skip to commissions</a>
 
       <Masthead />
-      <Hero onBrief={() => goCommission('solidity-audit')} />
-      <div id="commissions">
-        <Offerings commissions={COMMISSIONS} onCommission={goCommission} />
-      </div>
+      <Hero
+        onBrief={() => goCommission('solidity-audit')}
+        onBrowse={scrollToCommissions}
+      />
+      <Offerings commissions={COMMISSIONS} onCommission={goCommission} />
 
       {isAuthenticated && folios.length > 0 && (
         <InProgress folios={folios} onOpen={onResume} />

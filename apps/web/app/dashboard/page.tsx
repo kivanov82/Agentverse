@@ -11,6 +11,7 @@ import {
   Correspondence,
   Composer,
   WorkspaceScroll,
+  NextActionBanner,
   type MessageEntry,
   type MethodEntry,
   InlineMono,
@@ -18,21 +19,9 @@ import {
 } from '@/components/foundry';
 
 const AUDIT_METHODS: MethodEntry[] = [
-  {
-    roman: 'I',
-    name: 'Feynman',
-    body: "Business-logic sweep. We explain each contract as if teaching a peer — any step we can't justify becomes a finding.",
-  },
-  {
-    roman: 'II',
-    name: 'Nemesis',
-    body: 'Adversarial loop. We attack our own findings, feed the counter-findings back, and iterate until nothing new surfaces.',
-  },
-  {
-    roman: 'III',
-    name: 'State Inconsistency',
-    body: 'Coupled-state desync hunt. Any op that mutates one variable without updating its partner is a bug waiting to ship.',
-  },
+  { roman: 'I',   name: 'Feynman',             body: "Business-logic sweep. Any step we can't justify becomes a finding." },
+  { roman: 'II',  name: 'Nemesis',             body: 'Adversarial loop. We attack our own findings until nothing new surfaces.' },
+  { roman: 'III', name: 'State Inconsistency', body: 'Coupled-state desync hunt. Any unupdated partner is a bug waiting to ship.' },
 ];
 
 const FOLIO_HEADERS: Record<UseCaseId, { eyebrow: string; title: string; lede: string }> = {
@@ -44,7 +33,7 @@ const FOLIO_HEADERS: Record<UseCaseId, { eyebrow: string; title: string; lede: s
   seo: {
     eyebrow: 'Folio II · The Brief',
     title: 'How we rank.',
-    lede: 'Technical sweep, content rewrite, schema. We earn the page or learn why we can\'t.',
+    lede: "Technical sweep, content rewrite, schema. We earn the page or learn why we can't.",
   },
   'landing-page': {
     eyebrow: 'Folio · The Brief',
@@ -82,30 +71,6 @@ function senderName(message: ChatMessage, agents: ReturnType<typeof useShipWithA
 }
 
 function renderBody(content: string): React.ReactNode {
-  // Lightweight inline mark-up: detect `bare-words` (mono) and bare URLs (link).
-  const parts: React.ReactNode[] = [];
-  const monoRegex = /`([^`]+)`/g;
-  const urlRegex = /(https?:\/\/[^\s)]+)/g;
-
-  let remaining = content;
-  let keyIdx = 0;
-  // Replace URLs first.
-  remaining.split(urlRegex).forEach((seg, i) => {
-    if (urlRegex.test(seg)) {
-      parts.push(<InlineLink key={`u${keyIdx++}`} href={seg}>{seg.replace(/^https?:\/\//, '')}</InlineLink>);
-    } else {
-      // Within non-URL segments, mono-style `code` runs.
-      seg.split(monoRegex).forEach((s, j) => {
-        if (j % 2 === 1) {
-          parts.push(<InlineMono key={`m${keyIdx++}`}>{s}</InlineMono>);
-        } else if (s) {
-          parts.push(<span key={`t${keyIdx++}`}>{s}</span>);
-        }
-      });
-    }
-  });
-
-  // Render with paragraph breaks for double newlines.
   return content.split(/\n\n+/).map((para, i) => (
     <p key={i} style={{ margin: i === 0 ? '0 0 14px' : '14px 0', textWrap: 'pretty' as any }}>
       {para.split(/\n/).flatMap((line, j, arr) => [
@@ -134,6 +99,14 @@ function inlineMarkup(text: string): React.ReactNode[] {
   }
   if (last < text.length) out.push(<span key={`x${key++}`}>{text.slice(last)}</span>);
   return out;
+}
+
+function focusComposer() {
+  const el = document.getElementById('composer-reply') as HTMLTextAreaElement | null;
+  if (!el) return;
+  el.focus();
+  // Scroll into view in case it's below the fold.
+  el.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
 export default function WorkspacePage() {
@@ -172,18 +145,51 @@ export default function WorkspacePage() {
     }),
   [chatMessages, agents]);
 
+  // Pending user action heuristic — the banner only renders when this is true.
+  // "Pending" = the most recent non-system message is from an agent, OR the
+  // folio is brand-new (no messages yet) and the user must brief it.
+  const pendingAction = useMemo(() => {
+    const last = [...chatMessages].reverse().find((m) => m.role !== 'system');
+    if (!last) return activeUseCase ? 'brief' : null;
+    return last.role === 'agent' ? 'reply' : null;
+  }, [chatMessages, activeUseCase]);
+
+  const bannerDescription = useMemo(() => {
+    if (pendingAction === 'brief') {
+      return activeUseCase === 'solidity-audit'
+        ? 'Pick a direction to begin the audit.'
+        : 'Brief the studio to start the work.';
+    }
+    if (pendingAction === 'reply') return 'An agent is waiting on your reply.';
+    return null;
+  }, [pendingAction, activeUseCase]);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [chatMessages.length]);
 
+  // RightRail "Ask" → prefill composer with @AgentName.
+  useEffect(() => {
+    const onAsk = (e: Event) => {
+      const detail = (e as CustomEvent<{ agentId: string; agentName: string }>).detail;
+      if (!detail) return;
+      setInput((prev) => {
+        const tag = `@${detail.agentName} `;
+        if (prev.startsWith(tag)) return prev;
+        return tag + (prev.trimStart() ? prev.trimStart() : '');
+      });
+      focusComposer();
+    };
+    window.addEventListener('shipwithai:ask', onAsk);
+    return () => window.removeEventListener('shipwithai:ask', onAsk);
+  }, []);
+
   const onSend = useCallback(async () => {
     const text = input.trim();
     if (!text || busy) return;
 
-    // Default routing: messages go to PM unless one specific agent owns the
-    // active turn. Keeping the new shell simple — PM coordinates handoffs.
     const targetAgent = agents.find((a) => a.id === 'pm');
     if (!targetAgent) return;
 
@@ -216,7 +222,7 @@ export default function WorkspacePage() {
       });
     } catch (err) {
       if (err instanceof PaywallError) {
-        addChatMessage({ role: 'system', content: 'You\'re out of credit. Top up to continue.' });
+        addChatMessage({ role: 'system', content: "You're out of credit. Top up to continue." });
       } else {
         addChatMessage({ role: 'system', content: (err as Error).message ?? 'Something went wrong.' });
       }
@@ -227,7 +233,6 @@ export default function WorkspacePage() {
     }
   }, [input, busy, agents, addChatMessage, setAgentTyping, updateAgentStatus, chatMessages, activeProjectId, activeSession]);
 
-  // Empty workspace — guide user back to the landing
   if (!activeUseCase || !activeProjectId) {
     return (
       <>
@@ -235,7 +240,7 @@ export default function WorkspacePage() {
           <FolioHeader
             eyebrow="No folio open"
             title="Begin a commission."
-            lede="Open one of the commissions on the landing page to start a folio. Each folio holds the brief, the correspondence, the methodology and the delivery for one engagement."
+            lede="Open one of the commissions on the landing page to start a folio."
           />
           <button
             type="button"
@@ -266,7 +271,14 @@ export default function WorkspacePage() {
 
   return (
     <>
-      <div ref={scrollRef} style={{ flex: 1, overflow: 'auto', padding: '28px 56px', minHeight: 0 }}>
+      {bannerDescription && (
+        <NextActionBanner
+          description={bannerDescription}
+          onCta={focusComposer}
+        />
+      )}
+
+      <div ref={scrollRef} style={{ flex: 1, overflow: 'auto', padding: '20px 56px 0', minHeight: 0 }}>
         {folioCopy && (
           <FolioHeader
             eyebrow={folioCopy.eyebrow}

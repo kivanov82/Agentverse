@@ -2,13 +2,13 @@
 import * as React from 'react';
 import { F, fonts } from './tokens';
 import { Label, Mono } from './type';
-import { SendArrow } from './marks';
 
 interface ComposerProps {
   placeholder?: string;
   value: string;
   onChange: (v: string) => void;
   onSend: () => void;
+  onAttach?: () => void;
   disabled?: boolean;
 }
 
@@ -17,16 +17,17 @@ export function Composer({
   value,
   onChange,
   onSend,
+  onAttach,
   disabled,
 }: ComposerProps) {
   const ref = React.useRef<HTMLTextAreaElement>(null);
 
-  // Auto-grow textarea up to ~3 lines.
+  // Auto-grow textarea up to ~4 lines.
   React.useEffect(() => {
     const el = ref.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 72) + 'px';
+    el.style.height = Math.min(el.scrollHeight, 96) + 'px';
   }, [value]);
 
   const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -36,19 +37,55 @@ export function Composer({
     }
   };
 
+  const sendDisabled = disabled || !value.trim();
+
   return (
-    <div style={{ borderTop: `1px solid ${F.hairline}`, padding: '16px 56px 20px', background: F.surface, flexShrink: 0 }}>
+    <div
+      style={{
+        borderTop: `1px solid ${F.hairline}`,
+        padding: '14px 56px 20px',
+        background: F.surface,
+        flexShrink: 0,
+      }}
+    >
+      {/* Label row */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 12,
-        padding: '0 4px',
-        borderBottom: `1px solid ${F.ink}`,
-        paddingBottom: 10,
+        justifyContent: 'space-between',
+        marginBottom: 8,
       }}>
-        <Label size="m" color={F.inkMute}>Reply —</Label>
+        <Label size="l" color={F.ink}>Your reply</Label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {onAttach && (
+            <button
+              type="button"
+              onClick={onAttach}
+              style={{
+                background: 'transparent', border: 'none', padding: 0,
+                fontFamily: fonts.ui, fontSize: 11, color: F.inkMute,
+                cursor: 'pointer',
+              }}
+            >
+              ¶ Attach
+            </button>
+          )}
+          <Mono size="s" color={F.inkMute}>⌘ ↵ to send</Mono>
+        </div>
+      </div>
+
+      {/* Input + send */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'stretch',
+          border: `1px solid ${F.ink}`,
+          background: F.card,
+        }}
+      >
         <textarea
           ref={ref}
+          id="composer-reply"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKey}
@@ -65,32 +102,36 @@ export function Composer({
             fontSize: 17,
             fontStyle: value ? 'normal' : 'italic',
             color: value ? F.ink : F.inkMute,
-            lineHeight: 1.4,
-            padding: 0,
+            lineHeight: 1.45,
+            padding: '14px 16px',
           }}
         />
-        <Mono size="s" color={F.inkMute}>⌘ ↵</Mono>
         <button
           type="button"
           onClick={onSend}
-          disabled={disabled || !value.trim()}
+          disabled={sendDisabled}
           aria-label="Send"
           style={{
-            width: 32,
-            height: 32,
             border: 'none',
+            borderLeft: `1px solid ${F.ink}`,
             background: F.ink,
             color: F.surface,
-            cursor: disabled || !value.trim() ? 'not-allowed' : 'pointer',
-            opacity: disabled || !value.trim() ? 0.5 : 1,
-            display: 'flex',
+            cursor: sendDisabled ? 'not-allowed' : 'pointer',
+            opacity: sendDisabled ? 0.55 : 1,
+            padding: '0 20px',
+            fontFamily: fonts.ui,
+            fontSize: 12,
+            fontWeight: 600,
+            letterSpacing: '0.16em',
+            textTransform: 'uppercase',
+            display: 'inline-flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            padding: 0,
+            gap: 10,
             transition: 'opacity 120ms ease',
           }}
         >
-          <SendArrow size={14} color={F.surface} />
+          Send
+          <span aria-hidden="true" style={{ fontSize: 14 }}>→</span>
         </button>
       </div>
     </div>
