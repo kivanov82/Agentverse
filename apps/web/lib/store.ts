@@ -291,7 +291,7 @@ interface ShipWithAIState {
 // Initial agents
 const initialAgents: Agent[] = [
   { id: 'pm', name: 'Project Manager', role: 'Orchestrator', description: 'Coordinates workflows & tasks', pricing: '$0.05-0.15', status: 'idle', avatar: 'PM', color: '#8b5cf6', balance: 100 },
-  { id: 'ux-analyst', name: 'UX Analyst', role: 'Research & Flows', description: 'User research & journeys', pricing: '$0.03-0.08', status: 'idle', avatar: 'UX', color: '#ec4899', balance: 100 },
+  { id: 'ux-analyst', name: 'UX Analyst', role: 'Research & Flows', description: 'User research & user-flow design', pricing: '$0.03-0.08', status: 'idle', avatar: 'UX', color: '#ec4899', balance: 100 },
   { id: 'ui-designer', name: 'UI Designer', role: 'Visual Design', description: 'Interfaces & design systems', pricing: '$0.04-0.10', status: 'idle', avatar: 'UI', color: '#f59e0b', balance: 100 },
   { id: 'ui-developer', name: 'FE Developer', role: 'React/Next.js', description: 'Frontend components & apps', pricing: '$0.05-0.12', status: 'idle', avatar: 'FE', color: '#10b981', balance: 100 },
   { id: 'backend-developer', name: 'Integration Dev', role: 'APIs & Serverless', description: 'API integration & data fetching', pricing: '$0.05-0.12', status: 'idle', avatar: 'ID', color: '#3b82f6', balance: 100 },
