@@ -26,5 +26,37 @@ module.exports = {
       },
     },
   },
+  // SPEC §2.2 — no shadows, no gradients, no blur, no filters. Disable the
+  // core plugins so Tailwind doesn't even emit the unused utility scaffolding
+  // into the compiled CSS bundle.
+  corePlugins: {
+    boxShadow: false,
+    dropShadow: false,
+    backdropBlur: false,
+    backdropBrightness: false,
+    backdropContrast: false,
+    backdropGrayscale: false,
+    backdropHueRotate: false,
+    backdropInvert: false,
+    backdropOpacity: false,
+    backdropSaturate: false,
+    backdropSepia: false,
+    blur: false,
+    brightness: false,
+    contrast: false,
+    grayscale: false,
+    hueRotate: false,
+    invert: false,
+    saturate: false,
+    sepia: false,
+    filter: false,
+    backdropFilter: false,
+    gradientColorStops: false,
+    backgroundImage: false,
+    // Components author transitions inline (`transition: 'background-color
+    // 120ms ease'`); disabling this plugin removes the Tailwind utility
+    // declarations that list box-shadow/filter as transition properties.
+    transitionProperty: false,
+  },
   plugins: [],
 };
