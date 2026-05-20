@@ -16,42 +16,28 @@ import {
   PhaseBar,
   type Phase,
   type FolioEntry,
-  type WorkshopItem,
   type ResidentAgent,
   type SessionRow,
+  type WorkspaceTab,
 } from '@/components/foundry';
 
-const DEFAULT_PHASE_NAMES = ['Discovery', 'Design', 'Development', 'Review', 'Go Live'];
-const DEFAULT_PHASE_SUBS  = ['Project brief', 'Direction', 'GitHub repo', 'Sign-off', 'Live site'];
-
-const AUDIT_PHASE_NAMES = ['Discovery', 'Methodology', 'Report', 'Review', 'Delivered'];
-const AUDIT_PHASE_SUBS  = ['Project brief', 'Auditor passes', 'Findings', 'Sign-off', 'PDF & repo'];
+const DEFAULT_PHASE_NAMES = ['Discovery', 'Design', 'Build',       'Review', 'Deliver'];
+const AUDIT_PHASE_NAMES   = ['Discovery', 'Audit',  'Report',      'Review', 'Deliver'];
 
 type ProjectStatus = 'planning' | 'active' | 'review' | 'completed' | string;
 
-/**
- * When the PM hasn't emitted a submit_plan yet, derive a useful phase
- * progression from `project.status`. This stops the bar from rendering as
- * five lifeless 'pending' circles even when the folio is actively in work.
- */
 function derivePhases(useCase: string | null, status: ProjectStatus | undefined): Phase[] {
-  const isAudit = useCase === 'solidity-audit';
-  const names = isAudit ? AUDIT_PHASE_NAMES : DEFAULT_PHASE_NAMES;
-  const subs  = isAudit ? AUDIT_PHASE_SUBS  : DEFAULT_PHASE_SUBS;
-
-  // Index of the currently-active phase. -1 = no project, all pending.
+  const names = useCase === 'solidity-audit' ? AUDIT_PHASE_NAMES : DEFAULT_PHASE_NAMES;
   let activeIdx = -1;
   switch (status) {
-    case 'planning':  activeIdx = 0; break;          // Discovery
-    case 'active':    activeIdx = 1; break;          // Methodology / Design
-    case 'review':    activeIdx = 3; break;          // Review
-    case 'completed': activeIdx = names.length; break; // everything done
+    case 'planning':  activeIdx = 0; break;
+    case 'active':    activeIdx = 1; break;
+    case 'review':    activeIdx = 3; break;
+    case 'completed': activeIdx = names.length; break;
     default:          activeIdx = status ? 0 : -1;
   }
-
   return names.map((name, i) => ({
     name,
-    sub: subs[i],
     state: i < activeIdx ? 'done' : i === activeIdx ? 'active' : 'pending',
   }));
 }
@@ -60,11 +46,6 @@ function ago(ts: number): string {
   const d = Math.floor((Date.now() - ts) / 86400000);
   if (d < 1) return `${Math.max(1, Math.floor((Date.now() - ts) / 3600000))}h`;
   return `${d}d`;
-}
-
-function truncate(s: string): string {
-  if (s.length <= 10) return s;
-  return `${s.slice(0, 4)}…${s.slice(-4)}`;
 }
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -102,7 +83,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const activeProject = projects.find((p) => p.id === activeProjectId);
   const useCaseConfig = activeUseCase ? USE_CASES[activeUseCase as UseCaseId] : null;
-  const folioLabel = useCaseConfig ? `Folio · ${useCaseConfig.label}` : undefined;
+  const folioName = useCaseConfig?.label;
 
   const folioEntries: FolioEntry[] = useMemo(
     () => projects.map((p) => ({
@@ -115,10 +96,14 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     [projects, activeProjectId]
   );
 
-  const workshop: WorkshopItem[] = [
-    { id: 'agents',  label: 'Agents',  active: pathname === '/dashboard',         onClick: () => router.push('/dashboard') },
-    { id: 'project', label: 'Project', active: pathname === '/dashboard/project', onClick: () => router.push('/dashboard/project') },
-    { id: 'ledger',  label: 'Ledger',  active: false,                              onClick: () => router.push('/dashboard/project#ledger') },
+  // Workspace top-tab nav (Observatory / Project / Files / Ledger).
+  // Ledger + Files don't have routes yet — they're disabled placeholders
+  // wired to scroll to a hash on the project page until those surfaces ship.
+  const tabs: WorkspaceTab[] = [
+    { id: 'observatory', label: 'Observatory', active: pathname === '/dashboard',         onClick: () => router.push('/dashboard') },
+    { id: 'project',     label: 'Project',     active: pathname === '/dashboard/project', onClick: () => router.push('/dashboard/project') },
+    { id: 'files',       label: 'Files',       active: false,                              onClick: () => router.push('/dashboard/project#deliverables') },
+    { id: 'ledger',      label: 'Ledger',      active: false,                              onClick: () => router.push('/dashboard/project#ledger') },
   ];
 
   const residents: ResidentAgent[] = useMemo(() => {
@@ -144,11 +129,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const phases: Phase[] = useMemo(() => {
     if (projectPhases.length) {
-      return projectPhases.map((p) => ({
-        name: p.name,
-        sub: p.deliverable?.label ?? '',
-        state: p.status,
-      }));
+      return projectPhases.map((p) => ({ name: p.name, state: p.status }));
     }
     return derivePhases(activeUseCase, activeProject?.status);
   }, [projectPhases, activeUseCase, activeProject?.status]);
@@ -157,13 +138,8 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const accountLabel = !isAuthenticated ? 'Sign in →' : `Account · ${accountInitial}`;
   const onAccount = !isAuthenticated
     ? () => setSignInOpen(true)
-    : () => {
-        if (window.confirm('Sign out?')) signOut();
-      };
+    : () => { if (window.confirm('Sign out?')) signOut(); };
 
-  /** Cross-pane dispatch: RightRail "Ask" button → workspace composer.
-   *  Keeps the layout and the workspace center loosely coupled — the
-   *  workspace page listens for `shipwithai:ask` on `window`. */
   const onAsk = (agentId: string) => {
     const agent = agents.find((a) => a.id === agentId);
     if (!agent) return;
@@ -172,7 +148,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div style={{
+      width: 1440,
       height: '100vh',
+      maxHeight: '100vh',
+      margin: '0 auto',
       display: 'flex',
       flexDirection: 'column',
       background: 'var(--surface)',
@@ -181,7 +160,12 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     }}>
       <a href="#workspace" className="skip-link">Skip to workspace</a>
 
-      <TopBar folioLabel={folioLabel} live={residents.some((r) => r.online)} />
+      <TopBar
+        folioName={folioName}
+        onFoliosClick={() => router.push('/')}
+        tabs={tabs}
+        live={residents.some((r) => r.online)}
+      />
 
       <div style={{
         flex: 1,
@@ -193,18 +177,22 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
           accountInitial={accountInitial}
           accountLabel={accountLabel}
           balanceUSDC={balance ?? 0}
-          walletShort={session?.user?.email ? truncate(session.user.email) : undefined}
           onTopUp={isAuthenticated ? () => setTopUpOpen(true) : () => setSignInOpen(true)}
           onAccount={onAccount}
           folios={folioEntries}
           onSelectFolio={(id) => resumeProject(id)}
           onNewFolio={() => router.push('/')}
-          workshop={workshop}
+          onSettings={() => router.push('/dashboard/project')}
         />
         <div id="workspace" style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
           {children}
         </div>
-        <RightRail agents={residents} session={sessionRows} onAsk={onAsk} />
+        <RightRail
+          agents={residents}
+          session={sessionRows}
+          onAsk={onAsk}
+          onViewReport={() => router.push('/dashboard/project')}
+        />
       </div>
 
       <PhaseBar phases={phases} />

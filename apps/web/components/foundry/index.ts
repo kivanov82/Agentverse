@@ -2,18 +2,18 @@ export { F, fonts } from './tokens';
 export { Display, Body, Label, Mono, Headline } from './type';
 export { RegMark, Asterism, Eye, Check, SendArrow } from './marks';
 export { Rule, VRule } from './Rule';
-export { Masthead, Wordmark, dateLine } from './Masthead';
+// Wordmark only — the editorial Masthead is gone in v3.
+// Landing uses LandingTopBar, workspace uses TopBar.
+export { Wordmark } from './Wordmark';
+export { LandingTopBar } from './LandingTopBar';
+export type { LandingTopBarNavItem } from './LandingTopBar';
 export { Hero } from './Hero';
-export { HowItWorks, DEFAULT_STEPS } from './HowItWorks';
-export type { HowItWorksStep } from './HowItWorks';
 export { Offerings } from './Offerings';
 export type { Commission } from './Offerings';
-export { InProgress } from './InProgress';
-export type { Folio } from './InProgress';
-export { Colophon } from './Colophon';
 export { TopBar } from './TopBar';
+export type { WorkspaceTab } from './TopBar';
 export { LeftRail } from './LeftRail';
-export type { FolioEntry, WorkshopItem } from './LeftRail';
+export type { FolioEntry } from './LeftRail';
 export { RightRail, AvatarTile } from './RightRail';
 export type { ResidentAgent, SessionRow } from './RightRail';
 export { PhaseBar } from './PhaseBar';

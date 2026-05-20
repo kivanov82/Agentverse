@@ -10,9 +10,17 @@ import {
   Composer,
   Label,
   Mono,
+  Methodology,
   F,
+  type MethodEntry,
 } from '@/components/foundry';
 import { useState } from 'react';
+
+const AUDIT_METHODS: MethodEntry[] = [
+  { roman: 'I',   name: 'Feynman',             body: "Business-logic sweep. Any step we can't justify becomes a finding." },
+  { roman: 'II',  name: 'Nemesis',             body: 'Adversarial loop. We attack our own findings until nothing new surfaces.' },
+  { roman: 'III', name: 'State Inconsistency', body: 'Coupled-state desync hunt. Any unupdated partner is a bug waiting to ship.' },
+];
 
 export default function ProjectPage() {
   const {
@@ -30,12 +38,17 @@ export default function ProjectPage() {
         <FolioHeader
           eyebrow="Folio · The Record"
           title="Project."
-          lede="The brief, the residents, the deliveries — all in one ledger."
         />
 
         {isUseCaseMode && (
           <Section label="Brief">
             <ProjectBrief />
+          </Section>
+        )}
+
+        {activeUseCase === 'solidity-audit' && (
+          <Section label="Methodology">
+            <Methodology entries={AUDIT_METHODS} />
           </Section>
         )}
 

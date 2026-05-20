@@ -1,8 +1,6 @@
 'use client';
 import * as React from 'react';
 import { F, fonts } from './tokens';
-import { Label, Mono, Display, Body } from './type';
-import { Rule } from './Rule';
 
 export interface Commission {
   id: string;
@@ -10,65 +8,104 @@ export interface Commission {
   roman: string;
   title: string;
   description: string;
-  scope: string;
   lead: string;
   turnaround: string;
+  from: string;
 }
 
 interface OfferingsProps {
   commissions: Commission[];
   onCommission: (id: string) => void;
+  /** Optional aside text shown right of the section title ("Two ready · more next month"). */
+  aside?: string;
 }
 
-export function Offerings({ commissions, onCommission }: OfferingsProps) {
+export function Offerings({ commissions, onCommission, aside }: OfferingsProps) {
   return (
-    <section id="commissions" style={{ padding: '64px 96px 0' }}>
-      <Rule color="hairline" />
-      <div style={{ padding: '28px 0 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 22 }}>
-          <Label size="l" color={F.ink}>Today's Commissions</Label>
-          <Mono size="m" color={F.ink2}>02 · OFFERINGS</Mono>
-        </div>
-
-        <div style={{
+    <section
+      id="commissions"
+      style={{
+        padding: '0 96px 32px',
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        minHeight: 0,
+      }}
+    >
+      <SectionTitle aside={aside} />
+      <div
+        style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          borderTop: `1px solid ${F.ink}`,
-          borderBottom: `1px solid ${F.ink}`,
-        }}>
-          {commissions.map((c, i) => (
-            <CommissionCard
-              key={c.id}
-              c={c}
-              index={i}
-              total={commissions.length}
-              hasRightBorder={i < commissions.length - 1}
-              primary={i === 0}
-              onClick={() => onCommission(c.id)}
-            />
-          ))}
-        </div>
+          gap: 24,
+          flex: 1,
+          minHeight: 0,
+          marginTop: 16,
+        }}
+      >
+        {commissions.map((c, i) => (
+          <CommissionCard
+            key={c.id}
+            c={c}
+            primary={i === 0}
+            onClick={() => onCommission(c.id)}
+          />
+        ))}
       </div>
     </section>
   );
 }
 
+function SectionTitle({ aside }: { aside?: string }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        paddingBottom: 12,
+        borderBottom: `1px solid ${F.ink}`,
+      }}
+    >
+      <h2
+        style={{
+          fontFamily: fonts.display,
+          fontSize: 22,
+          fontWeight: 400,
+          letterSpacing: '-0.01em',
+          color: F.ink,
+          margin: 0,
+        }}
+      >
+        Choose a commission
+      </h2>
+      {aside && (
+        <span
+          style={{
+            fontFamily: fonts.ui,
+            fontSize: 13,
+            color: F.ink2,
+          }}
+        >
+          {aside}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function CommissionCard({
-  c, index, total, hasRightBorder, primary, onClick,
+  c,
+  primary,
+  onClick,
 }: {
   c: Commission;
-  index: number;
-  total: number;
-  hasRightBorder: boolean;
   primary: boolean;
   onClick: () => void;
 }) {
   const [hovered, setHovered] = React.useState(false);
-  const showAccent = primary || hovered;
-  const usePrimaryButton = primary || hovered;
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    // Allow modifier-click to open in new tab; otherwise intercept and route.
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
     e.preventDefault();
     onClick();
@@ -81,90 +118,134 @@ function CommissionCard({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        position: 'relative',
-        padding: '28px 32px 28px',
-        borderRight: hasRightBorder ? `1px solid ${F.hairline}` : 'none',
-        background: hovered || primary ? F.hover : 'transparent',
-        cursor: 'pointer',
-        textAlign: 'left',
-        fontFamily: 'inherit',
-        color: 'inherit',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: '22px 26px 24px',
+        background: primary || hovered ? F.hover : 'transparent',
+        border: `1px solid ${primary ? F.ink : F.hairline}`,
         textDecoration: 'none',
-        transition: 'background-color 120ms ease',
-        display: 'block',
-        boxSizing: 'border-box',
+        color: 'inherit',
+        cursor: 'pointer',
+        transition: 'background-color 120ms ease, border-color 120ms ease',
       }}
     >
-      {/* Accent top strip — pre-applied on primary card, on hover otherwise */}
-      <span
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 2,
-          background: F.accent,
-          opacity: showAccent ? 1 : 0,
-          transition: 'opacity 120ms ease',
-        }}
-      />
-
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{
-          fontFamily: fonts.display,
-          fontStyle: 'italic',
-          fontSize: 22,
-          fontWeight: 400,
-          color: F.accent,
-        }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+        <span
+          style={{
+            fontFamily: fonts.display,
+            fontStyle: 'italic',
+            fontSize: 20,
+            color: F.accent,
+          }}
+        >
           {c.roman}.
         </span>
-        <Mono size="s" color={F.inkMute}>{`0${index + 1} / 0${total}`}</Mono>
+        <h3
+          style={{
+            fontFamily: fonts.display,
+            fontSize: 34,
+            fontWeight: 400,
+            letterSpacing: '-0.02em',
+            color: F.ink,
+            margin: 0,
+            lineHeight: 1.05,
+          }}
+        >
+          {c.title}
+        </h3>
       </div>
 
-      <Display size="s" as="h3" style={{ marginBottom: 10 }}>{c.title}</Display>
-
-      <Body size="s" as="p" color={F.ink2} style={{ marginBottom: 20, maxWidth: 460 }}>
+      <p
+        style={{
+          fontFamily: fonts.ui,
+          fontSize: 14,
+          lineHeight: 1.5,
+          color: F.ink2,
+          margin: '14px 0 18px',
+          textWrap: 'pretty' as any,
+          maxWidth: 460,
+        }}
+      >
         {c.description}
-      </Body>
+      </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 22 }}>
-        {[
-          ['Scope', c.scope],
-          ['Lead', c.lead],
-          ['Turnaround', c.turnaround],
-        ].map(([k, v], j) => (
-          <div
-            key={k}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '110px 1fr',
-              padding: '8px 0',
-              borderTop: j === 0 ? 'none' : `1px solid ${F.hairlineFaint}`,
-              alignItems: 'baseline',
-            }}
-          >
-            <Label size="m" color={F.inkMute}>{k}</Label>
-            <span style={{
-              fontFamily: fonts.ui,
-              fontSize: 13,
-              color: F.ink,
-              letterSpacing: '-0.005em',
-            }}>
-              {v}
-            </span>
-          </div>
-        ))}
+      <MetadataRow lead={c.lead} turnaround={c.turnaround} from={c.from} />
+
+      <div style={{ marginTop: 'auto', paddingTop: 18 }}>
+        <CommissionButton primary={primary || hovered} />
       </div>
-
-      <CommissionButton primary={usePrimaryButton} />
     </a>
   );
 }
 
+function MetadataRow({
+  lead,
+  turnaround,
+  from,
+}: {
+  lead: string;
+  turnaround: string;
+  from: string;
+}) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        borderTop: `1px solid ${F.hairlineFaint}`,
+        borderBottom: `1px solid ${F.hairlineFaint}`,
+      }}
+    >
+      <MetadataCell label="Lead" value={lead} divider />
+      <MetadataCell label="Turnaround" value={turnaround} divider />
+      <MetadataCell label="From" value={from} />
+    </div>
+  );
+}
+
+function MetadataCell({
+  label,
+  value,
+  divider,
+}: {
+  label: string;
+  value: string;
+  divider?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        padding: '10px 12px',
+        borderRight: divider ? `1px solid ${F.hairlineFaint}` : 'none',
+      }}
+    >
+      <div
+        style={{
+          fontFamily: fonts.ui,
+          fontSize: 10,
+          fontWeight: 500,
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: F.inkMute,
+          marginBottom: 4,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontFamily: fonts.ui,
+          fontSize: 13,
+          color: F.ink,
+        }}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
 function CommissionButton({ primary }: { primary: boolean }) {
-  const filled = primary;
   return (
     <div
       style={{
@@ -172,9 +253,9 @@ function CommissionButton({ primary }: { primary: boolean }) {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '12px 16px',
-        border: `1px solid ${filled ? F.accent : F.ink}`,
-        background: filled ? F.accent : 'transparent',
-        color: filled ? F.surface : F.ink,
+        border: `1px solid ${primary ? F.accent : F.ink}`,
+        background: primary ? F.accent : 'transparent',
+        color: primary ? F.surface : F.ink,
         fontFamily: fonts.ui,
         fontSize: 13,
         fontWeight: 600,

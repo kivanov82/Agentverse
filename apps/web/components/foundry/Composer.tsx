@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import { F, fonts } from './tokens';
-import { Label, Mono } from './type';
+import { SendArrow } from './marks';
 
 interface ComposerProps {
   placeholder?: string;
@@ -10,6 +10,8 @@ interface ComposerProps {
   onSend: () => void;
   onAttach?: () => void;
   disabled?: boolean;
+  /** Right-aligned utility text (e.g. "Auto-saved"). */
+  utility?: string;
 }
 
 export function Composer({
@@ -19,62 +21,33 @@ export function Composer({
   onSend,
   onAttach,
   disabled,
+  utility = 'Auto-saved',
 }: ComposerProps) {
-  const ref = React.useRef<HTMLTextAreaElement>(null);
+  const [focused, setFocused] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
-  // Auto-grow textarea up to ~4 lines.
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 96) + 'px';
-  }, [value]);
-
-  const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      if (!disabled && value.trim()) onSend();
+    } else if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (!disabled && value.trim()) onSend();
     }
   };
 
   const sendDisabled = disabled || !value.trim();
+  const placeholderItalic = !value && !focused;
 
   return (
     <div
       style={{
-        borderTop: `1px solid ${F.hairline}`,
-        padding: '14px 56px 20px',
+        padding: '16px 48px 18px',
         background: F.surface,
+        borderTop: `1px solid ${F.hairline}`,
         flexShrink: 0,
       }}
     >
-      {/* Label row */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 8,
-      }}>
-        <Label size="l" color={F.ink}>Your reply</Label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {onAttach && (
-            <button
-              type="button"
-              onClick={onAttach}
-              style={{
-                background: 'transparent', border: 'none', padding: 0,
-                fontFamily: fonts.ui, fontSize: 11, color: F.inkMute,
-                cursor: 'pointer',
-              }}
-            >
-              ¶ Attach
-            </button>
-          )}
-          <Mono size="s" color={F.inkMute}>⌘ ↵ to send</Mono>
-        </div>
-      </div>
-
-      {/* Input + send */}
       <div
         style={{
           display: 'flex',
@@ -83,29 +56,51 @@ export function Composer({
           background: F.card,
         }}
       >
-        <textarea
-          ref={ref}
+        <input
+          ref={inputRef}
           id="composer-reply"
+          type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKey}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           placeholder={placeholder}
-          rows={1}
           aria-label="Reply"
           style={{
             flex: 1,
             background: 'transparent',
             border: 'none',
             outline: 'none',
-            resize: 'none',
             fontFamily: fonts.display,
-            fontSize: 17,
-            fontStyle: value ? 'normal' : 'italic',
-            color: value ? F.ink : F.inkMute,
-            lineHeight: 1.45,
-            padding: '14px 16px',
+            fontSize: 16,
+            fontStyle: placeholderItalic ? 'italic' : 'normal',
+            color: F.ink,
+            padding: '12px 16px',
           }}
         />
+        {onAttach && (
+          <button
+            type="button"
+            onClick={onAttach}
+            aria-label="Attach"
+            style={{
+              border: 'none',
+              borderLeft: `1px solid ${F.hairline}`,
+              background: 'transparent',
+              color: F.ink2,
+              padding: '0 14px',
+              fontFamily: fonts.display,
+              fontSize: 18,
+              cursor: 'pointer',
+              transition: 'background-color 120ms ease, color 120ms ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = F.hover; e.currentTarget.style.color = F.ink; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = F.ink2; }}
+          >
+            ¶
+          </button>
+        )}
         <button
           type="button"
           onClick={onSend}
@@ -118,7 +113,7 @@ export function Composer({
             color: F.surface,
             cursor: sendDisabled ? 'not-allowed' : 'pointer',
             opacity: sendDisabled ? 0.55 : 1,
-            padding: '0 20px',
+            padding: '0 18px',
             fontFamily: fonts.ui,
             fontSize: 12,
             fontWeight: 600,
@@ -131,8 +126,24 @@ export function Composer({
           }}
         >
           Send
-          <span aria-hidden="true" style={{ fontSize: 14 }}>→</span>
+          <SendArrow size={12} color={F.surface} />
         </button>
+      </div>
+
+      <div
+        style={{
+          marginTop: 6,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontFamily: fonts.mono,
+          fontSize: 10,
+          letterSpacing: '0.16em',
+          color: F.inkMute,
+        }}
+      >
+        <span>⌘↵ to send · ⌘K for commands</span>
+        <span>{utility}</span>
       </div>
     </div>
   );

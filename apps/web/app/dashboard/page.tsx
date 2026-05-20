@@ -3,83 +3,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useShipWithAIStore, type ChatMessage } from '@/lib/store';
-import { USE_CASES, type UseCaseId } from '@/lib/use-cases';
 import { invokeAgent, PaywallError } from '@/lib/agent-client';
 import {
-  FolioHeader,
-  Methodology,
-  Correspondence,
   Composer,
-  WorkspaceScroll,
   NextActionBanner,
-  type MessageEntry,
-  type MethodEntry,
   InlineMono,
   InlineLink,
+  F,
+  fonts,
 } from '@/components/foundry';
-
-const AUDIT_METHODS: MethodEntry[] = [
-  { roman: 'I',   name: 'Feynman',             body: "Business-logic sweep. Any step we can't justify becomes a finding." },
-  { roman: 'II',  name: 'Nemesis',             body: 'Adversarial loop. We attack our own findings until nothing new surfaces.' },
-  { roman: 'III', name: 'State Inconsistency', body: 'Coupled-state desync hunt. Any unupdated partner is a bug waiting to ship.' },
-];
-
-const FOLIO_HEADERS: Record<UseCaseId, { eyebrow: string; title: string; lede: string }> = {
-  'solidity-audit': {
-    eyebrow: 'Folio I · The Method',
-    title: 'How we audit.',
-    lede: 'Every contract runs through three methodologies, in order — each one surfaces a different class of bug.',
-  },
-  seo: {
-    eyebrow: 'Folio II · The Brief',
-    title: 'How we rank.',
-    lede: "Technical sweep, content rewrite, schema. We earn the page or learn why we can't.",
-  },
-  'landing-page': {
-    eyebrow: 'Folio · The Brief',
-    title: 'Ship the page.',
-    lede: 'Design, build, deploy — one page that converts.',
-  },
-  'app-prototype': {
-    eyebrow: 'Folio · The Sketch',
-    title: 'Sketch the app.',
-    lede: 'An interactive prototype to show what the idea feels like.',
-  },
-  ecommerce: {
-    eyebrow: 'Folio · The Storefront',
-    title: 'Open the store.',
-    lede: 'Catalog, payments, shipping — a storefront ready to accept orders.',
-  },
-};
+import { AvatarTile } from '@/components/foundry/RightRail';
 
 const formatTime = (ts: number) =>
   new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-function senderInitials(message: ChatMessage, agents: ReturnType<typeof useShipWithAIStore.getState>['agents']): string {
-  if (message.role === 'user') return 'YOU';
-  if (message.role === 'system') return 'SYS';
-  const agent = agents.find((a) => a.id === message.agentId);
-  return agent?.avatar ?? 'AI';
-}
-
-function senderName(message: ChatMessage, agents: ReturnType<typeof useShipWithAIStore.getState>['agents']): { name: string; role?: string } {
-  if (message.role === 'user') return { name: 'You' };
-  if (message.role === 'system') return { name: 'System' };
-  const agent = agents.find((a) => a.id === message.agentId);
-  if (!agent) return { name: 'Agent' };
-  return { name: agent.name, role: agent.role };
-}
-
-function renderBody(content: string): React.ReactNode {
-  return content.split(/\n\n+/).map((para, i) => (
-    <p key={i} style={{ margin: i === 0 ? '0 0 14px' : '14px 0', textWrap: 'pretty' as any }}>
-      {para.split(/\n/).flatMap((line, j, arr) => [
-        ...inlineMarkup(line),
-        j < arr.length - 1 ? <br key={`br${j}`} /> : null,
-      ]).filter(Boolean)}
-    </p>
-  ));
-}
 
 function inlineMarkup(text: string): React.ReactNode[] {
   const out: React.ReactNode[] = [];
@@ -101,12 +37,77 @@ function inlineMarkup(text: string): React.ReactNode[] {
   return out;
 }
 
+function renderBody(content: string): React.ReactNode {
+  return content.split(/\n\n+/).map((para, i) => (
+    <p key={i} style={{ margin: i === 0 ? '0 0 12px' : '12px 0', textWrap: 'pretty' as any }}>
+      {para.split(/\n/).flatMap((line, j, arr) => [
+        ...inlineMarkup(line),
+        j < arr.length - 1 ? <br key={`br${j}`} /> : null,
+      ]).filter(Boolean)}
+    </p>
+  ));
+}
+
 function focusComposer() {
-  const el = document.getElementById('composer-reply') as HTMLTextAreaElement | null;
+  const el = document.getElementById('composer-reply') as HTMLInputElement | null;
   if (!el) return;
   el.focus();
-  // Scroll into view in case it's below the fold.
   el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+interface EntryProps {
+  initials: string;
+  isYou: boolean;
+  name: string;
+  role?: string;
+  timestamp: string;
+  body: React.ReactNode;
+}
+
+function Entry({ initials, isYou, name, role, timestamp, body }: EntryProps) {
+  return (
+    <article style={{ marginBottom: 22 }}>
+      <header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginBottom: 8,
+        }}
+      >
+        <AvatarTile size={24} initials={initials} variant={isYou ? 'you' : 'agent'} />
+        <span style={{ fontFamily: fonts.display, fontSize: 15, color: F.ink, lineHeight: 1.1 }}>
+          {name}
+        </span>
+        {role && (
+          <>
+            <span style={{ fontFamily: fonts.ui, fontSize: 11, color: F.inkMute }}>·</span>
+            <span style={{ fontFamily: fonts.ui, fontSize: 11, color: F.inkMute }}>{role}</span>
+          </>
+        )}
+        <span style={{
+          marginLeft: 'auto',
+          fontFamily: fonts.mono,
+          fontSize: 10,
+          letterSpacing: '0.16em',
+          color: F.inkMute,
+        }}>
+          {timestamp}
+        </span>
+      </header>
+      <div
+        style={{
+          paddingLeft: 34,
+          fontFamily: fonts.display,
+          fontSize: 16,
+          lineHeight: 1.55,
+          color: F.ink,
+        }}
+      >
+        {body}
+      </div>
+    </article>
+  );
 }
 
 export default function WorkspacePage() {
@@ -126,28 +127,36 @@ export default function WorkspacePage() {
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const folioCopy = activeUseCase ? FOLIO_HEADERS[activeUseCase as UseCaseId] : null;
-  const showMethodology = activeUseCase === 'solidity-audit';
+  const entries = useMemo(() => {
+    return chatMessages
+      .filter((m) => m.role !== 'system')
+      .slice(-50)
+      .map((m: ChatMessage) => {
+        if (m.role === 'user') {
+          return {
+            id: m.id,
+            initials: 'YOU',
+            isYou: true,
+            name: 'You',
+            role: undefined as string | undefined,
+            timestamp: formatTime(m.timestamp),
+            body: renderBody(m.content),
+          };
+        }
+        const agent = agents.find((a) => a.id === m.agentId);
+        return {
+          id: m.id,
+          initials: agent?.avatar ?? 'AI',
+          isYou: false,
+          name: agent?.name ?? 'Agent',
+          role: agent?.role,
+          timestamp: formatTime(m.timestamp),
+          body: renderBody(m.content),
+        };
+      });
+  }, [chatMessages, agents]);
 
-  const messages: MessageEntry[] = useMemo(() => chatMessages
-    .filter((m) => m.role !== 'system')
-    .slice(-30)
-    .map((m) => {
-      const sender = senderName(m, agents);
-      return {
-        id: m.id,
-        senderInitials: senderInitials(m, agents),
-        senderName: sender.name,
-        senderRole: sender.role,
-        timestamp: formatTime(m.timestamp),
-        body: renderBody(m.content),
-      };
-    }),
-  [chatMessages, agents]);
-
-  // Pending user action heuristic — the banner only renders when this is true.
-  // "Pending" = the most recent non-system message is from an agent, OR the
-  // folio is brand-new (no messages yet) and the user must brief it.
+  // Pending action heuristic — banner only when something needs the user.
   const pendingAction = useMemo(() => {
     const last = [...chatMessages].reverse().find((m) => m.role !== 'system');
     if (!last) return activeUseCase ? 'brief' : null;
@@ -157,7 +166,7 @@ export default function WorkspacePage() {
   const bannerDescription = useMemo(() => {
     if (pendingAction === 'brief') {
       return activeUseCase === 'solidity-audit'
-        ? 'Pick a direction to begin the audit.'
+        ? 'Brief the auditor to begin.'
         : 'Brief the studio to start the work.';
     }
     if (pendingAction === 'reply') return 'An agent is waiting on your reply.';
@@ -170,7 +179,6 @@ export default function WorkspacePage() {
     }
   }, [chatMessages.length]);
 
-  // RightRail "Ask" → prefill composer with @AgentName.
   useEffect(() => {
     const onAsk = (e: Event) => {
       const detail = (e as CustomEvent<{ agentId: string; agentName: string }>).detail;
@@ -233,37 +241,51 @@ export default function WorkspacePage() {
     }
   }, [input, busy, agents, addChatMessage, setAgentTyping, updateAgentStatus, chatMessages, activeProjectId, activeSession]);
 
+  // Empty state — no active folio
   if (!activeUseCase || !activeProjectId) {
     return (
       <>
-        <WorkspaceScroll>
-          <FolioHeader
-            eyebrow="No folio open"
-            title="Begin a commission."
-            lede="Open one of the commissions on the landing page to start a folio."
-          />
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflow: 'auto',
+            padding: '24px 48px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            gap: 12,
+          }}
+        >
+          <p style={{
+            fontFamily: fonts.display, fontSize: 22, color: F.ink, margin: 0,
+            letterSpacing: '-0.01em',
+          }}>
+            Begin a commission.
+          </p>
+          <p style={{
+            fontFamily: fonts.ui, fontSize: 14, color: F.ink2, margin: 0,
+            maxWidth: 380, textAlign: 'center',
+          }}>
+            Pick a commission on the home page to start a folio.
+          </p>
           <button
             type="button"
             onClick={() => router.push('/')}
             style={{
-              fontFamily: 'var(--font-ui)',
-              fontSize: 14,
-              fontWeight: 500,
-              letterSpacing: '0.02em',
-              padding: '14px 22px',
-              background: 'var(--ink)',
-              color: 'var(--surface)',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 12,
-              marginTop: 16,
+              marginTop: 12,
+              fontFamily: fonts.ui,
+              fontSize: 14, fontWeight: 500, letterSpacing: '0.02em',
+              padding: '12px 20px',
+              background: F.ink, color: F.surface,
+              border: 'none', cursor: 'pointer',
+              display: 'inline-flex', alignItems: 'center', gap: 10,
             }}
           >
-            Brief a project <span style={{ fontSize: 18, lineHeight: 1 }}>→</span>
+            Brief a project <span aria-hidden="true" style={{ fontSize: 17 }}>→</span>
           </button>
-        </WorkspaceScroll>
+        </div>
         <Composer value={input} onChange={setInput} onSend={onSend} disabled />
       </>
     );
@@ -274,25 +296,42 @@ export default function WorkspacePage() {
       {bannerDescription && (
         <NextActionBanner
           description={bannerDescription}
+          ctaLabel="Reply"
           onCta={focusComposer}
         />
       )}
 
-      <div ref={scrollRef} style={{ flex: 1, overflow: 'auto', padding: '20px 56px 0', minHeight: 0 }}>
-        {folioCopy && (
-          <FolioHeader
-            eyebrow={folioCopy.eyebrow}
-            title={folioCopy.title}
-            lede={folioCopy.lede}
-          />
-        )}
-
-        {showMethodology && <Methodology entries={AUDIT_METHODS} />}
-
-        {messages.length > 0 && (
-          <Correspondence messages={messages} entryCount={messages.length} />
+      <div
+        ref={scrollRef}
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          minHeight: 0,
+          padding: '24px 48px 8px',
+        }}
+      >
+        {entries.length === 0 ? (
+          <p style={{
+            fontFamily: fonts.display, fontStyle: 'italic',
+            fontSize: 17, color: F.inkMute, margin: '12px 0 0',
+          }}>
+            No correspondence yet. Brief the studio below to begin.
+          </p>
+        ) : (
+          entries.map((e) => (
+            <Entry
+              key={e.id}
+              initials={e.initials}
+              isYou={e.isYou}
+              name={e.name}
+              role={e.role}
+              timestamp={e.timestamp}
+              body={e.body}
+            />
+          ))
         )}
       </div>
+
       <Composer
         value={input}
         onChange={setInput}

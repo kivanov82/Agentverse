@@ -9,13 +9,14 @@ import { SignInModal } from './SignInModal';
 import { TopUpModal } from './TopUpModal';
 import { useCredits } from '@/lib/use-credits';
 import {
-  Masthead,
   Display,
   Label,
   Body,
   Mono,
   Rule,
   Asterism,
+  RegMark,
+  Wordmark,
   F,
   fonts,
 } from './foundry';
@@ -89,10 +90,30 @@ export function UseCaseWizard({ config }: Props) {
       display: 'flex',
       flexDirection: 'column',
     }}>
-      <Masthead
-        center={<Mono size="m" color={F.ink2}>{config.label.toUpperCase()}</Mono>}
-        right={<Mono size="m" color={F.ink2}>{stepLabel}</Mono>}
-      />
+      <header
+        style={{
+          height: 56,
+          padding: '0 40px',
+          borderBottom: `1px solid ${F.hairline}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: F.surface,
+          flexShrink: 0,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <RegMark size={16} strokeWidth={1.1} />
+          <Wordmark size={19} />
+          <span style={{
+            width: 1, height: 18, background: F.hairline, margin: '0 12px',
+          }} />
+          <span style={{
+            fontFamily: fonts.ui, fontSize: 13, color: F.ink2,
+          }}>{config.label}</span>
+        </div>
+        <Mono size="m" color={F.inkMute}>{stepLabel}</Mono>
+      </header>
 
       <div style={{ padding: '64px 96px 0' }}>
         {/* Eyebrow + back */}
