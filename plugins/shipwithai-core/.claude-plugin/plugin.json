@@ -1,0 +1,6 @@
+{
+  "name": "shipwithai-core",
+  "description": "Shared studio coordinator (PM) and reusable skills for ShipWithAI delivery verticals.",
+  "version": "0.1.0",
+  "author": { "name": "ShipWithAI" }
+}

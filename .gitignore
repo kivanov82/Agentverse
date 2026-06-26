@@ -1,58 +1,38 @@
-# Dependencies
+# Dependencies / build output
 node_modules/
-.pnpm-store/
-
-# Service account keys
-*-sa-key.json
-*-service-account*.json
-
-# Build outputs
 dist/
-.next/
 out/
+.next/
 *.tsbuildinfo
 
-# Local tooling
-.claude/
+# Client engagement working dirs — client work stays out of git; only the index is tracked
+engagements/*
+!engagements/index.json
+
+# Local tooling — track shared project settings, ignore personal + local state
+.claude/*
+!.claude/settings.json
 .playwright-mcp/
 
-# Environment
+# Secrets / environment
 .env
 .env.local
 .env.*.local
+*-sa-key.json
+*-service-account*.json
 
-# Database
-*.db
-*.db-journal
-
-# IDE
-.vscode/
+# IDE / OS
 .idea/
 *.iml
+.vscode/
+.DS_Store
 *.swp
 *.swo
-.DS_Store
 
-# Logs
-logs/
+# Logs / temp
 *.log
-npm-debug.log*
-pnpm-debug.log*
-
-# Testing
-coverage/
-.nyc_output/
-
-# Temporary
 tmp/
-temp/
 .cache/
 
-# Project artifacts (keep structure, ignore contents)
-projects/*/src/
-projects/*/dist/
-!projects/*/.shipwithai/
-
-# Keep these
+# Keep
 !.gitkeep
-!.env.example

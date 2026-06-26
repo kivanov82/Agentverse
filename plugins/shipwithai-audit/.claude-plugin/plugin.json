@@ -1,0 +1,6 @@
+{
+  "name": "shipwithai-audit",
+  "description": "Smart-contract security audit vertical. Runs the Feynman, Nemesis, and State-Inconsistency methodologies locally and produces a severity-rated client audit report with a Go/No-Go recommendation.",
+  "version": "0.1.0",
+  "author": { "name": "ShipWithAI" }
+}

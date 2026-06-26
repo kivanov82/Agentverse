@@ -1,0 +1,6 @@
+{
+  "name": "shipwithai-web",
+  "description": "Web & e-commerce build vertical — two-way Claude Design (Figma), frontend, backend, payments, and deploy. Produces a runnable, on-brand storefront or site.",
+  "version": "0.1.0",
+  "author": { "name": "ShipWithAI" }
+}

@@ -1,167 +1,69 @@
-# ShipWithAI
+# ShipWithAI — local-first AI delivery studio
 
-A connected network of AI agents working together as a decentralized Web3 software development company.
+ShipWithAI is a **local-first delivery studio**: a fleet of specialist AI agents that run inside Claude Code to produce real client deliverables — smart-contract audits, e-commerce builds, SEO, marketing campaigns, and marketing videos. The studio is packaged as **Claude Code plugins** and runs locally; engagements are billed per project (no automated payments).
 
 Brand: **ShipWithAI** (no dot). Domain: **shipwithai.nl**.
 
-## Project Structure
+> **History.** This repo was previously a hosted multi-agent web SaaS (a Next.js app + a bespoke agent runtime + Firestore + Stripe/x402 payment rails). That system was retired in the 2026-06 pivot to local-first; the old `apps/web`, `packages/core`, `agents/`, `scripts/`, `memory/`, and monorepo scaffolding were removed (recoverable from git history). The agent prompts and audit methodologies — the real IP — were ported into the plugins below.
+
+## Structure
 
 ```
-shipwithai/
-├── apps/web/              # Next.js 14 (App Router) dashboard
-│   ├── app/
-│   │   ├── api/           # REST API routes
-│   │   │   ├── agents/    # Agent invocation
-│   │   │   ├── costs/     # Token cost tracking
-│   │   │   ├── deliverables/ # File delivery & download
-│   │   │   ├── events/    # Event bus
-│   │   │   ├── projects/  # Project management
-│   │   │   ├── sessions/  # Session CRUD & messages
-│   │   │   ├── topup/     # Stripe + x402 credit top-up routes
-│   │   │   └── webhooks/  # Stripe (credit top-up backstop) + GitHub
-│   │   └── dashboard/     # Main dashboard page
-│   ├── components/        # React components
-│   └── lib/               # Zustand store, hooks, config
-├── packages/
-│   ├── core/              # Shared types, events, Firestore persistence, agent runner
-│   └── orchestrator/      # Workflow coordination
-├── agents/                # Individual agent configurations
-│   ├── pm/                # Project Manager
-│   ├── ux-analyst/
-│   ├── ui-designer/
-│   ├── ui-developer/      # Frontend Developer
-│   ├── backend-developer/ # Integration Developer (API routes, serverless)
-│   ├── solidity-developer/
-│   ├── solidity-auditor/  # Includes skills/{feynman,nemesis,state-inconsistency}-auditor
-│   ├── infrastructure/
-│   ├── qa-tester/
-│   ├── unit-tester/
-│   ├── tech-writer/
-│   └── marketing/
-├── memory/                # Global and per-project context
-├── projects/              # Project outputs
-└── scripts/               # CLI utilities
+.claude-plugin/marketplace.json   # local plugin marketplace (source: path — loads from disk)
+.claude/settings.json             # auto-activates the marketplace + plugins (tracked)
+plugins/
+  shipwithai-core/                # pm coordinator + shared skills (intake, brand-extract)
+  shipwithai-audit/               # /audit      — solidity-auditor + 3 methodologies + workflow
+  shipwithai-web/                 # /ecommerce  — design/build/payments/deploy (Figma two-way)
+  shipwithai-growth/              # /seo /campaign — seo / marketing / tech-writer / ux-analyst
+  shipwithai-video/               # /promo      — Remotion video + capture/compose skills + template
+docs/                             # production docs (e.g. promo-script.md)
+engagements/                      # per-client working dirs (gitignored; only index.json tracked)
 ```
 
-## Quick Start
+## How it works
 
-```bash
-# Install dependencies
-pnpm install
+- **Plugins auto-activate.** `.claude/settings.json` registers the local `shipwithai` marketplace (`extraKnownMarketplaces`) and enables all five plugins (`enabledPlugins`). On first open you accept a one-time trust/install prompt; then the commands are live — no `/plugin` typing. Fallback: `/plugin marketplace add .` then `/plugin install`.
+- **Each vertical is a wizard.** Run its slash command (e.g. `/shipwithai-audit:audit`). The command runs the shared `intake` convention against its `intake_questions:` frontmatter (clickable choices + free-text), sets up `engagements/<slug>/`, runs the specialists, and produces the deliverable.
+- **Deliverables are files** written into `engagements/<slug>/` — reports, built sites, plans, MP4s. Specialists read/write the local working tree; there are no output tools or external persistence.
+- **The PM coordinates** multi-agent verticals by delegating to specialist subagents (the `Agent` tool) one at a time, or via a bundled Workflow script for parallel/verified flows (the audit uses one).
 
-# Start development server (web UI at http://localhost:3000)
-pnpm dev
+## The verticals
 
-# Invoke an agent directly
-pnpm invoke pm "Plan a token launchpad project"
-pnpm invoke ui-developer "Build a wallet connect button"
+| Command | Vertical | Produces |
+|---------|----------|----------|
+| `/audit` | smart-contract audit | severity-rated report + Go/No-Go (Feynman · Nemesis · State-Inconsistency, each finding proven with a Foundry PoC) |
+| `/ecommerce` | e-commerce build | runnable on-brand storefront + screenshots |
+| `/seo` | SEO optimization | SEO audit + keyword + content plan |
+| `/campaign` | marketing campaign | campaign plan + ready-to-publish copy |
+| `/promo` | marketing video | branded MP4 (Remotion) from captured deliverables + motion graphics |
 
-# Register agents with ERC-8004 (requires ETH)
-pnpm register-agents --dry-run
-```
+## Key concepts
 
-### Environment Variables
+### Plugin anatomy
+A vertical plugin = `commands/<name>.md` (the wizard) + `agents/*.md` (subagents, with `name`/`description`/`tools`/`model` frontmatter) + `skills/*/SKILL.md` + optional `workflows/*.js`. `shipwithai-core` holds the `pm` agent and the shared `intake` + `brand-extract` skills every vertical reuses. There are 14 specialist agents and 8 skills across the plugins.
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | Claude API key for agent invocation |
-| `GITHUB_REPO_OWNER` | Yes | GitHub org/user for project repos |
-| `GITHUB_APP_ID` | Yes | GitHub App ID for repo management |
-| `GITHUB_APP_PRIVATE_KEY` | Yes | GitHub App private key |
-| `GITHUB_APP_INSTALLATION_ID` | Yes | GitHub App installation ID |
-| `GITHUB_PAT` | Yes | Personal access token for Git writes |
-| `SHIPWITHAI_FREE_MODE` | No | `true` locally, `false` in production — bypasses payment gates |
-| `NEXT_PUBLIC_SHIPWITHAI_FREE_MODE` | No | Client-visible mirror of the flag above |
-| `FIREBASE_SERVICE_ACCOUNT_KEY` | Yes (local) | Path to Firestore service account JSON (ignored on Cloud Run) |
-| `VERCEL_TOKEN` | No | Enables Vercel deployment tools |
-| `VERCEL_TEAM_ID` | No | Vercel team scope |
-| `BRAVE_SEARCH_API_KEY` | No | Enables web search tool |
-| `E2B_API_KEY` | No | Enables sandbox command execution |
-| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | No | Enables wallet connection (RainbowKit) |
-| `STRIPE_SECRET_KEY` | Yes (prod) | Stripe API key for Checkout sessions (credit top-ups) |
-| `STRIPE_WEBHOOK_SECRET` | Yes (prod) | Verifies Stripe webhook signature at `/api/webhooks/stripe` |
-| `BASE_RPC_URL` | No | Custom Base mainnet RPC for x402 top-up verification; falls back to `https://mainnet.base.org` |
+### Intake wizard
+Each command declares its questions in an `intake_questions:` YAML frontmatter block — the single source of truth (the local-first heir to the old `use-cases.ts`). The core `intake` skill reads that block: choices → `AskUserQuestion` (clickable), free-text asked conversationally, anything pre-filled from args is skipped. It emits a normalized brief the specialists act on.
 
-When optional variables are not set, their features are gracefully disabled.
+### Audit workflow
+`/audit` at `full` depth runs `plugins/shipwithai-audit/workflows/audit.js` via the Workflow tool: Feynman + State-Inconsistency run once each as independent passes, then **Nemesis runs fusion-only** (its Phase-4 feedback loop over their combined output — it does NOT re-run the hunt passes), then every Critical/High/Medium finding is adversarially verified, then synthesized. `quick`/`standard` depths delegate to the `solidity-auditor` subagent directly. **Gotcha:** the Workflow runtime delivers the `args` global as a JSON string — workflow scripts must `JSON.parse` it (see `audit.js`).
 
-## Use Cases
+### Claude Design (two-way Figma)
+In `shipwithai-web`: `ui-designer` does **code→design** (Figma write tools + the `figma-generate-design`/`figma-use` skills), `ui-developer` does **design→code** (Figma read via `get_design_context` + `frontend-design`) and verifies the result in a browser with Playwright.
 
-Configured in `apps/web/lib/use-cases.ts` and surfaced as tiles on the home page. Each use case defines its agent team, intake questions, and PM brief template.
+### Marketing-video pipeline
+`shipwithai-video` produces an MP4 with Remotion. `capture-footage` gathers real footage — branded HTML deliverables → Playwright screenshot (the Playwright MCP blocks `file://`, so serve over localhost), Figma frame renders, browser captures. `remotion-compose` copies the bundled **data-driven template** (`plugins/shipwithai-video/template/`), customizes `src/brand.ts` + `src/scenes.ts`, drops stills/clips into `public/`, and renders (`npx remotion render`). Screen recordings enter via `<OffthreadVideo playbackRate>` (a `clip` scene type — to be added). The current promo plan lives in `docs/promo-script.md`.
 
-- **Solidity Audit** (public launch focus) — PM + solidity-auditor only. Intake: public GitHub repo URL + optional scope + optional brand URL. Runs Feynman → Nemesis → State-Inconsistency sequentially. Produces a Firestore `audit_report` deliverable with markdown + structured JSON, rendered to a branded PDF on demand.
-- **Landing Page, App Prototype, E-commerce, SEO** — multi-agent dev flows (PM + designers/devs/etc).
+### Connected tools (MCP)
+Figma (design), Playwright (browser/test/capture), Vercel (deploy), Stripe (payments), GitHub + Brave (repo/search) — all via globally-enabled Claude Code plugins; agents reference the `mcp__*` tools directly. No plugin-level `.mcp.json` is needed.
 
-Use cases may set `skipGithubStep: true` when they operate on an existing user repo (audit does this) — the wizard omits the "where to save" prompt.
+## Engagements
+Per-client work lives in `engagements/<owner>-<slug>-<YYYYMMDD>/`. `engagements/index.json` is the tracked registry (`{slug, vertical, date, status}`); everything else under `engagements/` is gitignored (client code is never committed). Mark `status: complete` when a deliverable ships.
 
-## Web UI Features
-
-The Next.js dashboard (`/dashboard`) provides a unified project interface:
-
-- **Unified Chat**: Single conversation stream for all agents — no tab switching. Agent badges show who is speaking.
-- **Agent Sidebar**: Right panel showing team members with live status and per-agent cost
-- **Project Timeline**: Bottom bar showing phase progress (Discovery → Design → Development → Review → Go Live) with deliverable links
-- **Auto-Handoffs**: PM routes to specialists automatically — no manual button clicks. Handoff task descriptions are passed to the target agent.
-- **Clickable Options**: Agents present choices as buttons instead of open-ended questions
-- **Mobile Overlay**: "Designed for Desktop" screen on small viewports
-- **Sessions**: Multi-agent context-building sessions with message history
-- **Deliverables Tree**: Work products grouped by producing agent
-- **Audit Methodology Explainer**: 3-card banner shown once per user on solidity-audit projects before the audit runs
-- **Onboarding Tour**: 6-step guided overlay for new users
-- **Usage Tiers**: Anonymous (10 free), connected wallet (25 free), funded (unlimited)
-
-## Key Concepts
-
-### Agents
-Each agent is a specialized AI worker with:
-- A system prompt (`agents/<id>/CLAUDE.md`)
-- Configuration (`agents/<id>/config.json`) — model, tools, outputTool, maxIterations, optional `skills` allowlist
-- Skills (`agents/<id>/skills/<folder>/SKILL.md`) — auto-loaded and appended to the system prompt
-- Optional `erc8004TokenId` in config metadata (on-chain identity, not currently used at runtime)
-
-### Data Layer
-- **Firestore** (`packages/core/src/firestore-store.ts`) — the sole persistence layer
-- Stores projects, sessions, messages, deliverables, delivery requests, usage, costs, workflows
-- Type definitions live in `packages/core/src/types-stored.ts`
-- State managed client-side via **Zustand** (`apps/web/lib/store.ts`) with API sync
-- Deliverable content supports multiple payloads per deliverable via `docKey` — e.g. audit reports store markdown at `main` and structured JSON at `structured`
-
-### Events
-In-memory event bus (`packages/core/src/events.ts`) used by the orchestrator and project tools. Event types: `task.created/assigned/completed/failed/retrying/escalated`, `payment.sent`, `artifact.produced`, `message.sent`. For durable event history, write to a Firestore collection instead — the bus itself is not persistent.
-
-### Brand Scraper
-`packages/core/src/brand-scraper.ts` — lightweight HTML regex parser that extracts `theme-color`, primary Google Font family, `og:image`/favicon, and site name from a URL. Called once when a project is created with a `brandUrl` answer; result persisted to `project.metadata.brandTheme` and reused by downstream renderers (e.g. audit PDF).
-
-### PDF Rendering
-Audit reports render on demand at `GET /api/deliverables/[id]/pdf` via `@react-pdf/renderer` (chosen over Puppeteer so the Alpine-based Docker runner stays lean). The document template lives in `apps/web/lib/audit-pdf.tsx` — it uses the scraped `brandTheme` for accent color + logo and carries a fixed AI disclaimer footer.
-
-### Payments
-- **Credit top-ups (Phase 3)** — two rails, both feed the same Firestore `creditLedger`:
-  - **Stripe Checkout**: `POST /api/topup/stripe` creates session; `GET /api/topup/stripe/callback` credits inline on return using `session.amount_total`; `POST /api/webhooks/stripe` is the tab-close backstop. Both paths use `applyStripeSession()` in `apps/web/lib/stripe.ts`.
-  - **x402 USDC on Base mainnet**: `POST /api/topup/x402` verifies on-chain Transfer log (treasury = `0x9c9550871C8d714e90eE03E610B21F156381bDF1`, sender must match `user.walletAddress`, amount derived on-chain). Client waits for confirmation; server uses fast `getTransactionReceipt` to stay under serverless timeouts.
-- **Idempotency**: `store.creditTopUp(userId, usd, source, externalRef, externalUrl)` writes `paymentReceipts` doc + `creditLedger` entry + user balance bump in one Firestore transaction. Doc ID = `stripe_{pi_id}` / `x402_{txHash}` — duplicate webhook/callback calls are no-ops.
-- **Wallet UX**: RainbowKit + wagmi v2, Base mainnet only (testnet dropped). SIWE sign-in links a user's wallet address; x402 top-up requires that link.
-- **Agent-to-agent payments**: not implemented. The old `packages/x402/` agent-wallet module was removed in Phase 3 as unused.
-- **5× markup** on Claude API costs for user-facing pricing (`apps/web/lib/pricing.ts`)
-
-### Workflows
-The orchestrator coordinates multi-agent workflows:
-1. User submits request
-2. PM breaks down into tasks
-3. Tasks assigned to specialists
-4. Agents work and produce artifacts
-5. Quality checks and payments
-6. Final delivery
-
-## Development
-
-When working on this project:
-1. Keep agent prompts focused and specific
-2. Test agent interactions locally before deployment
-3. Use mock payments in development
-4. Document all decisions in `memory/`
-5. Wallet providers are conditionally loaded — no build-time WalletConnect dependency
-6. `useSearchParams()` requires `<Suspense>` boundary in Next.js 14
-
-## Bootstrap Project
-
-ShipWithAI is building itself! Check `projects/shipwithai-bootstrap/` for the meta-project where our agents are improving their own code.
+## Conventions when working here
+- Build new work as plugin-shaped subagents / skills / commands / workflows — not as a node app.
+- Agent tool lists use native tools + `mcp__*` patterns; no legacy tool names (no `github_read_files`, `submit_deliverable`, `request_handoff`, etc.).
+- Deliverables are files in the engagement dir; don't reintroduce output tools, Firestore, or payment rails.
+- The Remotion template self-installs per engagement (`npm install` inside the copied `video/` dir). `node` + `ffmpeg` are available.
+- To add a vertical: a new `plugins/shipwithai-<name>/` with a `commands/<name>.md` wizard, its specialist agents, any skills, and an entry in `marketplace.json` + `.claude/settings.json` `enabledPlugins`.

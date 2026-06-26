@@ -1,0 +1,17 @@
+{
+  "extraKnownMarketplaces": {
+    "shipwithai": {
+      "source": {
+        "source": "path",
+        "path": "./.claude-plugin/marketplace.json"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "shipwithai-core@shipwithai": true,
+    "shipwithai-audit@shipwithai": true,
+    "shipwithai-web@shipwithai": true,
+    "shipwithai-growth@shipwithai": true,
+    "shipwithai-video@shipwithai": true
+  }
+}

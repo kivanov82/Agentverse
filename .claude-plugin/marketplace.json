@@ -1,0 +1,34 @@
+{
+  "name": "shipwithai",
+  "owner": { "name": "ShipWithAI" },
+  "metadata": {
+    "description": "ShipWithAI delivery studio — agent verticals run locally in Claude Code to produce client deliverables."
+  },
+  "plugins": [
+    {
+      "name": "shipwithai-core",
+      "description": "Shared studio coordinator (PM) and reusable skills for every delivery vertical.",
+      "source": { "type": "path", "path": "./plugins/shipwithai-core" }
+    },
+    {
+      "name": "shipwithai-audit",
+      "description": "Smart-contract security audit vertical — Feynman / Nemesis / State-Inconsistency methodologies, run locally to produce a client audit report.",
+      "source": { "type": "path", "path": "./plugins/shipwithai-audit" }
+    },
+    {
+      "name": "shipwithai-web",
+      "description": "Web & e-commerce build vertical — two-way Claude Design (Figma), frontend, backend, payments, deploy.",
+      "source": { "type": "path", "path": "./plugins/shipwithai-web" }
+    },
+    {
+      "name": "shipwithai-growth",
+      "description": "Growth vertical — SEO optimization and marketing campaigns.",
+      "source": { "type": "path", "path": "./plugins/shipwithai-growth" }
+    },
+    {
+      "name": "shipwithai-video",
+      "description": "Marketing-video vertical — Remotion promo/explainer videos from captured deliverables + motion graphics.",
+      "source": { "type": "path", "path": "./plugins/shipwithai-video" }
+    }
+  ]
+}
