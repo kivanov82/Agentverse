@@ -9,7 +9,7 @@ Brand: **ShipWithAI** (no dot). Domain: **shipwithai.nl**.
 ## Structure
 
 ```
-.claude-plugin/marketplace.json   # local plugin marketplace (source: path — loads from disk)
+.claude-plugin/marketplace.json   # local plugin marketplace (relative string sources, e.g. "./plugins/x" — loads from disk)
 .claude/settings.json             # auto-activates the marketplace + plugins (tracked)
 plugins/
   shipwithai-core/                # pm coordinator + shared skills (intake, brand-extract)

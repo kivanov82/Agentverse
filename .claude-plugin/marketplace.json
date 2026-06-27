@@ -8,27 +8,27 @@
     {
       "name": "shipwithai-core",
       "description": "Shared studio coordinator (PM) and reusable skills for every delivery vertical.",
-      "source": { "type": "path", "path": "./plugins/shipwithai-core" }
+      "source": "./plugins/shipwithai-core"
     },
     {
       "name": "shipwithai-audit",
       "description": "Smart-contract security audit vertical — Feynman / Nemesis / State-Inconsistency methodologies, run locally to produce a client audit report.",
-      "source": { "type": "path", "path": "./plugins/shipwithai-audit" }
+      "source": "./plugins/shipwithai-audit"
     },
     {
       "name": "shipwithai-web",
       "description": "Web & e-commerce build vertical — Claude Design round-trip (code↔canvas via GitHub), frontend, backend, payments, deploy.",
-      "source": { "type": "path", "path": "./plugins/shipwithai-web" }
+      "source": "./plugins/shipwithai-web"
     },
     {
       "name": "shipwithai-growth",
       "description": "Growth vertical — SEO optimization and marketing campaigns.",
-      "source": { "type": "path", "path": "./plugins/shipwithai-growth" }
+      "source": "./plugins/shipwithai-growth"
     },
     {
       "name": "shipwithai-video",
       "description": "Marketing-video vertical — Remotion promo/explainer videos from captured deliverables + motion graphics.",
-      "source": { "type": "path", "path": "./plugins/shipwithai-video" }
+      "source": "./plugins/shipwithai-video"
     }
   ]
 }
