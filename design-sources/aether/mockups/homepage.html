@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aether — Your home, aware.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{--ink:#0B0F12;--surface:#11181D;--raised:#161F25;--border:#1E2A30;--text:#E8F1EE;--muted:#88A0A6;--accent:#15C2A5;--accentHover:#23D8B9;--accentInk:#04130F;--mono:'JetBrains Mono',monospace;--disp:'Space Grotesk',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--ink);color:var(--text);font-family:var(--disp);line-height:1.6;
+background-image:linear-gradient(rgba(232,241,238,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(232,241,238,.04) 1px,transparent 1px);background-size:64px 64px}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.price{font-family:var(--mono);font-weight:500}
+header{position:sticky;top:0;z-index:10;backdrop-filter:blur(18px) saturate(140%);background:rgba(18,27,33,.72);border-bottom:1px solid var(--border)}
+nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{font-weight:700;font-size:1.25rem;display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+.links{display:flex;gap:28px;color:var(--muted);font-size:.9rem}
+.links a:hover{color:var(--text)}
+.cart{font-family:var(--mono);font-size:.8rem;border:1px solid var(--border);border-radius:9999px;padding:6px 14px;display:flex;gap:8px;align-items:center}
+.badge{background:var(--accent);color:var(--accentInk);border-radius:9999px;padding:0 7px;font-weight:500}
+.hero{position:relative;padding:96px 0 80px;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(120% 120% at 75% 0%,rgba(21,194,165,.22) 0%,rgba(21,194,165,.05) 38%,rgba(11,15,18,0) 70%);pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center;position:relative}
+h1{font-size:5rem;line-height:1.04;letter-spacing:-.02em;font-weight:700;margin:18px 0}
+.sub{color:var(--muted);font-size:1.15rem;max-width:46ch}
+.cta-row{display:flex;gap:14px;margin-top:32px;flex-wrap:wrap}
+.btn{font-family:var(--disp);font-weight:500;border-radius:.625rem;padding:14px 26px;border:1px solid transparent;cursor:pointer;font-size:1rem;transition:.2s}
+.btn-primary{background:var(--accent);color:var(--accentInk)}
+.btn-primary:hover{background:var(--accentHover);box-shadow:0 0 24px rgba(21,194,165,.25)}
+.btn-ghost{background:transparent;color:var(--muted);border-color:var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:#2A3A42}
+.hero-vis{aspect-ratio:4/3;border-radius:1.5rem;border:1px solid rgba(255,255,255,.06);background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,0) 45%),var(--raised);position:relative;display:flex;align-items:center;justify-content:center;color:var(--muted);font-family:var(--mono);font-size:.85rem;overflow:hidden}
+.scan{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,rgba(21,194,165,0),#15C2A5,rgba(21,194,165,0))}
+.trust{display:flex;gap:28px;flex-wrap:wrap;font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;color:var(--muted);margin-top:48px;border-top:1px solid var(--border);padding-top:24px}
+section.cat{padding:72px 0}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px}
+.sec-head h2{font-size:1.75rem;font-weight:600;letter-spacing:-.01em}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}
+.chip{font-family:var(--mono);font-size:.75rem;border:1px solid var(--border);border-radius:9999px;padding:6px 14px;color:var(--muted);cursor:pointer}
+.chip.active{background:rgba(21,194,165,.14);color:var(--accent);border-color:rgba(21,194,165,.45)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.card{background:rgba(22,31,37,.6);border:1px solid var(--border);border-radius:1rem;padding:14px;transition:.25s;position:relative}
+.card:hover{transform:translateY(-4px);border-color:rgba(21,194,165,.45);box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 24px rgba(21,194,165,.18)}
+.thumb{aspect-ratio:4/3;border-radius:.625rem;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:#5A6E74;font-family:var(--mono);font-size:.72rem;margin-bottom:14px}
+.card .name{font-weight:600;font-size:1.05rem;margin:4px 0}
+.hook{font-family:var(--mono);font-size:.72rem;color:var(--muted);min-height:2.4em}
+.card-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.add{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--accent);font-size:1.2rem;cursor:pointer;transition:.2s}
+.card:hover .add{background:var(--accent);color:var(--accentInk);border-color:var(--accent)}
+.tag{position:absolute;top:18px;left:18px;font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;color:var(--accent);background:rgba(21,194,165,.12);padding:3px 8px;border-radius:6px}
+footer{border-top:1px solid var(--border);padding:56px 0 40px;color:#5A6E74;font-family:var(--mono);font-size:.78rem}
+.fcols{display:flex;justify-content:space-between;gap:40px;flex-wrap:wrap;margin-bottom:36px;font-family:var(--disp)}
+.fcols b{color:var(--text);font-size:.95rem;display:block;margin-bottom:12px}
+.fcols a{display:block;color:var(--muted);font-size:.85rem;margin-bottom:8px}
+@media(max-width:860px){.hero-grid{grid-template-columns:1fr}h1{font-size:3rem}.grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><nav>
+<a class="brand"><span class="dot"></span>Aether</a>
+<div class="links"><a>Shop</a><a>Sensors</a><a>Kits</a><a>Support</a></div>
+<a class="cart">CART <span class="badge">2</span></a>
+</nav></div></header>
+
+<section class="hero"><div class="wrap"><div class="hero-grid">
+<div>
+<span class="eyebrow">Smart home · Matter-native</span>
+<h1>Your home,<br>aware.</h1>
+<p class="sub">Hubs, sensors, and automation kits that read the room — then quietly do the right thing. No app-hopping, no setup hell.</p>
+<div class="cta-row"><button class="btn btn-primary">Shop the system</button><button class="btn btn-ghost">Explore the Hub →</button></div>
+</div>
+<div class="hero-vis"><span class="scan"></span>Aether Hub Pro</div>
+</div>
+<div class="trust"><span>2-YR WARRANTY</span><span>FREE RETURNS</span><span>SECURE CHECKOUT</span><span>MATTER / HOMEKIT / ALEXA</span></div>
+</div></section>
+
+<section class="cat"><div class="wrap">
+<div class="sec-head"><div><span class="eyebrow">Featured</span><h2>Build your aware home</h2></div></div>
+<div class="chips"><span class="chip active">All</span><span class="chip">Hubs</span><span class="chip">Kits</span><span class="chip">Sensors</span><span class="chip">Plugs</span><span class="chip">Lighting</span></div>
+<div class="grid">
+<div class="card"><span class="tag">FEATURED</span><div class="thumb">aether-hub-pro</div><span class="eyebrow">Hubs</span><div class="name">Aether Hub Pro</div><div class="hook">Wi-Fi 6 · Zigbee 3.0 · Thread · Z-Wave</div><div class="card-foot"><span class="price">$129.00</span><button class="add">+</button></div></div>
+<div class="card"><span class="tag">FEATURED</span><div class="thumb">starter-kit</div><span class="eyebrow">Kits</span><div class="name">Starter Automation Kit</div><div class="hook">Hub + 5 devices · up to 3 rooms</div><div class="card-foot"><span class="price">$199.00</span><button class="add">+</button></div></div>
+<div class="card"><span class="tag">FEATURED</span><div class="thumb">multi-sensor-pro</div><span class="eyebrow">Sensors</span><div class="name">Multi-Sensor Pro</div><div class="hook">Motion · Temp · Humidity · Lux</div><div class="card-foot"><span class="price">$49.00</span><button class="add">+</button></div></div>
+<div class="card"><span class="tag">FEATURED</span><div class="thumb">smart-bulb-e27</div><span class="eyebrow">Lighting</span><div class="name">Smart Bulb E27</div><div class="hook">806 lm · 16M colors · 2700–6500K</div><div class="card-foot"><span class="price">$18.00</span><button class="add">+</button></div></div>
+</div>
+</div></section>
+
+<section class="cat" style="padding-top:0"><div class="wrap">
+<div class="sec-head"><div><span class="eyebrow">Full catalog</span><h2>Every sensor, plug, and node</h2></div></div>
+<div class="grid">
+<div class="card"><div class="thumb">motion-sensor</div><span class="eyebrow">Sensors</span><div class="name">Motion Sensor</div><div class="hook">110° PIR · 7 m range · Zigbee</div><div class="card-foot"><span class="price">$29.00</span><button class="add">+</button></div></div>
+<div class="card"><div class="thumb">leak-sensor</div><span class="eyebrow">Sensors</span><div class="name">Leak Sensor</div><div class="hook">&lt;3 s alert · IP55 · 24-mo battery</div><div class="card-foot"><span class="price">$24.00</span><button class="add">+</button></div></div>
+<div class="card"><div class="thumb">smart-plug</div><span class="eyebrow">Plugs</span><div class="name">Smart Plug</div><div class="hook">16 A · real-time energy monitor</div><div class="card-foot"><span class="price">$22.00</span><button class="add">+</button></div></div>
+<div class="card"><div class="thumb">contact-sensor</div><span class="eyebrow">Sensors</span><div class="name">Contact Sensor</div><div class="hook">Door/window · tamper · 24-mo battery</div><div class="card-foot"><span class="price">$19.00</span><button class="add">+</button></div></div>
+</div>
+</div></section>
+
+<footer><div class="wrap">
+<div class="fcols">
+<div><b>Aether</b>Your home, aware.</div>
+<div><b>Product</b><a>Hubs</a><a>Sensors</a><a>Kits</a></div>
+<div><b>Support</b><a>Shipping & returns</a><a>Warranty</a><a>Contact</a></div>
+<div><b>Company</b><a>About</a><a>Press</a><a>Careers</a></div>
+</div>
+<div>© 2026 AETHER · MATTER / HOMEKIT / ALEXA · SECURE CHECKOUT</div>
+</div></footer>
+</body>
+</html>

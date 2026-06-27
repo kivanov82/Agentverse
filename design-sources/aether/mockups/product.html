@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aether Hub Pro — Aether</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{--ink:#0B0F12;--surface:#11181D;--raised:#161F25;--border:#1E2A30;--text:#E8F1EE;--muted:#88A0A6;--faint:#5A6E74;--accent:#15C2A5;--accentHover:#23D8B9;--accentInk:#04130F;--success:#3DD68C;--mono:'JetBrains Mono',monospace;--disp:'Space Grotesk',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--ink);color:var(--text);font-family:var(--disp);line-height:1.6;
+background-image:linear-gradient(rgba(232,241,238,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(232,241,238,.04) 1px,transparent 1px);background-size:64px 64px}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.mono{font-family:var(--mono)}
+header{position:sticky;top:0;z-index:10;backdrop-filter:blur(18px) saturate(140%);background:rgba(18,27,33,.72);border-bottom:1px solid var(--border)}
+nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{font-weight:700;font-size:1.25rem;display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)}
+.links{display:flex;gap:28px;color:var(--muted);font-size:.9rem}
+.links a:hover{color:var(--text)}
+.cart{font-family:var(--mono);font-size:.8rem;border:1px solid var(--border);border-radius:9999px;padding:6px 14px;display:flex;gap:8px;align-items:center}
+.badge{background:var(--accent);color:var(--accentInk);border-radius:9999px;padding:0 7px;font-weight:500}
+.crumb{font-family:var(--mono);font-size:.75rem;color:var(--faint);padding:28px 0 8px}
+.crumb b{color:var(--muted);font-weight:400}
+.pdp{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;padding-bottom:40px}
+.gallery{position:sticky;top:88px;align-self:start}
+.main-img{aspect-ratio:4/3;border-radius:1.5rem;border:1px solid rgba(255,255,255,.06);background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(255,255,255,0) 45%),var(--raised);display:flex;align-items:center;justify-content:center;color:var(--faint);font-family:var(--mono);font-size:.85rem;position:relative;overflow:hidden}
+.scan{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,rgba(21,194,165,0),#15C2A5,rgba(21,194,165,0))}
+.thumbs{display:flex;gap:12px;margin-top:14px}
+.thumbs div{width:72px;height:64px;border-radius:.5rem;border:1px solid var(--border);background:var(--surface)}
+.thumbs div:first-child{border-color:var(--accent)}
+.buy{background:rgba(22,31,37,.6);border:1px solid var(--border);border-radius:1.25rem;padding:28px}
+h1{font-size:2.5rem;line-height:1.1;letter-spacing:-.02em;font-weight:700;margin:8px 0}
+.posit{color:var(--muted);font-size:1.05rem;margin-bottom:18px}
+.price{font-family:var(--mono);font-size:1.9rem;font-weight:500;letter-spacing:-.01em}
+.stock{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:.78rem;color:var(--success);margin:14px 0 22px}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 8px var(--success)}
+.qtyrow{display:flex;gap:14px;align-items:center;margin-bottom:18px}
+.stepper{display:flex;align-items:center;border:1px solid var(--border);border-radius:.625rem;font-family:var(--mono)}
+.stepper button{width:40px;height:44px;background:transparent;border:0;color:var(--text);font-size:1.1rem;cursor:pointer}
+.stepper span{width:40px;text-align:center}
+.btn{font-family:var(--disp);font-weight:500;border-radius:.625rem;padding:15px 26px;border:1px solid transparent;cursor:pointer;font-size:1.05rem;transition:.2s;flex:1}
+.btn-primary{background:var(--accent);color:var(--accentInk)}
+.btn-primary:hover{background:var(--accentHover);box-shadow:0 0 24px rgba(21,194,165,.25)}
+.works{display:flex;gap:10px;flex-wrap:wrap;margin:22px 0}
+.works span{font-family:var(--mono);font-size:.72rem;border:1px solid rgba(21,194,165,.45);background:rgba(21,194,165,.1);color:var(--accent);border-radius:9999px;padding:6px 12px}
+.box{font-size:.9rem;color:var(--muted);border-top:1px solid var(--border);padding-top:16px;margin-top:6px}
+.box b{color:var(--text);font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:8px}
+section.specs{padding:24px 0 80px}
+.specs h2{font-size:1.4rem;font-weight:600;margin-bottom:20px}
+table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:1rem;overflow:hidden}
+caption{text-align:left;font-family:var(--mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);padding-bottom:12px}
+td{padding:14px 18px;font-size:.92rem;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:0}
+tr:nth-child(odd){background:var(--surface)}
+tr:nth-child(even){background:var(--raised)}
+td.k{color:var(--muted);width:34%;text-transform:capitalize}
+td.v{font-family:var(--mono);color:var(--text)}
+.related{padding-bottom:80px}
+.related h2{font-size:1.4rem;font-weight:600;margin-bottom:20px}
+.rgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.rcard{background:rgba(22,31,37,.6);border:1px solid var(--border);border-radius:1rem;padding:14px;transition:.25s}
+.rcard:hover{border-color:rgba(21,194,165,.45);transform:translateY(-3px)}
+.rthumb{aspect-ratio:4/3;border-radius:.625rem;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--faint);font-family:var(--mono);font-size:.7rem;margin-bottom:12px}
+.rcard .n{font-weight:600;margin-bottom:6px}
+.rfoot{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.85rem;color:var(--muted)}
+@media(max-width:860px){.pdp{grid-template-columns:1fr}.gallery{position:static}h1{font-size:2rem}.rgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><nav>
+<a class="brand"><span class="dot"></span>Aether</a>
+<div class="links"><a>Shop</a><a>Sensors</a><a>Kits</a><a>Support</a></div>
+<a class="cart">CART <span class="badge">2</span></a>
+</nav></div></header>
+
+<div class="wrap">
+<div class="crumb"><b>Shop</b> / <b>Hubs</b> / Aether Hub Pro</div>
+<div class="pdp">
+<div class="gallery">
+<div class="main-img"><span class="scan"></span>aether-hub-pro.jpg</div>
+<div class="thumbs"><div></div><div></div><div></div><div></div></div>
+</div>
+<div class="buy">
+<span class="eyebrow">Hubs · AE-HUB-001</span>
+<h1>Aether Hub Pro</h1>
+<p class="posit">The brain your home has been waiting for.</p>
+<div class="price">$129.00</div>
+<div class="stock"><span class="sdot"></span>IN STOCK · SHIPS IN 2 DAYS</div>
+<div class="qtyrow">
+<div class="stepper"><button>–</button><span>1</span><button>+</button></div>
+<button class="btn btn-primary">Add to cart</button>
+</div>
+<div class="works"><span>Matter</span><span>Apple Home</span><span>Google Home</span><span>Alexa</span></div>
+<div class="box"><b>What's in the box</b>Hub Pro · 12 V DC adapter · Ethernet cable · quick-start card · 2-year warranty.</div>
+</div>
+</div>
+</div>
+
+<section class="specs"><div class="wrap">
+<h2>Technical specifications</h2>
+<table>
+<caption>All readings · factory calibrated</caption>
+<tr><td class="k">Connectivity</td><td class="v">Wi-Fi 6 · Zigbee 3.0 · Z-Wave Plus · Thread · BLE 5.2</td></tr>
+<tr><td class="k">Processor</td><td class="v">Quad-core ARM Cortex-A53 · 1.8 GHz</td></tr>
+<tr><td class="k">Memory</td><td class="v">2 GB RAM · 8 GB eMMC</td></tr>
+<tr><td class="k">Ports</td><td class="v">2× USB-A · 1× USB-C · 1× Ethernet</td></tr>
+<tr><td class="k">Power</td><td class="v">12 V DC adapter (included)</td></tr>
+<tr><td class="k">Dimensions</td><td class="v">120 × 120 × 28 mm</td></tr>
+<tr><td class="k">Compatibility</td><td class="v">Works with Matter · Apple Home · Google Home · Alexa</td></tr>
+</table>
+</div></section>
+
+<section class="related"><div class="wrap">
+<h2>Complete the setup</h2>
+<div class="rgrid">
+<div class="rcard"><div class="rthumb">starter-kit</div><div class="n">Starter Automation Kit</div><div class="rfoot"><span>Hub + 5 devices</span><span>$199.00</span></div></div>
+<div class="rcard"><div class="rthumb">multi-sensor-pro</div><div class="n">Multi-Sensor Pro</div><div class="rfoot"><span>Motion · Temp · Lux</span><span>$49.00</span></div></div>
+<div class="rcard"><div class="rthumb">smart-plug</div><div class="n">Smart Plug</div><div class="rfoot"><span>16 A · energy</span><span>$22.00</span></div></div>
+</div>
+</div></section>
+</body>
+</html>
