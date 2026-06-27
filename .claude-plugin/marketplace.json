@@ -17,7 +17,7 @@
     },
     {
       "name": "shipwithai-web",
-      "description": "Web & e-commerce build vertical — two-way Claude Design (Figma), frontend, backend, payments, deploy.",
+      "description": "Web & e-commerce build vertical — Claude Design round-trip (code↔canvas via GitHub), frontend, backend, payments, deploy.",
       "source": { "type": "path", "path": "./plugins/shipwithai-web" }
     },
     {

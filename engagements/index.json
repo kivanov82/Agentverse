@@ -4,5 +4,11 @@
     "vertical": "promo",
     "date": "20260626",
     "status": "complete"
+  },
+  {
+    "slug": "shipwithai-promo-20260627",
+    "vertical": "promo",
+    "date": "20260627",
+    "status": "active"
   }
 ]

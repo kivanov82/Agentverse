@@ -6,6 +6,11 @@ export type Scene =
   | { type: "message"; durationInFrames: number; lines: string[] }
   | { type: "grid"; durationInFrames: number; heading: string; items: string[] }
   | { type: "showcase"; durationInFrames: number; image: string; caption: string }
+  // A screen recording (mp4/webm in public/), fast-forwarded inside a branded frame.
+  // playbackRate 3-5 = the speed-up; startFrom/endAt (in frames of the SOURCE) trim to the highlight.
+  | { type: "clip"; durationInFrames: number; src: string; caption: string; playbackRate?: number; startFrom?: number; endAt?: number; muted?: boolean }
+  // Animated counters: each stat counts up from 0 to `value`, with a label and the tagline below.
+  | { type: "stat"; durationInFrames: number; stats: { value: number; label: string; suffix?: string }[]; tagline?: string }
   | { type: "cta"; durationInFrames: number; title: string; subtitle: string };
 
 // Default = the ShipWithAI self-promo. `image: ""` renders a captioned placeholder,

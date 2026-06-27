@@ -14,7 +14,7 @@ Brand: **ShipWithAI** (no dot). Domain: **shipwithai.nl**.
 plugins/
   shipwithai-core/                # pm coordinator + shared skills (intake, brand-extract)
   shipwithai-audit/               # /audit      — solidity-auditor + 3 methodologies + workflow
-  shipwithai-web/                 # /ecommerce  — design/build/payments/deploy (Figma two-way)
+  shipwithai-web/                 # /ecommerce  — design/build/payments/deploy (Claude Design round-trip)
   shipwithai-growth/              # /seo /campaign — seo / marketing / tech-writer / ux-analyst
   shipwithai-video/               # /promo      — Remotion video + capture/compose skills + template
 docs/                             # production docs (e.g. promo-script.md)
@@ -41,7 +41,7 @@ engagements/                      # per-client working dirs (gitignored; only in
 ## Key concepts
 
 ### Plugin anatomy
-A vertical plugin = `commands/<name>.md` (the wizard) + `agents/*.md` (subagents, with `name`/`description`/`tools`/`model` frontmatter) + `skills/*/SKILL.md` + optional `workflows/*.js`. `shipwithai-core` holds the `pm` agent and the shared `intake` + `brand-extract` skills every vertical reuses. There are 14 specialist agents and 8 skills across the plugins.
+A vertical plugin = `commands/<name>.md` (the wizard) + `agents/*.md` (subagents, with `name`/`description`/`tools`/`model` frontmatter) + `skills/*/SKILL.md` + optional `workflows/*.js`. `shipwithai-core` holds the `pm` agent and the shared `intake` + `brand-extract` skills every vertical reuses. There are 14 specialist agents and 9 skills across the plugins.
 
 ### Intake wizard
 Each command declares its questions in an `intake_questions:` YAML frontmatter block — the single source of truth (the local-first heir to the old `use-cases.ts`). The core `intake` skill reads that block: choices → `AskUserQuestion` (clickable), free-text asked conversationally, anything pre-filled from args is skipped. It emits a normalized brief the specialists act on.
@@ -49,14 +49,14 @@ Each command declares its questions in an `intake_questions:` YAML frontmatter b
 ### Audit workflow
 `/audit` at `full` depth runs `plugins/shipwithai-audit/workflows/audit.js` via the Workflow tool: Feynman + State-Inconsistency run once each as independent passes, then **Nemesis runs fusion-only** (its Phase-4 feedback loop over their combined output — it does NOT re-run the hunt passes), then every Critical/High/Medium finding is adversarially verified, then synthesized. `quick`/`standard` depths delegate to the `solidity-auditor` subagent directly. **Gotcha:** the Workflow runtime delivers the `args` global as a JSON string — workflow scripts must `JSON.parse` it (see `audit.js`).
 
-### Claude Design (two-way Figma)
-In `shipwithai-web`: `ui-designer` does **code→design** (Figma write tools + the `figma-generate-design`/`figma-use` skills), `ui-developer` does **design→code** (Figma read via `get_design_context` + `frontend-design`) and verifies the result in a browser with Playwright.
+### Claude Design (code ↔ design round-trip)
+In `shipwithai-web`, design runs through **Claude Design** (`claude.ai/design`), not Figma. The `claude-design` skill drives the round-trip: `ui-designer` scaffolds a design-source repo (tokens + briefs) and pushes it to GitHub; an operator imports it into the Claude Design canvas, designs the screens, and exports the result back into `engagements/<slug>/design/claude-design-export/`; `ui-developer` builds the real storefront from that export + `tokens.json` and verifies it in a browser with Playwright. The canvas step is human-in-the-loop (browser, login-gated) — the in-repo HTML mockups are the fallback.
 
 ### Marketing-video pipeline
-`shipwithai-video` produces an MP4 with Remotion. `capture-footage` gathers real footage — branded HTML deliverables → Playwright screenshot (the Playwright MCP blocks `file://`, so serve over localhost), Figma frame renders, browser captures. `remotion-compose` copies the bundled **data-driven template** (`plugins/shipwithai-video/template/`), customizes `src/brand.ts` + `src/scenes.ts`, drops stills/clips into `public/`, and renders (`npx remotion render`). Screen recordings enter via `<OffthreadVideo playbackRate>` (a `clip` scene type — to be added). The current promo plan lives in `docs/promo-script.md`.
+`shipwithai-video` produces an MP4 with Remotion. `capture-footage` gathers real footage — branded HTML deliverables (via the bundled `render-md.mjs`) → Playwright screenshot (the Playwright MCP blocks `file://`, so serve over localhost), operator screen recordings (terminal, the Claude Design canvas, live storefronts), browser captures. `remotion-compose` copies the bundled **data-driven template** (`plugins/shipwithai-video/template/`), customizes `src/brand.ts` + `src/scenes.ts`, drops stills/clips into `public/`, and renders (`npx remotion render`). Scene types: `title`, `message`, `grid`, `showcase` (still), **`clip`** (screen recording via `<OffthreadVideo trimBefore/trimAfter playbackRate>`), **`stat`** (animated counters), `cta`. The current promo plan lives in `docs/promo-script.md`.
 
 ### Connected tools (MCP)
-Figma (design), Playwright (browser/test/capture), Vercel (deploy), Stripe (payments), GitHub + Brave (repo/search) — all via globally-enabled Claude Code plugins; agents reference the `mcp__*` tools directly. No plugin-level `.mcp.json` is needed.
+Playwright (browser/test/capture), Vercel (deploy), Stripe (payments), GitHub + Brave (repo/search) — all via globally-enabled Claude Code plugins; agents reference the `mcp__*` tools directly. No plugin-level `.mcp.json` is needed. **Design** does not use an MCP tool: it runs in **Claude Design** (`claude.ai/design`, a browser app) via the GitHub round-trip (the `claude-design` skill). The Figma MCP may still be present globally but the studio no longer depends on it.
 
 ## Engagements
 Per-client work lives in `engagements/<owner>-<slug>-<YYYYMMDD>/`. `engagements/index.json` is the tracked registry (`{slug, vertical, date, status}`); everything else under `engagements/` is gitignored (client code is never committed). Mark `status: complete` when a deliverable ships.

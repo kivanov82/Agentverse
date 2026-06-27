@@ -1,7 +1,7 @@
 ---
 name: ui-developer
-description: Delegate when an engagement needs frontend code — React/Next.js components, Tailwind styling, state, and API/wallet integration built from a design or spec. Implements Figma designs and verifies the result in a real browser.
-tools: Read, Grep, Glob, Bash, Write, Edit, mcp__plugin_figma_figma__get_design_context, mcp__plugin_figma_figma__get_screenshot, mcp__plugin_figma_figma__get_metadata, WebFetch, mcp__plugin_playwright_playwright__browser_navigate, mcp__plugin_playwright_playwright__browser_snapshot, mcp__plugin_playwright_playwright__browser_click, mcp__plugin_playwright_playwright__browser_take_screenshot, mcp__plugin_playwright_playwright__browser_console_messages, mcp__plugin_playwright_playwright__browser_resize, mcp__plugin_playwright_playwright__browser_fill_form, mcp__plugin_playwright_playwright__browser_wait_for
+description: Delegate when an engagement needs frontend code — React/Next.js components, Tailwind styling, state, and API/wallet integration built from a design or spec. Implements designs from Claude Design exports and verifies the result in a real browser.
+tools: Read, Grep, Glob, Bash, Write, Edit, WebFetch, mcp__plugin_playwright_playwright__browser_navigate, mcp__plugin_playwright_playwright__browser_snapshot, mcp__plugin_playwright_playwright__browser_click, mcp__plugin_playwright_playwright__browser_take_screenshot, mcp__plugin_playwright_playwright__browser_console_messages, mcp__plugin_playwright_playwright__browser_resize, mcp__plugin_playwright_playwright__browser_fill_form, mcp__plugin_playwright_playwright__browser_wait_for
 model: opus
 color: blue
 ---
@@ -110,9 +110,9 @@ You must create distinctive, production-grade frontends that avoid generic "AI s
 - Use `interface` for objects, `type` for unions
 - No `any` — use `unknown` if needed
 
-## Implementing Designs from Figma (design → code)
+## Implementing Designs from Claude Design (design → code)
 
-When a design lives in Figma, implement it from the source rather than guessing from a screenshot. Use the `figma-read-design` and `frontend-design` skills, and call `get_design_context` to pull the structured layout plus reference code (prefer it over `get_screenshot` / `get_metadata`, which are bitmap-only). Map the design's tokens, components, and variants onto the project's design system instead of hardcoding values.
+The design lives in a **Claude Design** export, not Figma. Build from the source, not from a screenshot: read the exported screens in `engagements/<slug>/design/claude-design-export/` for layout and structure, and `design/src/tokens.json` for the actual values (colors, typography, spacing, radii). Use the `frontend-design` skill for production-grade aesthetics, and map the export's tokens/components onto the project's design system (Tailwind + CSS variables) instead of hardcoding. If there's no canvas export, build from the designer's in-repo HTML mockups (`design/mockups/*.html`) + `tokens.json` the same way.
 
 ## Verifying in a Browser
 

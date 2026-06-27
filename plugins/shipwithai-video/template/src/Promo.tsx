@@ -7,6 +7,7 @@ import {
   interpolate,
   spring,
   Img,
+  OffthreadVideo,
   staticFile,
 } from "remotion";
 import { brand } from "./brand";
@@ -117,6 +118,61 @@ const ShowcaseScene: React.FC<{ s: Extract<Scene, { type: "showcase" }> }> = ({ 
   );
 };
 
+const ClipScene: React.FC<{ s: Extract<Scene, { type: "clip" }> }> = ({ s }) => {
+  const e = useEntrance(4);
+  const ty = interpolate(e, [0, 1], [60, 0]);
+  const scale = interpolate(e, [0, 1], [0.96, 1]);
+  return (
+    <AbsoluteFill style={{ backgroundColor: brand.ink, justifyContent: "center", alignItems: "center" }}>
+      <div
+        style={{ transform: `translateY(${ty}px) scale(${scale})`, width: 1600, height: 810, backgroundColor: "#000", overflow: "hidden", border: `2px solid ${brand.accent}` }}
+      >
+        <OffthreadVideo
+          src={staticFile(s.src)}
+          playbackRate={s.playbackRate ?? 4}
+          trimBefore={s.startFrom}
+          trimAfter={s.endAt}
+          muted={s.muted ?? true}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      </div>
+      <div style={{ position: "absolute", bottom: 70, left: 120, right: 120, fontFamily: serif, fontSize: 46, color: brand.paper }}>
+        <span style={{ borderBottom: `4px solid ${brand.accent}`, paddingBottom: 8 }}>{s.caption}</span>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+const StatScene: React.FC<{ s: Extract<Scene, { type: "stat" }> }> = ({ s }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  return (
+    <AbsoluteFill style={{ backgroundColor: brand.paper, justifyContent: "center", alignItems: "center", flexDirection: "column" }}>
+      <div style={{ display: "flex", gap: 100, justifyContent: "center", flexWrap: "wrap" }}>
+        {s.stats.map((st, i) => {
+          const sp = spring({ frame: frame - i * 10, fps, config: { damping: 200 } });
+          const n = Math.round(interpolate(sp, [0, 1], [0, st.value]));
+          const op = interpolate(sp, [0, 1], [0, 1]);
+          return (
+            <div key={st.label} style={{ opacity: op, textAlign: "center" }}>
+              <div style={{ fontFamily: serif, fontSize: 170, color: brand.ink, fontWeight: 600, letterSpacing: -2 }}>
+                {n}
+                {st.suffix ?? ""}
+              </div>
+              <div style={{ fontFamily: serif, fontSize: 40, color: brand.ink, opacity: 0.7, marginTop: -8 }}>{st.label}</div>
+            </div>
+          );
+        })}
+      </div>
+      {s.tagline ? (
+        <div style={{ fontFamily: serif, fontSize: 64, color: brand.accent, fontWeight: 600, marginTop: 70, opacity: interpolate(spring({ frame: frame - 36, fps, config: { damping: 200 } }), [0, 1], [0, 1]) }}>
+          {s.tagline}
+        </div>
+      ) : null}
+    </AbsoluteFill>
+  );
+};
+
 const CtaScene: React.FC<{ s: Extract<Scene, { type: "cta" }> }> = ({ s }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -143,6 +199,10 @@ function renderScene(s: Scene) {
       return <GridScene s={s} />;
     case "showcase":
       return <ShowcaseScene s={s} />;
+    case "clip":
+      return <ClipScene s={s} />;
+    case "stat":
+      return <StatScene s={s} />;
     case "cta":
       return <CtaScene s={s} />;
   }

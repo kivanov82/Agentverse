@@ -6,7 +6,7 @@
 
 ShipWithAI is a **local-first AI delivery studio** — a fleet of specialist agents packaged as Claude Code plugins that produce real client deliverables on your machine. No hosted backend, no automated billing: you run the studio and bill per engagement.
 
-**14 specialist agents · 8 skills · 5 use-cases**, connected to Figma, Playwright, Vercel, Stripe, and GitHub.
+**14 specialist agents · 9 skills · 5 use-cases**, connected to Claude Design, Playwright, Vercel, Stripe, and GitHub.
 
 ## What it ships
 

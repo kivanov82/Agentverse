@@ -1,92 +1,185 @@
-# ShipWithAI — Promo v2 (production plan & script)
+# ShipWithAI — Promo v3 (production plan & exact script)
 
-**Status:** DRAFT — do not render yet. Footage gets recorded as we run each vertical; we assemble at the end.
-**Format:** 1920×1080 (landscape, for site hero / LinkedIn / email). Optional 9:16 cut later.
-**Target length:** ~75s — LOCKED (sizzle, captions + music, no voiceover).
-**Goal:** a prospect walks away convinced of (a) possibilities, (b) speed, (c) professionalism.
-**Sound:** licensed music bed (drop `.mp3` in `public/`), no voiceover (captions carry it). VO is an option if we want it.
+**Status:** READY — every tooling prerequisite is built; only footage + music remain (both need an operator at the keyboard). Supersedes v1 (a 30s stills-only cut, rendered at `engagements/shipwithai-promo-20260626/`) and the v2 draft.
+**Output:** a single **~75s sizzle** (LOCKED), 1920×1080 landscape — for the site hero, LinkedIn, email.
+**Sound:** licensed music bed (drop `.mp3` in `public/`), no voiceover — captions carry it.
+**Goal:** a prospect walks away convinced of (a) **range** (any brand, any audience), (b) **speed** (afternoon vs weeks), (c) **professionalism** (real, verified, on-brand deliverables).
+
+The film is produced by running the studio for real across **three contrasting brands**, recording as we go, then cutting the footage to 75s. The walkthrough doubles as a delivery-proof: if we can film it, we can ship it.
 
 ---
 
 ## 1. The message (spine)
 
-> A traditional agency needs weeks and a room full of specialists. ShipWithAI **is** that room — 14 AI specialists working in parallel in one terminal — that designs, builds, audits, and launches your product in an afternoon.
+> A traditional agency needs weeks and a room full of specialists. ShipWithAI **is** that room — running locally in one terminal — that designs, builds, audits, and launches your product in an afternoon. We prove it by building three completely different brands at once.
 
-Three beats the whole film must land: **possibilities** (it does the whole SDLC), **speed** (afternoon vs weeks), **professionalism** (real, verified, on-brand deliverables).
+**Headline claim — B (Scale):** *"A full software studio. 14 specialists. One terminal. 10× faster."* (unfolds across scenes 1–3, echoed in the payoff).
 
-### Headline claim — CHOSEN: **B — Scale**
-> "A full software studio. **14 specialists. One terminal. 10× faster.**"
-
-(Unfolds across scenes 1–3, echoed in the payoff scene 10. Alternatives considered: A "What an agency ships in a month, a fleet ships in an afternoon."; C "Brief in. Product out. Designed, built, audited, launched — by AI.")
-
-### Real stats to feature (verified — keep honest)
-- 14 specialist agents · 8 skills · 5 use-cases · 6 connected tools
-- 2,608 lines of audit methodology (Feynman · Nemesis · State-Inconsistency)
+**Honest stats (verified 2026-06-27 — keep honest):**
+- **14** specialist agents · **9** skills · **5** verticals · connected to Claude Design, Playwright, Vercel, Stripe, GitHub
+- **2,539** lines of audit methodology (Feynman 973 · Nemesis 1,048 · State-Inconsistency 518)
 - Every audit finding proven with a passing Foundry PoC
+- Three storefronts designed, built, and wired in a single run
 
 ---
 
-## 2. Storyboard (scene-by-scene)
+## 2. The three brands (the range triangle)
 
-Legend — **MG** = motion graphics (Remotion, no capture needed) · **REC** = real screen recording (capture required) · **SHOT** = static screenshot of a deliverable.
+Three deliberately different briefs so the design system visibly adapts to audience. Names are placeholders — swap freely.
 
-| # | t (s) | Type | Visual | On-screen copy | Capture source |
-|---|------|------|--------|----------------|----------------|
-| 1 | 0–4 | MG | Title card, brand rule animates in | "A full software studio." | — (have it) |
-| 2 | 4–9 | MG | Bold type, lines build | "14 specialists. One terminal." | — |
-| 3 | 9–15 | MG | Animated counters + agent grid → tagline | "14 specialists · 8 skills · 5 use-cases" (count up) → "10× faster." | — (real numbers) |
-| 4 | 15–25 | **REC** | Terminal: brief in → PM hands off → subagents fan out (the `/workflows` progress tree is ideal) | "One brief. The whole team mobilises — in parallel." | **Record:** a multi-agent run (`/ecommerce` or the `/audit` full workflow) showing handoffs / parallel subagents |
-| 5 | — | *DEFERRED* | Claude Design → Figma (Figma skipped for now). Re-add if/when Figma is connected; until then this time folds into scenes 6–7. | "Design — straight into Figma." (deferred) | **Deferred:** needs Figma connected |
-| 6 | 34–43 | **REC** | Terminal building + browser opens the live storefront, fast-forward | "Built, wired, running — in minutes." | **Record:** `/ecommerce` build + the store in a browser (dev server / Playwright) |
-| 7 | 43–52 | **REC → SHOT** | `/audit` workflow running + PoC tests passing → cut to the report card | "Audited — every finding proven with a test." | **Record:** `/audit` full run (workflow tree + `forge test` passing). Report card SHOT already exists |
-| 8 | 52–59 | **SHOT** | SEO report + campaign assets slide in | "SEO, content, campaigns — ready to publish." | **Capture:** `/seo` + `/campaign` deliverables (HTML→screenshot) |
-| 9 | 59–67 | **SHOT** | Deliverables montage: audit · store · SEO · campaign · video | "Real deliverables. On brand. Production-grade." | the above stills + a frame of this video (meta) |
-| 10 | 67–71 | MG | Big payoff line, accent sweep | "10× faster. A fraction of the cost." | — |
-| 11 | 71–75 | MG | CTA card | "ShipWithAI · shipwithai.nl" / small: "Even this video was made by the studio." | — (have CTA scene) |
+### Brand 1 — **Aether** · smart-home  *(the DEEP brand — also gets SEO + campaign)*
+- **Sells:** smart-home sensors, hubs, automation kits. Tagline: *"Your home, aware."*
+- **Audience:** tech-forward, 25–45.
+- **Aesthetic:** futuristic / electric. Dark UI, near-black canvas, electric-teal accent, glass panels, subtle grid, motion-forward.
+- **Type:** Space Grotesk (display) + JetBrains Mono (specs/prices). **Palette:** ink `#0B0F12`, surface `#11181D`, accent `#15C2A5`, paper `#E8F1EE`.
+- **Screens:** home (hero + product grid), product (a sensor kit), cart, checkout.
 
-**Meta-flex (scene 11 subtitle):** calling out that the studio produced its own promo is a strong professionalism beat — keep it.
+### Brand 2 — **Evergreen** · made-for-ease  *(built + checkout)*
+- **Sells:** wellbeing / mobility / gardening for 60+ — ergonomic garden tools, easy-grip kitchenware, mobility aids. Tagline: *"Comfort, delivered."*
+- **Audience:** 60+. Accessibility is the design thesis.
+- **Aesthetic:** warm & accessible. Large legible type, very high contrast, generous spacing, visible trust badges, a prominent **"Call to order"** phone CTA next to every add-to-cart, simple flat nav.
+- **Type:** Fraunces (display) + Source Sans 3 at large sizes (body ≥ 20px). **Palette:** paper `#FBF7EE`, ink `#22302A`, accent forest `#2F6B4F`, warm `#C2552E`.
+- **Screens:** home (big hero, large cards), product (huge type, big add-to-cart), checkout (one simple page).
 
----
-
-## 3. Capture checklist (record as we build each use-case)
-
-Record at **1920×1080** (or 2× and downscale), large terminal font, clean prompt, no secrets on screen. Record at **normal speed** — we fast-forward in Remotion, not at capture time (keeps it smooth). Save to `engagements/shipwithai-promo-<date>/clips/`.
-
-- [ ] **C1 — Fleet / parallel subagents** (scene 4). During a multi-agent run, screen-record the terminal. Best visual: the `/workflows` live progress tree, or PM `request_handoff` → `agent_start` events. ~30–60s raw.
-- [ ] **C2 — Claude Design code→design** (scene 5) — **DEFERRED** (Figma skipped for now). The designer still works in-code during `/ecommerce`; capture the Figma round-trip later only if Figma gets connected.
-- [ ] **C3 — Build + live store** (scene 6). During `/ecommerce` build: record the terminal building, then the **browser** loading the storefront (scroll the homepage + a product page). ~30s raw.
-- [ ] **C4 — Audit run** (scene 7). Record a `/audit` full run: the workflow tree + a `forge test` pass scrolling by. ~30–60s raw. (Report card SHOT done.)
-- [ ] **C5 — Growth deliverables** (scene 8). After `/seo` + `/campaign`, render their `.md` deliverables to branded HTML and screenshot (same method as the audit card).
-- [ ] **C6 — Deliverables stills** (scene 9). Collect best stills: audit card ✅, store homepage, SEO report, campaign asset, a promo frame.
-
-**How to record (macOS):** `Cmd+Shift+5` → record selected window/region → save `.mov`. Or `screencapture -v -R <x,y,w,h> clip.mov` for a scripted region. Transcode if needed: `ffmpeg -i clip.mov -vf scale=1920:-2 -r 30 clip.mp4`.
+### Brand 3 — **Meridian** · advisory  *(built + booking, NOT a cart)*
+- **Sells:** boutique financial advisory / wealth consultancy. CTA is **"Book a consultation,"** not checkout — proves the studio does lead-gen sites, not only carts.
+- **Audience:** institutional / HNW, premium B2B.
+- **Aesthetic:** premium / institutional. Navy + bone, serif, restrained, fine rules, lots of whitespace, credibility cues (stats, logos, team).
+- **Type:** Newsreader (display serif) + a grotesque for labels. **Palette:** navy `#0E1B2C`, bone `#F2EFE9`, muted gold `#B08D57`.
+- **Screens:** home (hero + services + insights), services, **book-a-consultation** (calendar/lead form).
 
 ---
 
-## 4. Technical: bringing recordings into Remotion (template work, do later)
+## 3. The pipeline (what runs, who does it, what it produces)
 
-The current template only does stills. To use screen recordings we add to `plugins/shipwithai-video/template`:
+Run with `/ecommerce` per brand (one `engagements/<brand>-<date>/` each), then `/seo` + `/campaign` + `/audit` for the deep/breadth beats. Every step names an agent + a deliverable (the captions).
 
-1. **New scene type `clip`** in `scenes.ts`:
-   ```ts
-   { type: "clip"; durationInFrames: number; src: string; caption: string; playbackRate?: number; startFrom?: number }
-   ```
-   Rendered in `Promo.tsx` with Remotion's `<OffthreadVideo src={staticFile(src)} playbackRate={4} startFrom={...} />` inside a branded frame, caption overlaid. `playbackRate` = the fast-forward; `startFrom`/`endAt` trims to the good moment.
-2. **New scene type `stat`** (optional): animated counting numbers for scene 3 (more impressive than static labels) — `interpolate(frame, [...], [0, 14])` rounded.
-3. Recordings live in `public/clips/`. Keep each clip trimmed to its highlight before import (smaller files, tighter cut).
-4. Music: `<Audio src={staticFile("music.mp3")} />` at the composition root, volume ducked.
+| Step | Agent(s) | Brands | Deliverable (named on screen) |
+|------|----------|--------|-------------------------------|
+| Intake | `pm` + `intake` | all 3 | normalized briefs |
+| **Design** | `ui-designer` + `claude-design` skill | all 3 | logo + style book + screens (Claude Design canvas → export) |
+| Build | `ui-developer` | all 3 | running storefront ×3 |
+| Catalog/cart | `e-commerce-specialist` | Aether, Evergreen | product model + cart |
+| **Commerce** | `payment-integration` | Aether, Evergreen = **Stripe checkout** (test mode); Meridian = **book-a-call** lead form | live checkout / booking |
+| SEO | `seo-specialist` + `tech-writer` | **Aether only** | `seo-report.md` + content plan |
+| Campaign | `marketing` + `tech-writer` | **Aether only** | `campaign-plan.md` + `copy/*` |
+| Breadth: Audit | `solidity-auditor` | (existing vault) | severity report + Foundry PoC |
+| Meta: Video | `video-producer` | the studio | *this film* |
 
-These are ~1 file of React changes; we'll add them once C1–C6 footage exists.
+**Commerce note:** Stripe is the connected payment rail (Shopify is **not** wired — don't promise it). Use Stripe **test mode** only; never show live keys or real card data on screen.
 
 ---
 
-## 5. Build/record order (how this unfolds)
+## 4. Recording shot list — *what to record, and when*
 
-1. **Activate plugins** (reload → trust/install), then **you run `/ecommerce`** while recording. Store subject: **ShipWithAI merch** (on-brand demo store). Figma step **skipped** for now. → capture **C1** (fleet) + **C3** (build/store) + a store SHOT. (C2/Figma deferred.)
-2. Re-run `/audit` (or capture from a fresh run) → **C4**.
-3. Run `/seo` + `/campaign` → **C5** deliverables.
-4. Extend the Remotion template (clip + stat scene types).
-5. Assemble `scenes.ts` against the real footage, drop clips/stills in `public/`, render.
-6. Add music, review pacing/legibility, final render.
+Record at **1920×1080** (or 2× and downscale), large terminal font, clean prompt, **no secrets/keys on screen**, normal speed (we fast-forward in Remotion). Save every recording into `engagements/shipwithai-promo-20260627/clips/` and transcode `.mov → .mp4` (`ffmpeg -i in.mov -vf scale=1920:-2 -r 30 out.mp4`). macOS capture: `Cmd+Shift+5` → record window/region.
 
-> ✅ Decided: claim **B (Scale)**, length **~75s**, captions + music, no VO. Next: start the capture runs — begin with `/ecommerce` (yields C1 fleet + C2 Claude Design + C3 build/store).
+| Tag | Record this | When (during which run) | Raw len | Feeds scene |
+|-----|-------------|--------------------------|---------|-------------|
+| **R1 — fleet** | The terminal during a multi-agent run — ideally the `/workflows` progress tree, or PM handoffs / subagents fanning out | the `/audit --depth full` workflow, or any `/ecommerce` run | 30–60s | 4 |
+| **R2 — Claude Design** (hero) | The **claude.ai/design** canvas building screens from the imported repo — chat-left/canvas-right, screens appearing, a logo/style-book forming | during the design step (after `claude-design` pushes each brand's repo) | 40–80s | 5 |
+| **R3 — storefronts** | Browser scrolling each **running** store: homepage → a product page. One recording per brand | after each `/ecommerce` build (`npm run dev`) | 3×~10s | 6, 7, 8 |
+| **R4 — checkout** | Stripe **test-mode** checkout on Aether (or Evergreen): cart → checkout → success | after `payment-integration` | 10–20s | 9 |
+| **R6 — audit test** | `forge test` passing, scrolling green; optionally the workflow tree | during/after the `/audit` run | 10–20s | 12 |
+
+**Stills (no recording — generated):**
+- **S-SEO / S-CAMPAIGN** (scenes 10, 11): render Aether's `seo-report.md` and a `copy/*.md` to branded HTML with `render-md.mjs`, serve over localhost, Playwright screenshot → `shots/shot-seo.png`, `shot-campaign.png`.
+- **S-AUDIT** (scene 13): already have `shot-audit-report.png` (copy from the 0626 engagement).
+- **S-MONTAGE** (scene 14): composite the three store homepages + the audit card + one frame of *this* video (the meta-flex) into `shot-montage.png`.
+
+---
+
+## 5. The 75s storyboard (frame-accurate · 30fps · 2250 frames total)
+
+Legend: **MG** = motion graphics (no capture) · **CLIP** = screen recording (R-tag) · **SHOT** = still.
+
+| # | Type | Frames | t (s) | On-screen copy / content | Source |
+|---|------|--------|-------|--------------------------|--------|
+| 1 | MG `title` | 105 | 0.0–3.5 | "A full software studio." | have |
+| 2 | MG `message` | 105 | 3.5–7.0 | "14 specialists." / "One terminal." | — |
+| 3 | MG `stat` | 150 | 7.0–12.0 | 14 specialists · 9 skills · 5 verticals → "10× faster." | — |
+| 4 | CLIP `clip` | 180 | 12.0–18.0 | "One brief. The whole fleet mobilises." | **R1** |
+| 5 | CLIP `clip` | 270 | 18.0–27.0 | "Design — logo, style book, screens." | **R2** |
+| 6 | CLIP `clip` | 120 | 27.0–31.0 | "Aether — smart home." | **R3a** |
+| 7 | CLIP `clip` | 120 | 31.0–35.0 | "Evergreen — made for ease." | **R3b** |
+| 8 | CLIP `clip` | 120 | 35.0–39.0 | "Meridian — book a call." | **R3c** |
+| 9 | CLIP `clip` | 150 | 39.0–44.0 | "Checkout, live." | **R4** |
+| 10 | SHOT `showcase` | 105 | 44.0–47.5 | "SEO + content plan." | S-SEO |
+| 11 | SHOT `showcase` | 105 | 47.5–51.0 | "Campaigns, ready to publish." | S-CAMPAIGN |
+| 12 | CLIP `clip` | 165 | 51.0–56.5 | "Audited — every finding proven with a test." | **R6** |
+| 13 | SHOT `showcase` | 105 | 56.5–60.0 | "Severity-rated. Go / No-Go." | S-AUDIT |
+| 14 | SHOT `showcase` | 150 | 60.0–65.0 | "Real deliverables. On brand." | S-MONTAGE |
+| 15 | MG `message` | 135 | 65.0–69.5 | "10× faster." / "A fraction of the cost." | — |
+| 16 | MG `cta` | 165 | 69.5–75.0 | "ShipWithAI · shipwithai.nl" + "Even this video was made by the studio." | have |
+
+Sum = 2250 frames = **75.0s** ✓.
+
+---
+
+## 6. Final `scenes.ts` (drop-in)
+
+When footage lands, this is the exact composition. Set `brand.durationSeconds = 75` in `src/brand.ts`. Clips live in `public/clips/`, stills in `public/`. `startFrom`/`endAt` (source frames) trim each recording to its highlight; tune after a first render.
+
+```ts
+export const scenes: Scene[] = [
+  { type: "title", durationInFrames: 105, title: "A full software studio.", subtitle: "14 specialists. One terminal." },
+  { type: "message", durationInFrames: 105, lines: ["14 specialists.", "One terminal."] },
+  { type: "stat", durationInFrames: 150, stats: [
+      { value: 14, label: "specialists" }, { value: 9, label: "skills" }, { value: 5, label: "verticals" },
+    ], tagline: "10× faster." },
+  { type: "clip", durationInFrames: 180, src: "clips/fleet.mp4", caption: "One brief. The whole fleet mobilises.", playbackRate: 6 },
+  { type: "clip", durationInFrames: 270, src: "clips/claude-design.mp4", caption: "Design — logo, style book, screens.", playbackRate: 8 },
+  { type: "clip", durationInFrames: 120, src: "clips/store-aether.mp4", caption: "Aether — smart home.", playbackRate: 3 },
+  { type: "clip", durationInFrames: 120, src: "clips/store-evergreen.mp4", caption: "Evergreen — made for ease.", playbackRate: 3 },
+  { type: "clip", durationInFrames: 120, src: "clips/store-meridian.mp4", caption: "Meridian — book a call.", playbackRate: 3 },
+  { type: "clip", durationInFrames: 150, src: "clips/checkout.mp4", caption: "Checkout, live.", playbackRate: 3 },
+  { type: "showcase", durationInFrames: 105, image: "shot-seo.png", caption: "SEO + content plan." },
+  { type: "showcase", durationInFrames: 105, image: "shot-campaign.png", caption: "Campaigns, ready to publish." },
+  { type: "clip", durationInFrames: 165, src: "clips/audit-test.mp4", caption: "Audited — every finding proven with a test.", playbackRate: 6 },
+  { type: "showcase", durationInFrames: 105, image: "shot-audit-report.png", caption: "Severity-rated. Go / No-Go." },
+  { type: "showcase", durationInFrames: 150, image: "shot-montage.png", caption: "Real deliverables. On brand." },
+  { type: "message", durationInFrames: 135, lines: ["10× faster.", "A fraction of the cost."] },
+  { type: "cta", durationInFrames: 165, title: "ShipWithAI", subtitle: "shipwithai.nl · even this video was made by the studio." },
+];
+```
+
+Keep `brand.ts` on the studio theme (ink `#1A1A1A` / cream `#F4F1EA` / vermilion `#E4572E`, Newsreader). Add the music bed last: drop `music.mp3` in `public/` and an `<Audio>` at the composition root (volume ducked).
+
+---
+
+## 7. Prerequisites — status
+
+**Built (this pass — ready to use):**
+- ✅ `clip` scene type — `<OffthreadVideo trimBefore/trimAfter playbackRate>` in a branded frame (validated: typecheck + still render on Remotion 4.0.483).
+- ✅ `stat` scene type — animated count-up counters (validated render).
+- ✅ `claude-design` skill (`plugins/shipwithai-web/skills/claude-design/`) — the code↔design GitHub round-trip; `ui-designer`/`ui-developer`/`/ecommerce` rewired off Figma onto it.
+- ✅ `render-md.mjs` (`plugins/shipwithai-video/skills/capture-footage/`) — markdown → branded HTML (validated).
+- ✅ `gh` authed (`kivanov82`), `node` 22, `ffmpeg`, Stripe/Playwright/Vercel MCP connected.
+
+**Needs an operator (when you're back):**
+- ☐ Footage R1–R6 (recordings) + S-SEO/S-CAMPAIGN/S-MONTAGE (stills).
+- ☐ The Claude Design canvas step (browser, login) for each brand.
+- ☐ A licensed `music.mp3`.
+
+---
+
+## 8. Runbook — when you're back
+
+1. **Activate plugins** (reload Claude Code → accept trust/install).
+2. **Brand 1 — Aether (deep):** `/ecommerce` with the Aether brief. During it: the `claude-design` skill scaffolds + pushes `aether-design` → **you open claude.ai/design, import it, design the screens** (record **R2**). Export back. `ui-developer` builds; `npm run dev` → **record R3a** (storefront) and **R4** (Stripe checkout). If the run uses the workflow tree, **record R1** here.
+3. **Brand 2 — Evergreen:** `/ecommerce` with the Evergreen brief → **R3b**. (Add to R2/R4 if you want its canvas/checkout too.)
+4. **Brand 3 — Meridian:** `/ecommerce` with the Meridian brief (booking, not cart) → **R3c**.
+5. **Growth (Aether):** `/seo https://aether… ` + `/campaign` → render their `.md` with `render-md.mjs` → screenshot → `shot-seo.png`, `shot-campaign.png`.
+6. **Audit breadth:** `/audit … --depth full` → **record R6** (`forge test` + tree). Copy `shot-audit-report.png` from the 0626 engagement (or re-render).
+7. **Montage:** composite the three store homes + audit card + a promo frame → `shot-montage.png`.
+8. **Compose:** `/promo` (subject = the studio) → `remotion-compose` copies the template into `engagements/shipwithai-promo-20260627/video`, `npm install`, drop clips into `public/clips/` + stills into `public/`, paste §6 `scenes.ts`, set `durationSeconds = 75`.
+9. **Render & review:** `npx remotion render Promo out/promo.mp4`. Check pacing, caption legibility, that each clip's `startFrom`/`endAt` lands on the good moment. Tune and re-render.
+10. **Music:** drop `music.mp3` in `public/`, add `<Audio>`, final render. Mark the engagement `complete`.
+
+---
+
+## 9. Notes
+- **Honesty:** only real outputs on screen; the stats in scene 3 are the verified numbers above — don't inflate them. Stripe in **test mode**, no keys/cards visible.
+- **Throwaway design repos:** `<brand>-design` on GitHub hold only tokens + intent (no client data); delete after (`gh repo delete`).
+- **Shoot long, keep tight:** capture more than 75s of raw; the speed-up + trims do the compression. Aether is the brand that goes deep; Evergreen/Meridian carry the range beat.
+- **9:16 cut** (optional, later): same scenes, 1080×1920, re-stack the clip frames vertically.

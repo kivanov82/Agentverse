@@ -37,6 +37,8 @@ Turn a brief + captured footage into a rendered MP4 using the studio's bundled R
    - `{ type: "message", lines: string[] }` — big animated statement (e.g. "An AI studio that ships").
    - `{ type: "grid", items: string[] }` — animated grid of labels (the agent fleet / the verticals).
    - `{ type: "showcase", image, caption }` — a captured screenshot scaling/sliding in with a caption. `image` is a filename in `public/`.
+   - `{ type: "clip", src, caption, playbackRate?, startFrom?, endAt?, muted? }` — a **screen recording** (mp4/webm in `public/`) inside a branded frame, fast-forwarded. `playbackRate` (default 4) is the speed-up; `startFrom`/`endAt` (frames of the SOURCE) trim to the highlight. This is how terminal runs, the Claude Design canvas, and live storefronts get in.
+   - `{ type: "stat", stats: [{ value, label, suffix? }], tagline? }` — **animated counters** that count up from 0 (e.g. 14 specialists · 8 skills · 5 verticals → "10× faster.").
    - `{ type: "cta", title, subtitle }` — closing card with the domain + an accent sweep.
    Keep ~2.5–4s per caption; total of all `durationInFrames` should equal `fps * durationSeconds`.
 
@@ -53,6 +55,7 @@ Turn a brief + captured footage into a rendered MP4 using the studio's bundled R
 
 ## Notes
 
+- **Screen recordings** (`clip` scenes): drop the `.mp4`/`.webm` into `public/` (a `public/clips/` subfolder keeps it tidy — reference as `clips/name.mp4`). Trim each recording to its highlight before import, or use `startFrom`/`endAt`. Transcode `.mov` → `.mp4` with `ffmpeg -i clip.mov -vf scale=1920:-2 -r 30 clip.mp4`.
 - Music: drop an `.mp3` into `public/` and add `<Audio>` per the template's commented example, or leave silent.
 - If `npm install` is slow or offline, `npx remotion render` still works once deps are present.
 - Don't fabricate metrics in captions — only state what the deliverables actually show.

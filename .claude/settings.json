@@ -2,7 +2,7 @@
   "extraKnownMarketplaces": {
     "shipwithai": {
       "source": {
-        "source": "path",
+        "source": "file",
         "path": "./.claude-plugin/marketplace.json"
       }
     }

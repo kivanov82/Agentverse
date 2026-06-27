@@ -39,7 +39,7 @@ Slug = `<subject>-promo-<YYYYMMDD>`. `mkdir -p engagements/<slug>/shots`. Write 
 ## Step 3 — Gather footage
 Delegate to the **video-producer** subagent (or run inline) using the **`capture-footage`** skill:
 - If `footage` is explicit paths, use those.
-- If `auto`, pull real deliverables from existing `engagements/` — render markdown reports (e.g. an audit `report.md`) to branded HTML and screenshot them, screenshot any built storefront from its local dev server, grab Figma boards. Save into `engagements/<slug>/shots/`.
+- If `auto`, pull real deliverables from existing `engagements/` — render markdown reports (e.g. an audit `report.md`) to branded HTML (via `render-md.mjs`) and screenshot them, screenshot any built storefront from its local dev server, and use any operator screen recordings (terminal, the Claude Design canvas). Save stills into `engagements/<slug>/shots/` and recordings into `clips/`.
 
 ## Step 4 — Compose & render
 Use the **`remotion-compose`** skill: copy the bundled template into `engagements/<slug>/video`, fill `src/brand.ts` from the theme, author `src/scenes.ts` (title → message → 2–4 deliverable showcases → CTA, totalling the chosen length), drop the captured stills + logo into `public/`, then `npx remotion render Promo out/promo.mp4`.
@@ -48,4 +48,4 @@ Use the **`remotion-compose`** skill: copy the bundled template into `engagement
 Open the MP4; check pacing, caption legibility, brand consistency. Re-render after any fixes. Report the path (`engagements/<slug>/video/out/promo.mp4`), the duration, and what's featured. Mark the engagement `status: "complete"` in `engagements/index.json`.
 
 ## For the ShipWithAI self-promo
-Subject = the studio. Beat sheet (~30s): title (logo + "An AI studio that ships") → a `grid` of the verticals (audit · e-commerce · SEO · campaigns · video) → showcases of the real audit report + a built storefront → CTA (`shipwithai.nl`). This is the share-with-prospects asset.
+Subject = the studio. The full production plan — claim, three brand briefs, the recording shot list (what to record + when), and the frame-accurate ~75s storyboard — lives in **`docs/promo-script.md`**. Follow it rather than improvising. Spine: title → `stat` counters (14 specialists · 8 skills · 5 verticals → "10× faster") → `clip` recordings of the fleet/terminal, the Claude Design canvas, and three live storefronts → `showcase` stills of the audit/SEO/campaign deliverables → CTA (`shipwithai.nl`, "Even this video was made by the studio"). This is the share-with-prospects asset.

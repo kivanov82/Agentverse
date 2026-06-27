@@ -1,5 +1,5 @@
 ---
-description: Build an on-brand e-commerce storefront — guided intake, two-way Figma design, frontend + backend + payments, runnable locally with screenshots.
+description: Build an on-brand e-commerce storefront — guided intake, Claude Design round-trip, frontend + backend + payments, runnable locally with screenshots.
 argument-hint: "[product/store idea] [--deploy]"
 intake_questions:
   - id: products
@@ -26,7 +26,7 @@ intake_questions:
 
 # /ecommerce — e-commerce build engagement
 
-Design and build a runnable, on-brand storefront, entirely local. Demonstrates the **two-way Claude Design** flow (code↔Figma).
+Design and build a runnable, on-brand storefront, entirely local. Demonstrates the **Claude Design** round-trip (code↔canvas via GitHub).
 
 **Already provided:** `$ARGUMENTS`
 
@@ -39,8 +39,8 @@ Slug = `<brand-or-store>-<YYYYMMDD>`. `mkdir -p engagements/<slug>/store`. Write
 ## Step 3 — Run the team (one specialist at a time, via the `Agent` tool)
 Each specialist works in `engagements/<slug>/store`. For a demo-scope run, take it to a runnable storefront:
 1. **ux-analyst** — core flows (browse → product → cart → checkout), a short flows note.
-2. **ui-designer** — visual design. **Claude Design code→design:** push the screens into Figma (`figma-generate-design` / `use_figma`) using the brand theme; emit design tokens.
-3. **ui-developer** — build the Next.js storefront. **Claude Design design→code:** pull the designer's Figma frames via `get_design_context` (+ `frontend-design` skill); implement catalog, product page, cart.
+2. **ui-designer** — visual design via the **`claude-design`** skill (code→design): scaffold the design-source repo (tokens + briefs), push to GitHub, design the screens on the Claude Design canvas, export back to `design/claude-design-export/`. Emit `design/src/tokens.json`.
+3. **ui-developer** — build the Next.js storefront (design→code): implement from the Claude Design export + `tokens.json` (+ `frontend-design` skill); catalog, product page, cart.
 4. **e-commerce-specialist** — product catalog model, cart logic, shipping basics.
 5. **payment-integration** — checkout via Stripe (test mode; use the stripe skills/MCP).
 6. **deployer** — only if `--deploy`: ship to Vercel and return the URL.
