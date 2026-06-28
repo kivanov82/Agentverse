@@ -40,7 +40,12 @@ For early concepting, or before a buildable library exists. Claude Design import
 
 ## Bringing designs back (either path)
 
-Export from the canvas — **Standalone HTML / ZIP**, or **"Handoff to Claude Code"** — into `engagements/<slug>/design/claude-design-export/`, and grab the share URL. The `ui-developer` builds the production storefront from that export + `tokens.json` (don't guess from a screenshot).
+Two ways to pull the finished canvas into the engagement:
+
+1. **Via the DesignSync MCP (cleanest — no manual download).** The operator's canvas work lives in a **design *project*** (type `PROJECT_TYPE_PROJECT`, distinct from the design *system*). Read it directly: `DesignSync(get_project, projectId)` → `list_files` → `get_file` each `<Screen>.dc.html` (+ `support.js`, and the bound `_ds/<design-system>/`). The operator just gives you the project URL (the `?file=` param names the screen). `get_file` caps at 256 KB — large `.dc.html`/`support.js` persist to a tool-results file you parse for `.content`.
+2. **Manual export** — Standalone HTML / ZIP / "Handoff to Claude Code" → `engagements/<slug>/design/claude-design-export/`.
+
+**The `.dc.html` format:** a Claude Design canvas file is an `<x-dc>` template with inline styles + real copy, rendered by `support.js` (which needs `window.React`/`ReactDOM` + the bound `_ds_bundle.js`). To *view* it locally, serve the export dir and inject React/ReactDOM UMD ahead of `support.js`. But it's **self-describing** — the `ui-developer` can implement straight from the markup (inline CSS + copy + which `@aether/ui` components are used). It's typically a **multi-screen suite** (home, PDP, checkout, campaign, …), not one page — map each to a route. The `ui-developer` builds the production app from it + `tokens.json` (don't guess from a screenshot).
 
 ## Deliverables (`engagements/<slug>/design/`)
 - the standalone design-system package (Path A) and/or `design-sources/<brand>/` tokens+briefs+mockups (Path B)

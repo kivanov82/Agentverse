@@ -167,10 +167,14 @@ Keep `brand.ts` on the studio theme (ink `#1A1A1A` / cream `#F4F1EA` / vermilion
 - ✅ `render-md.mjs` (markdown → branded HTML, validated).
 - ✅ `gh` authed (`kivanov82`), `node` 22, `ffmpeg`, Stripe/Playwright/Vercel MCP connected; node Chromium installed.
 
-**Needs an operator (when you're back):**
-- ☐ Footage R1–R7 (recordings) + S-SEO/S-CAMPAIGN/S-MONITOR/S-MONTAGE (stills). R2 (Claude Design canvas) is being recorded now.
-- ☐ The Claude Design canvas step (browser, login) for the remaining brands.
-- ☐ A licensed `music.mp3`.
+**Footage captured (2026-06-28):**
+- ✅ **R1** fleet terminal (`clips/fleet.mp4`) · ✅ **R2** Claude Design canvas (`clips/claude-design.mp4`, 129s) · ✅ **R3a + R4** store + checkout (`clips/app-aether.mp4`) · ✅ **R8** Vercel deploy dashboard (`clips/deploy.mp4`) — live at **aether-store-fawn.vercel.app** · (+ `design-prep.mp4`, `claude-design-extra.mp4` extras)
+
+**Still needed:**
+- ☐ **R6** audit `forge test` · **R7** monitoring
+- ☐ **Evergreen + Meridian** stores → R3b / R3c (brands not built yet)
+- ☐ Stills: S-SEO, S-CAMPAIGN, S-MONTAGE (S-AUDIT ✓)
+- ☐ A licensed `music.mp3`
 
 ---
 

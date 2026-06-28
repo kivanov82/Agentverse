@@ -21,7 +21,11 @@ Some of the best footage is live and login-gated, so the **operator records it**
 - **Claude Design canvas** (`claude.ai/design`) — screens building from the imported repo. This is the design hero shot; the canvas is behind a login, so Playwright can't drive it.
 - **A live storefront** in a real browser when you want human-paced scrolling.
 
-macOS: `Cmd+Shift+5` → record window/region → save `.mov` into `engagements/<slug>/clips/`. Transcode: `ffmpeg -i clip.mov -vf scale=1920:-2 -r 30 clip.mp4`. These become `clip` scenes (fast-forwarded in `remotion-compose`). Record at normal speed — speed-up happens in Remotion.
+macOS: `Cmd+Shift+5` → record window/region → save `.mov` into `engagements/<slug>/clips/`. Record at normal speed — speed-up happens in Remotion.
+
+**Transcode every recording to a clean clip:** `ffmpeg -y -i in.mov -vf "scale=1920:-2,fps=30" -c:v libx264 -crf 20 -preset medium -pix_fmt yuv420p -an out.mp4`. macOS retina/240fps captures (e.g. 3332×1854) downscale cleanly and shrink ~20× (160MB → ~9MB). `-an` drops audio (music is added later).
+- **Find the trim points** without scrubbing: tile a filmstrip → `ffmpeg -i clip.mp4 -vf "fps=1/5,scale=460:-1,tile=4x2" -frames:v 1 strip.png` and read it. Note the second-ranges for each beat.
+- **One recording can feed several scenes:** a single app walkthrough (store → checkout → PDP) serves multiple `clip` scenes via different `startFrom`/`endAt` + `playbackRate` (source frames @30fps). No need to re-record per scene.
 
 ## 3. Markdown deliverables → branded HTML → screenshot
 Audit reports, SEO reports, campaign plans are markdown. To show them as a real-looking document, use the bundled zero-dependency renderer:
