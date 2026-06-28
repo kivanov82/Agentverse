@@ -12,7 +12,7 @@ Brand: **ShipWithAI** (no dot). Domain: **shipwithai.nl**.
 .claude-plugin/marketplace.json   # local plugin marketplace (relative string sources, e.g. "./plugins/x" — loads from disk)
 .claude/settings.json             # auto-activates the marketplace + plugins (tracked)
 plugins/
-  shipwithai-core/                # pm coordinator + shared skills (intake, brand-extract)
+  shipwithai-core/                # pm coordinator + /ship orchestrator + shared skills (intake, brand-extract)
   shipwithai-audit/               # /audit      — solidity-auditor + 3 methodologies + workflow
   shipwithai-web/                 # /ecommerce  — design/build/payments/deploy (Claude Design round-trip)
   shipwithai-growth/              # /seo /campaign — seo / marketing / tech-writer / ux-analyst
@@ -56,6 +56,9 @@ In `shipwithai-web`, design runs through **Claude Design** (`claude.ai/design`);
 
 ### Marketing-video pipeline
 `shipwithai-video` produces an MP4 with Remotion. `capture-footage` gathers real footage — branded HTML deliverables (via the bundled `render-md.mjs`) → Playwright screenshot (the Playwright MCP blocks `file://`, so serve over localhost), operator screen recordings (terminal, the Claude Design canvas, live storefronts), browser captures. `remotion-compose` copies the bundled **data-driven template** (`plugins/shipwithai-video/template/`), customizes `src/brand.ts` + `src/scenes.ts`, drops stills/clips into `public/`, and renders (`npx remotion render`). Scene types: `title`, `message`, `grid`, `showcase` (still), **`clip`** (screen recording via `<OffthreadVideo trimBefore/trimAfter playbackRate>`), **`stat`** (animated counters), `cta`. The current promo plan lives in `docs/promo-script.md`.
+
+### Full-pipeline orchestrator (`/ship`)
+`shipwithai-core` ships a `/ship` command — the studio's conductor for an end-to-end **product** delivery. The `pm` agent drives it, running the verticals **in sequence** (decide → design → build → commerce → deploy → grow → promo → monitor), delegating to each vertical's agents/skills, threading one engagement dir through, and **checkpointing with the operator** at human-in-the-loop moments (the Claude Design canvas, before deploy). It's a *guided* pipeline, not autopilot; phases are skippable per product `type`; each vertical command still runs standalone. Deterministic stretches can be backed by a `Workflow` (like `audit.js`). `/audit` stays a standalone service, not a `/ship` phase. (Built; to be exercised on the next product round — the current promo build runs the verticals manually.)
 
 ### Monitoring vertical (post-launch)
 `shipwithai-monitor` runs *after* go-live. `/monitor` stands up a config (`engagements/<slug>/monitoring/monitor.config.json`) + a recurring **scheduled cloud agent** (cron, via the `schedule` skill) that calls `/monitor --check <slug>`. Each cycle (`monitor-run` skill) fans out the enabled specialists — `uptime-sentinel` (tech), `revenue-analyst` (sales/Stripe), `traffic-analyst` (visitors/analytics), `seo-rank-watch` (search), `security-watch` (deps/CVEs/headers), `reputation-watch` (brand) — each returning **OK/WATCH/ALERT** + numbers, then writes a dated digest + alerts and delivers them via the `notify` skill (push / Slack / email / Notion / file). Monitors are **read-only** (observe + report; a fix is a hand-off to the relevant build vertical), alert on **change** not steady-state, and degrade gracefully (`unknown`) when a source isn't connected.

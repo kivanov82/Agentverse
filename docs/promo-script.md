@@ -61,14 +61,15 @@ Run with `/ecommerce` per brand (one `engagements/<brand>-<date>/` each), then `
 | **Design** | `ui-designer` + `claude-design` skill | all 3 | logo + style book + screens (Claude Design canvas → export) |
 | Build | `ui-developer` | all 3 | running storefront ×3 |
 | Catalog/cart | `e-commerce-specialist` | Aether, Evergreen | product model + cart |
-| **Commerce** | `payment-integration` | Aether, Evergreen = **Stripe checkout** (test mode); Meridian = **book-a-call** lead form | live checkout / booking |
+| **Commerce (UI only)** | `payment-integration` | Aether/Evergreen = **styled checkout UI** (NOT wired — shown for the film); Meridian = **book-a-call** lead form | checkout screen / booking |
+| **Deploy** | `deployer` | Aether (others as needed) | **live Vercel URL** |
 | SEO | `seo-specialist` + `tech-writer` | **Aether only** | `seo-report.md` + content plan |
 | Campaign | `marketing` + `tech-writer` | **Aether only** | `campaign-plan.md` + `copy/*` |
 | Breadth: Audit | `solidity-auditor` | (existing vault) | severity report + Foundry PoC |
 | **After launch: Monitor** | `uptime-sentinel` + `revenue-analyst` + `traffic-analyst` (+seo/security/reputation) | **Aether** | 24/7 digest + alerts (tech · sales · traffic) |
 | Meta: Video | `video-producer` | the studio | *this film* |
 
-**Commerce note:** Stripe is the connected payment rail (Shopify is **not** wired — don't promise it). Use Stripe **test mode** only; never show live keys or real card data on screen.
+**Commerce note:** Payments are **not** wired for the film — checkout is a **styled UI we show and caption** ("Secure checkout"), never a real transaction; no keys, no card entry, never imply a live charge. **Deploy IS real:** the `deployer` ships the store to **Vercel** for a live URL we record (the "live in minutes" proof).
 
 ---
 
@@ -81,7 +82,8 @@ Record at **1920×1080** (or 2× and downscale), large terminal font, clean prom
 | **R1 — fleet** | The terminal during a multi-agent run — ideally the `/workflows` progress tree, or PM handoffs / subagents fanning out | the `/audit --depth full` workflow, or any `/ecommerce` run | 30–60s | 4 |
 | **R2 — Claude Design** (hero) | The **claude.ai/design** canvas building screens from the imported repo — chat-left/canvas-right, screens appearing, a logo/style-book forming | during the design step (after `claude-design` pushes each brand's repo) | 40–80s | 5 |
 | **R3 — storefronts** | Browser scrolling each **running** store: homepage → a product page. One recording per brand | after each `/ecommerce` build (`npm run dev`) | 3×~10s | 6, 7, 8 |
-| **R4 — checkout** | Stripe **test-mode** checkout on Aether (or Evergreen): cart → checkout → success | after `payment-integration` | 10–20s | 9 |
+| **R8 — deploy** | The `deployer` shipping to **Vercel** — the deploy output/progress in the terminal, then the **live URL** opening in the browser (Vercel dashboard optional) | after the Aether build, via the `deployer` | 10–20s | 6 (with R3a) |
+| **R4 — checkout (UI)** | Cart → the **styled checkout screen** (UI walkthrough only, **no real payment**). The caption sells it; never show a live charge | after the checkout UI is built | 8–15s | 9 |
 | **R6 — audit test** | `forge test` passing, scrolling green; optionally the workflow tree | during/after the `/audit` run | 10–20s | 12 |
 | **R7 — monitoring** | The `/monitor` check cycle in the terminal **+** a notification firing (push/Slack) and the digest. No live data yet? Render the digest md → branded HTML for a clean "dashboard" still instead | after `/monitor` on Aether | 10–20s | 14 |
 
@@ -104,10 +106,10 @@ Legend: **MG** = motion graphics (no capture) · **CLIP** = screen recording (R-
 | 3 | MG `stat` | 150 | 7.0–12.0 | 20 specialists · 12 skills · 6 verticals → "10× faster." | — |
 | 4 | CLIP `clip` | 165 | 12.0–17.5 | "One brief. The whole fleet mobilises." | **R1** |
 | 5 | CLIP `clip` | 240 | 17.5–25.5 | "Design — logo, style book, screens." | **R2** |
-| 6 | CLIP `clip` | 110 | 25.5–29.2 | "Aether — smart home." | **R3a** |
+| 6 | CLIP `clip` | 110 | 25.5–29.2 | "Aether — built, deployed, live." | **R8 + R3a** |
 | 7 | CLIP `clip` | 110 | 29.2–32.8 | "Evergreen — made for ease." | **R3b** |
 | 8 | CLIP `clip` | 110 | 32.8–36.5 | "Meridian — book a call." | **R3c** |
-| 9 | CLIP `clip` | 135 | 36.5–41.0 | "Checkout, live." | **R4** |
+| 9 | CLIP `clip` | 135 | 36.5–41.0 | "Checkout — secure & simple." (UI only) | **R4** |
 | 10 | SHOT `showcase` | 100 | 41.0–44.3 | "SEO + content plan." | S-SEO |
 | 11 | SHOT `showcase` | 100 | 44.3–47.7 | "Campaigns, ready to publish." | S-CAMPAIGN |
 | 12 | CLIP `clip` | 150 | 47.7–52.7 | "Audited — every finding proven with a test." | **R6** |
@@ -134,10 +136,10 @@ export const scenes: Scene[] = [
     ], tagline: "10× faster." },
   { type: "clip", durationInFrames: 165, src: "clips/fleet.mp4", caption: "One brief. The whole fleet mobilises.", playbackRate: 6 },
   { type: "clip", durationInFrames: 240, src: "clips/claude-design.mp4", caption: "Design — logo, style book, screens.", playbackRate: 8 },
-  { type: "clip", durationInFrames: 110, src: "clips/store-aether.mp4", caption: "Aether — smart home.", playbackRate: 3 },
+  { type: "clip", durationInFrames: 110, src: "clips/store-aether.mp4", caption: "Aether — built, deployed, live.", playbackRate: 3 }, // splice R8 deploy → R3a live store
   { type: "clip", durationInFrames: 110, src: "clips/store-evergreen.mp4", caption: "Evergreen — made for ease.", playbackRate: 3 },
   { type: "clip", durationInFrames: 110, src: "clips/store-meridian.mp4", caption: "Meridian — book a call.", playbackRate: 3 },
-  { type: "clip", durationInFrames: 135, src: "clips/checkout.mp4", caption: "Checkout, live.", playbackRate: 3 },
+  { type: "clip", durationInFrames: 135, src: "clips/checkout.mp4", caption: "Checkout — secure & simple.", playbackRate: 3 }, // UI walkthrough, not a real payment
   { type: "showcase", durationInFrames: 100, image: "shot-seo.png", caption: "SEO + content plan." },
   { type: "showcase", durationInFrames: 100, image: "shot-campaign.png", caption: "Campaigns, ready to publish." },
   { type: "clip", durationInFrames: 150, src: "clips/audit-test.mp4", caption: "Audited — every finding proven with a test.", playbackRate: 6 },
@@ -175,7 +177,7 @@ Keep `brand.ts` on the studio theme (ink `#1A1A1A` / cream `#F4F1EA` / vermilion
 ## 8. Runbook — when you're back
 
 1. **Activate plugins** (reload Claude Code → accept trust/install).
-2. **Brand 1 — Aether (deep):** `/ecommerce` with the Aether brief. During it: the `claude-design` skill scaffolds + pushes `aether-design` → **you open claude.ai/design, import it, design the screens** (record **R2**). Export back. `ui-developer` builds; `npm run dev` → **record R3a** (storefront) and **R4** (Stripe checkout). If the run uses the workflow tree, **record R1** here.
+2. **Brand 1 — Aether (deep):** `/ecommerce` with the Aether brief. Design on the Claude Design canvas (record **R2**), export back, `ui-developer` builds; `npm run dev` → **record R3a** (storefront). Then **`deployer` → Vercel** → **record R8** (deploy output + the live URL opening). Record **R4** as a checkout-UI walkthrough (no real payment). If the run shows the fleet, **record R1** here. *(Aether's design + v2 build + design-sync are already done — what remains for Aether is R1/R2 save, the deploy, and recording R3a/R4.)*
 3. **Brand 2 — Evergreen:** `/ecommerce` with the Evergreen brief → **R3b**. (Add to R2/R4 if you want its canvas/checkout too.)
 4. **Brand 3 — Meridian:** `/ecommerce` with the Meridian brief (booking, not cart) → **R3c**.
 5. **Growth (Aether):** `/seo https://aether… ` + `/campaign` → render their `.md` with `render-md.mjs` → screenshot → `shot-seo.png`, `shot-campaign.png`.
