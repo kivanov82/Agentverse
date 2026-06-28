@@ -29,6 +29,11 @@
       "name": "shipwithai-video",
       "description": "Marketing-video vertical — Remotion promo/explainer videos from captured deliverables + motion graphics.",
       "source": "./plugins/shipwithai-video"
+    },
+    {
+      "name": "shipwithai-monitor",
+      "description": "Post-launch monitoring & alerting vertical — 24/7 watch of tech uptime, sales, traffic, SEO, security, and reputation, with scheduled check cycles, digests, and notifications.",
+      "source": "./plugins/shipwithai-monitor"
     }
   ]
 }

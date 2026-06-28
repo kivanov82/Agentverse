@@ -10,5 +10,11 @@
     "vertical": "promo",
     "date": "20260627",
     "status": "active"
+  },
+  {
+    "slug": "aether-20260627",
+    "vertical": "ecommerce",
+    "date": "20260627",
+    "status": "active"
   }
 ]

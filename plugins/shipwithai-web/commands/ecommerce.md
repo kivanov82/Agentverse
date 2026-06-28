@@ -39,8 +39,8 @@ Slug = `<brand-or-store>-<YYYYMMDD>`. `mkdir -p engagements/<slug>/store`. Write
 ## Step 3 — Run the team (one specialist at a time, via the `Agent` tool)
 Each specialist works in `engagements/<slug>/store`. For a demo-scope run, take it to a runnable storefront:
 1. **ux-analyst** — core flows (browse → product → cart → checkout), a short flows note.
-2. **ui-designer** — visual design via the **`claude-design`** skill (code→design): scaffold the design-source repo (tokens + briefs), push to GitHub, design the screens on the Claude Design canvas, export back to `design/claude-design-export/`. Emit `design/src/tokens.json`.
-3. **ui-developer** — build the Next.js storefront (design→code): implement from the Claude Design export + `tokens.json` (+ `frontend-design` skill); catalog, product page, cart.
+2. **ui-designer** — visual design via the **`claude-design`** skill (code→design). Two paths: **high-fidelity** = a standalone Next-free component library synced with `/design-sync` ("Create using Claude Code", run from the main session); **lighter** = `tokens.json` + `DESIGN.md` + HTML mockups in a tracked `design-sources/<brand>/` imported via "Create here". Emit `design/src/tokens.json` either way.
+3. **ui-developer** — build the Next.js storefront (design→code): implement from the Claude Design export + `tokens.json` (+ `frontend-design` skill); catalog, product page, cart. Keep components reusable/presentational so they can double as the synced design system.
 4. **e-commerce-specialist** — product catalog model, cart logic, shipping basics.
 5. **payment-integration** — checkout via Stripe (test mode; use the stripe skills/MCP).
 6. **deployer** — only if `--deploy`: ship to Vercel and return the URL.

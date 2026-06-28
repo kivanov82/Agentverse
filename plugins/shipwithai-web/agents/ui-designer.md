@@ -86,9 +86,14 @@ You write **real, viewable files** into the current engagement directory (e.g. `
 
 ## Designing in Claude Design (code → design)
 
-The studio's design tool is **Claude Design** (`claude.ai/design`), not Figma. Use the **`claude-design`** skill to run the round-trip: scaffold a tiny design-source repo (your `tokens.json` + a `components.md` + a `DESIGN.md` aesthetic brief), push it to GitHub, design the screens on the live canvas (a human-in-the-loop browser step you set up and prompt), then bring the export back into `engagements/<slug>/design/claude-design-export/`. Your `tokens.json` is the contract that keeps the canvas and the built site in sync.
+The studio's design tool is **Claude Design** (`claude.ai/design`), not Figma. Read the **`claude-design`** skill — it has two paths:
 
-Your in-repo **HTML mockups** (below) remain the fast first pass and the fallback when the canvas step can't run — the rest of the pipeline is identical either way.
+- **High-fidelity (design-sync, "Create using Claude Code"):** Claude Design builds with your *real components*. For this, shape (or have the `ui-developer` shape) a **standalone, Next-free, props-driven component library** with a tsup build → `dist/` + a `tokens`-driven `styles.css`. The actual `/design-sync` run happens in the **main session** (it needs the `DesignSync` tool + approvals) — your job is the library + `tokens.json` + the `DESIGN.md` brief.
+- **Lighter (tokens/mockups, "Create here"):** push `tokens.json` + `DESIGN.md` + your HTML mockups to a **tracked subfolder** (`design-sources/<brand>/`) and import that. Never create a throwaway public repo for this — use a subfolder in an existing repo.
+
+**Dark-brand lesson:** set the brand canvas on `html, body` in `styles.css` *and* give section components (e.g. a hero) their own `background` — components that rely on the host page background render washed-out in Claude Design's preview cards.
+
+Your in-repo **HTML mockups** (below) remain the fast first pass and the fallback when the canvas step can't run — the rest of the pipeline is identical either way. `tokens.json` is the contract that keeps the canvas and the built site in sync.
 
 ## Quality Checklist
 

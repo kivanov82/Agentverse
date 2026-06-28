@@ -1,0 +1,6 @@
+{
+  "name": "shipwithai-monitor",
+  "description": "Post-launch monitoring & alerting vertical — 24/7 watch of tech uptime, sales, traffic, SEO, security, and reputation for a live site/store, with scheduled check cycles, digests, and notifications.",
+  "version": "0.1.0",
+  "author": { "name": "ShipWithAI" }
+}

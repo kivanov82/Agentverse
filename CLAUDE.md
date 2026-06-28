@@ -1,6 +1,6 @@
 # ShipWithAI — local-first AI delivery studio
 
-ShipWithAI is a **local-first delivery studio**: a fleet of specialist AI agents that run inside Claude Code to produce real client deliverables — smart-contract audits, e-commerce builds, SEO, marketing campaigns, and marketing videos. The studio is packaged as **Claude Code plugins** and runs locally; engagements are billed per project (no automated payments).
+ShipWithAI is a **local-first delivery studio**: a fleet of specialist AI agents that run inside Claude Code to produce real client deliverables — smart-contract audits, e-commerce builds, SEO, marketing campaigns, marketing videos, and 24/7 post-launch monitoring. The studio is packaged as **Claude Code plugins** and runs locally; engagements are billed per project (no automated payments).
 
 Brand: **ShipWithAI** (no dot). Domain: **shipwithai.nl**.
 
@@ -17,6 +17,7 @@ plugins/
   shipwithai-web/                 # /ecommerce  — design/build/payments/deploy (Claude Design round-trip)
   shipwithai-growth/              # /seo /campaign — seo / marketing / tech-writer / ux-analyst
   shipwithai-video/               # /promo      — Remotion video + capture/compose skills + template
+  shipwithai-monitor/             # /monitor    — 24/7 post-launch monitoring (tech/sales/traffic/seo/security/reputation) + alerts
 docs/                             # production docs (e.g. promo-script.md)
 engagements/                      # per-client working dirs (gitignored; only index.json tracked)
 ```
@@ -37,11 +38,12 @@ engagements/                      # per-client working dirs (gitignored; only in
 | `/seo` | SEO optimization | SEO audit + keyword + content plan |
 | `/campaign` | marketing campaign | campaign plan + ready-to-publish copy |
 | `/promo` | marketing video | branded MP4 (Remotion) from captured deliverables + motion graphics |
+| `/monitor` | post-launch monitoring | 24/7 watch + scheduled digests/alerts across tech · sales · traffic · SEO · security · reputation |
 
 ## Key concepts
 
 ### Plugin anatomy
-A vertical plugin = `commands/<name>.md` (the wizard) + `agents/*.md` (subagents, with `name`/`description`/`tools`/`model` frontmatter) + `skills/*/SKILL.md` + optional `workflows/*.js`. `shipwithai-core` holds the `pm` agent and the shared `intake` + `brand-extract` skills every vertical reuses. There are 14 specialist agents and 9 skills across the plugins.
+A vertical plugin = `commands/<name>.md` (the wizard) + `agents/*.md` (subagents, with `name`/`description`/`tools`/`model` frontmatter) + `skills/*/SKILL.md` + optional `workflows/*.js`. `shipwithai-core` holds the `pm` agent and the shared `intake` + `brand-extract` skills every vertical reuses. There are 20 specialist agents and 12 skills across the plugins.
 
 ### Intake wizard
 Each command declares its questions in an `intake_questions:` YAML frontmatter block — the single source of truth (the local-first heir to the old `use-cases.ts`). The core `intake` skill reads that block: choices → `AskUserQuestion` (clickable), free-text asked conversationally, anything pre-filled from args is skipped. It emits a normalized brief the specialists act on.
@@ -49,11 +51,14 @@ Each command declares its questions in an `intake_questions:` YAML frontmatter b
 ### Audit workflow
 `/audit` at `full` depth runs `plugins/shipwithai-audit/workflows/audit.js` via the Workflow tool: Feynman + State-Inconsistency run once each as independent passes, then **Nemesis runs fusion-only** (its Phase-4 feedback loop over their combined output — it does NOT re-run the hunt passes), then every Critical/High/Medium finding is adversarially verified, then synthesized. `quick`/`standard` depths delegate to the `solidity-auditor` subagent directly. **Gotcha:** the Workflow runtime delivers the `args` global as a JSON string — workflow scripts must `JSON.parse` it (see `audit.js`).
 
-### Claude Design (code ↔ design round-trip)
-In `shipwithai-web`, design runs through **Claude Design** (`claude.ai/design`), not Figma. The `claude-design` skill drives the round-trip: `ui-designer` scaffolds a design-source repo (tokens + briefs) and pushes it to GitHub; an operator imports it into the Claude Design canvas, designs the screens, and exports the result back into `engagements/<slug>/design/claude-design-export/`; `ui-developer` builds the real storefront from that export + `tokens.json` and verifies it in a browser with Playwright. The canvas step is human-in-the-loop (browser, login-gated) — the in-repo HTML mockups are the fallback.
+### Claude Design (code ↔ design — not Figma)
+In `shipwithai-web`, design runs through **Claude Design** (`claude.ai/design`); authorize with `/design-login`. The `claude-design` skill has two paths. **High-fidelity = `design-sync` ("Create using Claude Code"):** bundle a **standalone, Next-free, props-driven component library** (tsup → `dist/` + a tokens-driven `styles.css`) and sync it with the built-in **`/design-sync`** skill so the canvas designs with the studio's *real* components — run from the **main session** (it needs the `DesignSync` tool + approvals); a `ui-designer` subagent only shapes the package. **Lighter = "Create here":** push `tokens.json` + `DESIGN.md` + HTML mockups to a tracked `design-sources/<brand>/` subfolder and import that. Either way the operator drives the canvas (human-in-the-loop, login-gated) and exports back to `engagements/<slug>/design/claude-design-export/`, which `ui-developer` builds from. **Gotchas:** components must own their backgrounds (a hero relying on the page `body` bg washes out in preview cards — set the canvas on `html,body` *and* on section components); the render check needs a node Chromium (`~/Library/Caches/ms-playwright` on macOS); never create a throwaway public repo (classifier-gated) — use a subfolder in an existing repo.
 
 ### Marketing-video pipeline
 `shipwithai-video` produces an MP4 with Remotion. `capture-footage` gathers real footage — branded HTML deliverables (via the bundled `render-md.mjs`) → Playwright screenshot (the Playwright MCP blocks `file://`, so serve over localhost), operator screen recordings (terminal, the Claude Design canvas, live storefronts), browser captures. `remotion-compose` copies the bundled **data-driven template** (`plugins/shipwithai-video/template/`), customizes `src/brand.ts` + `src/scenes.ts`, drops stills/clips into `public/`, and renders (`npx remotion render`). Scene types: `title`, `message`, `grid`, `showcase` (still), **`clip`** (screen recording via `<OffthreadVideo trimBefore/trimAfter playbackRate>`), **`stat`** (animated counters), `cta`. The current promo plan lives in `docs/promo-script.md`.
+
+### Monitoring vertical (post-launch)
+`shipwithai-monitor` runs *after* go-live. `/monitor` stands up a config (`engagements/<slug>/monitoring/monitor.config.json`) + a recurring **scheduled cloud agent** (cron, via the `schedule` skill) that calls `/monitor --check <slug>`. Each cycle (`monitor-run` skill) fans out the enabled specialists — `uptime-sentinel` (tech), `revenue-analyst` (sales/Stripe), `traffic-analyst` (visitors/analytics), `seo-rank-watch` (search), `security-watch` (deps/CVEs/headers), `reputation-watch` (brand) — each returning **OK/WATCH/ALERT** + numbers, then writes a dated digest + alerts and delivers them via the `notify` skill (push / Slack / email / Notion / file). Monitors are **read-only** (observe + report; a fix is a hand-off to the relevant build vertical), alert on **change** not steady-state, and degrade gracefully (`unknown`) when a source isn't connected.
 
 ### Connected tools (MCP)
 Playwright (browser/test/capture), Vercel (deploy), Stripe (payments), GitHub + Brave (repo/search) — all via globally-enabled Claude Code plugins; agents reference the `mcp__*` tools directly. No plugin-level `.mcp.json` is needed. **Design** does not use an MCP tool: it runs in **Claude Design** (`claude.ai/design`, a browser app) via the GitHub round-trip (the `claude-design` skill). The Figma MCP may still be present globally but the studio no longer depends on it.
