@@ -1,201 +1,172 @@
-# ShipWithAI — Promo v3 (production plan & exact script)
+# ShipWithAI — Explainer v6 (the AI-native studio story)
 
-**Status:** READY — every tooling prerequisite is built; only footage + music remain (both need an operator at the keyboard). Supersedes v1 (a 30s stills-only cut, rendered at `engagements/shipwithai-promo-20260626/`) and the v2 draft.
-**Output:** a single **~75s sizzle** (LOCKED), 1920×1080 landscape — for the site hero, LinkedIn, email.
-**Sound:** licensed music bed (drop `.mp3` in `public/`), no voiceover — captions carry it.
-**Goal:** a prospect walks away convinced of (a) **range** (any brand, any audience), (b) **speed** (afternoon vs weeks), (c) **professionalism** (real, verified, on-brand deliverables).
+**Status:** RENDERED — `engagements/shipwithai-promo-20260627/video/out/promo-v6.mp4` (125s · 1920×1080 · h264+aac · ~18 MB).
+**Output:** a single **~2-min educational explainer**, 1920×1080 landscape — for the site, LinkedIn, email.
+**Sound:** licensed music bed (`public/music.mp3`), no voiceover — captions carry it.
+**Goal:** a viewer *understands the idea* — not "buy this tool." Teach the AI-native company thesis, show that ShipWithAI is built exactly that way, then prove it with real deliverables.
 
-The film is produced by running the studio for real across **three contrasting brands**, recording as we go, then cutting the footage to 75s. The walkthrough doubles as a delivery-proof: if we can film it, we can ship it.
+> **This is an EXPLAINER, not a sizzle.** It supersedes the v1–v3 "20 specialists · 10× faster · three brands" sales cuts (kept in §History). No "terminal tool" framing — the operator has the terminal; the viewer gets the *idea*. Tone is calm and educational: **problem → solution → how → showcase → moat.**
 
 ---
 
 ## 1. The message (spine)
 
-> A traditional agency needs weeks and a room full of specialists. ShipWithAI **is** that room — running locally in one terminal — that designs, builds, audits, and launches your product in an afternoon, then **keeps watching it 24/7** after go-live. We prove it by building three completely different brands at once.
+> In the old world a company **is** its people — they hold the knowledge and do the work. In the new world people move up to **strategy, taste & judgment**, **agents do the labor**, and the company becomes a **shared, legible context layer** that both plug into. ShipWithAI is built exactly like that — and the **moat is legibility**: a delivery operation documented so well that agents can run it. Point that at work repetitive enough to systematize but complex enough that agencies stay slow — and ship.
 
-**Headline claim — B (Scale):** *"A full software studio. 20 specialists. One terminal. 10× faster."* (unfolds across scenes 1–3, echoed in the payoff).
+Built around the **four diagrams** from the founding thesis, each now a purpose-built animated scene:
+1. **Remove the maze** — the magic isn't the agent, it's collapsing the workflow (a `maze` before/after).
+2. **The org-chart / context layer** — humans → an orchestration agent → specialist teams → a shared context layer that *becomes the company* (a `network`, built in 4 teachable stages).
+3. **The readability stack** — you make the business legible, layer by layer (a `stack` pyramid).
+4. **The goldmine** — repetitive × complex is the opportunity (a `goldmine` 2×2 map).
 
-**Honest stats (verified 2026-06-28 — keep honest):**
-- **20** specialist agents · **12** skills · **6** verticals · connected to Claude Design, Playwright, Vercel, Stripe, GitHub
-- **2,539** lines of audit methodology (Feynman 973 · Nemesis 1,048 · State-Inconsistency 518)
-- Every audit finding proven with a passing Foundry PoC
-- Three storefronts designed, built, and wired in a single run
-- And it doesn't stop at launch — **24/7 monitoring agents** watch tech, sales & traffic after go-live
-
----
-
-## 2. The three brands (the range triangle)
-
-Three deliberately different briefs so the design system visibly adapts to audience. Names are placeholders — swap freely.
-
-### Brand 1 — **Aether** · smart-home  *(the DEEP brand — also gets SEO + campaign)*
-- **Sells:** smart-home sensors, hubs, automation kits. Tagline: *"Your home, aware."*
-- **Audience:** tech-forward, 25–45.
-- **Aesthetic:** futuristic / electric. Dark UI, near-black canvas, electric-teal accent, glass panels, subtle grid, motion-forward.
-- **Type:** Space Grotesk (display) + JetBrains Mono (specs/prices). **Palette:** ink `#0B0F12`, surface `#11181D`, accent `#15C2A5`, paper `#E8F1EE`.
-- **Screens:** home (hero + product grid), product (a sensor kit), cart, checkout.
-
-### Brand 2 — **Evergreen** · made-for-ease  *(built + checkout)*
-- **Sells:** wellbeing / mobility / gardening for 60+ — ergonomic garden tools, easy-grip kitchenware, mobility aids. Tagline: *"Comfort, delivered."*
-- **Audience:** 60+. Accessibility is the design thesis.
-- **Aesthetic:** warm & accessible. Large legible type, very high contrast, generous spacing, visible trust badges, a prominent **"Call to order"** phone CTA next to every add-to-cart, simple flat nav.
-- **Type:** Fraunces (display) + Source Sans 3 at large sizes (body ≥ 20px). **Palette:** paper `#FBF7EE`, ink `#22302A`, accent forest `#2F6B4F`, warm `#C2552E`.
-- **Screens:** home (big hero, large cards), product (huge type, big add-to-cart), checkout (one simple page).
-
-### Brand 3 — **Meridian** · advisory  *(built + booking, NOT a cart)*
-- **Sells:** boutique financial advisory / wealth consultancy. CTA is **"Book a consultation,"** not checkout — proves the studio does lead-gen sites, not only carts.
-- **Audience:** institutional / HNW, premium B2B.
-- **Aesthetic:** premium / institutional. Navy + bone, serif, restrained, fine rules, lots of whitespace, credibility cues (stats, logos, team).
-- **Type:** Newsreader (display serif) + a grotesque for labels. **Palette:** navy `#0E1B2C`, bone `#F2EFE9`, muted gold `#B08D57`.
-- **Screens:** home (hero + services + insights), services, **book-a-consultation** (calendar/lead form).
+**Honesty:** only real outputs on screen. The showcase footage is real runs (a live Vercel store, a real SEO deliverable, a real monitoring cycle that caught a real CVE). No payments are ever shown as live.
 
 ---
 
-## 3. The pipeline (what runs, who does it, what it produces)
+## 2. The arc (5 acts · what's on screen)
 
-Run with `/ecommerce` per brand (one `engagements/<brand>-<date>/` each), then `/seo` + `/campaign` + `/audit` for the deep/breadth beats. Every step names an agent + a deliverable (the captions).
+The cut is **data-driven** — `engagements/shipwithai-promo-20260627/video/src/scenes.ts` is the source of truth; total frames are computed from the scene durations (no fixed `durationSeconds`). Current total: **3750 frames = 125s @ 30fps.**
 
-| Step | Agent(s) | Brands | Deliverable (named on screen) |
-|------|----------|--------|-------------------------------|
-| Intake | `pm` + `intake` | all 3 | normalized briefs |
-| **Design** | `ui-designer` + `claude-design` skill | all 3 | logo + style book + screens (Claude Design canvas → export) |
-| Build | `ui-developer` | all 3 | running storefront ×3 |
-| Catalog/cart | `e-commerce-specialist` | Aether, Evergreen | product model + cart |
-| **Commerce (UI only)** | `payment-integration` | Aether/Evergreen = **styled checkout UI** (NOT wired — shown for the film); Meridian = **book-a-call** lead form | checkout screen / booking |
-| **Deploy** | `deployer` | Aether (others as needed) | **live Vercel URL** |
-| SEO | `seo-specialist` + `tech-writer` | **Aether only** | `seo-report.md` + content plan |
-| Campaign | `marketing` + `tech-writer` | **Aether only** | `campaign-plan.md` + `copy/*` |
-| Breadth: Audit | `solidity-auditor` | (existing vault) | severity report + Foundry PoC |
-| **After launch: Monitor** | `uptime-sentinel` + `revenue-analyst` + `traffic-analyst` (+seo/security/reputation) | **Aether** | 24/7 digest + alerts (tech · sales · traffic) |
-| Meta: Video | `video-producer` | the studio | *this film* |
-
-**Commerce note:** Payments are **not** wired for the film — checkout is a **styled UI we show and caption** ("Secure checkout"), never a real transaction; no keys, no card entry, never imply a live charge. **Deploy IS real:** the `deployer` ships the store to **Vercel** for a live URL we record (the "live in minutes" proof).
-
----
-
-## 4. Recording shot list — *what to record, and when*
-
-Record at **1920×1080** (or 2× and downscale), large terminal font, clean prompt, **no secrets/keys on screen**, normal speed (we fast-forward in Remotion). Save every recording into `engagements/shipwithai-promo-20260627/clips/` and transcode `.mov → .mp4` (`ffmpeg -i in.mov -vf scale=1920:-2 -r 30 out.mp4`). macOS capture: `Cmd+Shift+5` → record window/region.
-
-| Tag | Record this | When (during which run) | Raw len | Feeds scene |
-|-----|-------------|--------------------------|---------|-------------|
-| **R1 — fleet** | The terminal during a multi-agent run — ideally the `/workflows` progress tree, or PM handoffs / subagents fanning out | the `/audit --depth full` workflow, or any `/ecommerce` run | 30–60s | 4 |
-| **R2 — Claude Design** (hero) | The **claude.ai/design** canvas building screens from the imported repo — chat-left/canvas-right, screens appearing, a logo/style-book forming | during the design step (after `claude-design` pushes each brand's repo) | 40–80s | 5 |
-| **R3 — storefronts** | Browser scrolling each **running** store: homepage → a product page. One recording per brand | after each `/ecommerce` build (`npm run dev`) | 3×~10s | 6, 7, 8 |
-| **R8 — deploy** | The `deployer` shipping to **Vercel** — the deploy output/progress in the terminal, then the **live URL** opening in the browser (Vercel dashboard optional) | after the Aether build, via the `deployer` | 10–20s | 6 (with R3a) |
-| **R4 — checkout (UI)** | Cart → the **styled checkout screen** (UI walkthrough only, **no real payment**). The caption sells it; never show a live charge | after the checkout UI is built | 8–15s | 9 |
-| **R6 — audit test** | `forge test` passing, scrolling green; optionally the workflow tree | during/after the `/audit` run | 10–20s | 12 |
-| **R7 — monitoring** | The `/monitor` check cycle in the terminal **+** a notification firing (push/Slack) and the digest. No live data yet? Render the digest md → branded HTML for a clean "dashboard" still instead | after `/monitor` on Aether | 10–20s | 14 |
-
-**Stills (no recording — generated):**
-- **S-SEO / S-CAMPAIGN** (scenes 10, 11): render Aether's `seo-report.md` and a `copy/*.md` to branded HTML with `render-md.mjs`, serve over localhost, Playwright screenshot → `shots/shot-seo.png`, `shot-campaign.png`.
-- **S-AUDIT** (scene 13): already have `shot-audit-report.png` (copy from the 0626 engagement).
-- **S-MONITOR** (scene 14, fallback): if no R7 recording, render a `monitoring/digests/<date>.md` to branded HTML → `shots/shot-monitor.png` (green digest + one alert line).
-- **S-MONTAGE** (scene 15): composite the three store homepages + the audit card + one frame of *this* video (the meta-flex) into `shot-montage.png`.
+| Act | Beat | Scene type | ~dur | On-screen |
+|-----|------|-----------|------|-----------|
+| **1 · The shift** | "A company used to be its people." | `message` | 5.5s | the old world |
+| | **Remove the maze** (before→after) | `maze` | 12s | *"The magic isn't the agent — it's removing the maze."* |
+| | "People move up to strategy, taste & judgment. Agents do the labor." | `message` | 5.5s | the new split |
+| **2 · Built like that** | **The company is the context layer** (4-stage build) | `network` | 23s | humans → pm → clusters → shared context layer |
+| | **You make the business readable** (pyramid) | `stack` | 11.5s | clean data → … → continuous learning |
+| | "The moat is legibility." | `message` | 5s | the thesis |
+| **3 · The goldmine** | **Point it at the goldmine** (2×2) | `goldmine` | 11.5s | Repetition × Complexity, goldmine cell = the verticals |
+| **4 · The showcase** | "It starts with one brief." | `clip` fleet | 5.5s | the fleet mobilises |
+| | "Agents design it." | `clip` claude-design | 7s | Claude Design canvas |
+| | "They build the working app." | `clip` app-aether | 7.5s | a live storefront |
+| | "And deploy it — automatically." | `clip` deploy | 5.5s | live on Vercel |
+| | "They grow what they ship." | `showcase` shot-growth | 5.5s | real SEO + campaign deliverable |
+| | "Then watch it — 24/7." | `clip` monitoring | 6.5s | the monitor cycle (uptime · security · traffic) |
+| | "Even this video was made by the agents." | `showcase` shot-meta | 5.5s | Remotion (the meta-flex) |
+| **5 · The moat** | **"Strategy stays human."** | `cta` | 8s | *"the rest runs on agents · shipwithai.nl"* |
 
 ---
 
-## 5. The 75s storyboard (frame-accurate · 30fps · 2250 frames total)
+## 3. The scene engine (reusable template)
 
-Legend: **MG** = motion graphics (no capture) · **CLIP** = screen recording (R-tag) · **SHOT** = still.
+Lives in `plugins/shipwithai-video/template/src/{Promo.tsx,scenes.ts}` (the engagement copy is a per-run mirror). Scene types, beyond the basics (`title`/`message`/`grid`/`showcase`/`cta`/`stat`):
 
-| # | Type | Frames | t (s) | On-screen copy / content | Source |
-|---|------|--------|-------|--------------------------|--------|
-| 1 | MG `title` | 105 | 0.0–3.5 | "A full software studio." | have |
-| 2 | MG `message` | 105 | 3.5–7.0 | "20 specialists." / "One terminal." | — |
-| 3 | MG `stat` | 150 | 7.0–12.0 | 20 specialists · 12 skills · 6 verticals → "10× faster." | — |
-| 4 | CLIP `clip` | 165 | 12.0–17.5 | "One brief. The whole fleet mobilises." | **R1** |
-| 5 | CLIP `clip` | 240 | 17.5–25.5 | "Design — logo, style book, screens." | **R2** |
-| 6 | CLIP `clip` | 110 | 25.5–29.2 | "Aether — built, deployed, live." | **R8 + R3a** |
-| 7 | CLIP `clip` | 110 | 29.2–32.8 | "Evergreen — made for ease." | **R3b** |
-| 8 | CLIP `clip` | 110 | 32.8–36.5 | "Meridian — book a call." | **R3c** |
-| 9 | CLIP `clip` | 135 | 36.5–41.0 | "Checkout — secure & simple." (UI only) | **R4** |
-| 10 | SHOT `showcase` | 100 | 41.0–44.3 | "SEO + content plan." | S-SEO |
-| 11 | SHOT `showcase` | 100 | 44.3–47.7 | "Campaigns, ready to publish." | S-CAMPAIGN |
-| 12 | CLIP `clip` | 150 | 47.7–52.7 | "Audited — every finding proven with a test." | **R6** |
-| 13 | SHOT `showcase` | 100 | 52.7–56.0 | "Severity-rated. Go / No-Go." | S-AUDIT |
-| 14 | CLIP/SHOT | 150 | 56.0–61.0 | "After launch — it never stops watching." (tech · sales · traffic, 24/7) | **R7** / S-MONITOR |
-| 15 | SHOT `showcase` | 135 | 61.0–65.5 | "Real deliverables. On brand." | S-MONTAGE |
-| 16 | MG `message` | 130 | 65.5–69.8 | "10× faster." / "A fraction of the cost." | — |
-| 17 | MG `cta` | 155 | 69.8–75.0 | "ShipWithAI · shipwithai.nl" + "Even this video was made by the studio." | have |
+- **`clip`** — a screen recording in a branded frame: `<OffthreadVideo trimBefore/trimAfter playbackRate>`. `startFrom`/`endAt` (source frames) trim to the highlight; `playbackRate` speeds it up; `heading` is a LARGE title band across the top (scrim); `fit:"contain"` letterboxes ultra-wide sources (terminals) instead of cropping.
+- **`network`** — the agent fleet as a hub-and-spoke org chart. `humans` adds a directing bar above the center; `contextLayer` adds a shared-context bar at the base with bidirectional read/write pulses. **`stages` (4 lines) switches it into a cumulative 4-stage build** (humans → +center → +clusters → +contextLayer), each with a crossfading numbered caption — this is what makes it *teach* instead of dropping the whole chart at once.
+- **`maze`** — a before/after workflow (two rows of labelled boxes + arrows), scaled to fill the frame. The "remove the maze" beat.
+- **`stack`** — a bottom-up pyramid: `layers` given top→bottom (last = widest base), revealed base-first, top layer is the accent apex. The "make the business readable, layer by layer" beat.
+- **`goldmine`** — a 2×2 opportunity map (`xAxis` × `yAxis`); three muted quadrants + a highlighted top-right cell holding `items`. Makes "the goldmine" self-explanatory.
 
-Sum = 2250 frames = **75.0s** ✓. (Re-budgeted from the 16-scene cut to make room for the monitoring beat — earlier clips trimmed slightly.)
+`brand.ts` stays on the studio theme (ink `#1A1A1A` · paper `#F4F1EA` · vermilion `#E4572E` · Newsreader). Music: `public/music.mp3` wired via `brand.music` with a fade.
 
 ---
 
-## 6. Final `scenes.ts` (drop-in)
+## 4. Assets (real footage + stills)
 
-When footage lands, this is the exact composition. Set `brand.durationSeconds = 75` in `src/brand.ts`. Clips live in `public/clips/`, stills in `public/`. `startFrom`/`endAt` (source frames) trim each recording to its highlight; tune after a first render.
+**Clips** (`public/clips/`, transcoded `.mov → .mp4` via `ffmpeg -i in.mov -vf scale=1920:-2 -r 30 out.mp4`):
+- ✅ `fleet.mp4` — the terminal during a multi-agent run
+- ✅ `claude-design.mp4` — the claude.ai/design canvas building Aether's screens
+- ✅ `app-aether.mp4` — the live Aether storefront (built + deployed)
+- ✅ `deploy.mp4` — the Vercel deploy → live URL (**aether-store-fawn.vercel.app**)
+- ✅ `monitoring.mp4` — a `/monitor` cycle (the monitors reporting; the run caught a real Next.js CVE → ALERT)
+
+**Stills** (`public/`):
+- ✅ `shot-growth.png` — Aether's real **SEO audit & keyword plan** (`/seo` deliverable, rendered via `render-md.mjs` → Playwright screenshot). Campaign deliverable also produced (`engagements/aether-20260627/growth/campaign-plan.md`).
+- ✅ `shot-meta.png` — a frame of this very video (the meta-flex).
+
+**How a deliverable still is made:** `node plugins/shipwithai-video/skills/capture-footage/render-md.mjs <in.md> <out.html> "<accent>" "<font>" "<title>"` → serve over localhost (`http-server`, Playwright blocks `file://`) → `browser_navigate` + `browser_resize 1920×1080` + screenshot. Add ~180px body top-padding before shooting if a `clip`/`showcase` `heading` scrim would collide with the document's own title.
+
+---
+
+## 5. Current `scenes.ts` (v6, drop-in)
 
 ```ts
 export const scenes: Scene[] = [
-  { type: "title", durationInFrames: 105, title: "A full software studio.", subtitle: "20 specialists. One terminal." },
-  { type: "message", durationInFrames: 105, lines: ["20 specialists.", "One terminal."] },
-  { type: "stat", durationInFrames: 150, stats: [
-      { value: 20, label: "specialists" }, { value: 12, label: "skills" }, { value: 6, label: "verticals" },
-    ], tagline: "10× faster." },
-  { type: "clip", durationInFrames: 165, src: "clips/fleet.mp4", caption: "One brief. The whole fleet mobilises.", playbackRate: 6 },
-  { type: "clip", durationInFrames: 240, src: "clips/claude-design.mp4", caption: "Design — logo, style book, screens.", playbackRate: 8 },
-  { type: "clip", durationInFrames: 110, src: "clips/store-aether.mp4", caption: "Aether — built, deployed, live.", playbackRate: 3 }, // splice R8 deploy → R3a live store
-  { type: "clip", durationInFrames: 110, src: "clips/store-evergreen.mp4", caption: "Evergreen — made for ease.", playbackRate: 3 },
-  { type: "clip", durationInFrames: 110, src: "clips/store-meridian.mp4", caption: "Meridian — book a call.", playbackRate: 3 },
-  { type: "clip", durationInFrames: 135, src: "clips/checkout.mp4", caption: "Checkout — secure & simple.", playbackRate: 3 }, // UI walkthrough, not a real payment
-  { type: "showcase", durationInFrames: 100, image: "shot-seo.png", caption: "SEO + content plan." },
-  { type: "showcase", durationInFrames: 100, image: "shot-campaign.png", caption: "Campaigns, ready to publish." },
-  { type: "clip", durationInFrames: 150, src: "clips/audit-test.mp4", caption: "Audited — every finding proven with a test.", playbackRate: 6 },
-  { type: "showcase", durationInFrames: 100, image: "shot-audit-report.png", caption: "Severity-rated. Go / No-Go." },
-  // Scene 14 — after-launch monitoring. Use the R7 recording, or swap to a showcase of shot-monitor.png.
-  { type: "clip", durationInFrames: 150, src: "clips/monitoring.mp4", caption: "After launch — it never stops watching.", playbackRate: 4 },
-  { type: "showcase", durationInFrames: 135, image: "shot-montage.png", caption: "Real deliverables. On brand." },
-  { type: "message", durationInFrames: 130, lines: ["10× faster.", "A fraction of the cost."] },
-  { type: "cta", durationInFrames: 155, title: "ShipWithAI", subtitle: "shipwithai.nl · even this video was made by the studio." },
+  // ── ACT 1 · THE SHIFT ──
+  { type: "message", durationInFrames: 165, lines: ["A company used to be", "its people.", "They did all the work."] },
+  { type: "maze", durationInFrames: 360,
+    caption: "The magic isn't the agent — it's removing the maze.",
+    before: { label: "Before", steps: ["brief", "emails", "meetings", "specialists", "handoffs", "revisions", "weeks"] },
+    after: { label: "After", steps: ["brief", "context layer", "agents", "review", "shipped"] } },
+  { type: "message", durationInFrames: 165, lines: ["People move up to", "strategy, taste & judgment.", "Agents do the labor."] },
+
+  // ── ACT 2 · SHIPWITHAI IS BUILT LIKE THAT (the heart) ──
+  { type: "network", durationInFrames: 690, heading: "The company is the context layer.",
+    center: "pm",
+    humans: "Humans · strategy · taste · judgment",
+    contextLayer: { label: "Shared context layer", items: ["brief", "brand", "conventions", "playbooks", "decision logs", "memory"] },
+    stages: [
+      "Humans own the strategy, taste & judgment.",
+      "An orchestration agent routes the work.",
+      "Specialist agents — grouped by skill — hand tasks to each other.",
+      "A shared context layer holds the company's knowledge — and becomes the company.",
+    ],
+    clusters: [
+      { plugin: "web", agents: ["ui-designer", "ui-developer", "e-commerce", "backend", "payments", "deployer", "reviewer"] },
+      { plugin: "monitor", agents: ["uptime", "revenue", "traffic", "seo-rank", "security", "reputation"] },
+      { plugin: "growth", agents: ["seo", "marketing", "ux-analyst", "tech-writer"] },
+      { plugin: "video", agents: ["video-producer"] },
+    ] },
+  { type: "stack", durationInFrames: 345, heading: "You make the business readable.",
+    caption: "Agent leverage isn't a tool you buy — it's your business, made legible, layer by layer.",
+    layers: [
+      { label: "Continuous learning", sub: "every run sharpens the context" },
+      { label: "Human review", sub: "taste & judgment, in the loop" },
+      { label: "Agent workflows", sub: "the verticals that do the labor" },
+      { label: "Permissions & policies", sub: "what each agent may touch" },
+      { label: "Structured knowledge", sub: "briefs · brand · SOPs · decisions" },
+      { label: "Clean data", sub: "the foundation everything reads from" },
+    ] },
+  { type: "message", durationInFrames: 150, lines: ["The moat is", "legibility."] },
+
+  // ── ACT 3 · THE GOLDMINE (the opportunity map) ──
+  { type: "goldmine", durationInFrames: 345, heading: "Point it at the goldmine.",
+    caption: "Repetitive enough to systematize — complex enough that agencies stay slow and expensive.",
+    yAxis: "Repetition", xAxis: "Workflow complexity",
+    items: ["Web & e-commerce builds", "SEO & content", "Marketing campaigns", "Marketing videos", "24/7 monitoring", "Smart-contract audits"] },
+
+  // ── ACT 4 · THE SHOWCASE (agents executing on the context layer) ──
+  { type: "clip", durationInFrames: 165, src: "clips/fleet.mp4", heading: "It starts with one brief.", caption: "the fleet mobilises", playbackRate: 6, startFrom: 0, fit: "contain" },
+  { type: "clip", durationInFrames: 210, src: "clips/claude-design.mp4", heading: "Agents design it.", caption: "Claude Design", playbackRate: 10, startFrom: 0 },
+  { type: "clip", durationInFrames: 225, src: "clips/app-aether.mp4", heading: "They build the working app.", caption: "a live storefront", playbackRate: 2, startFrom: 0 },
+  { type: "clip", durationInFrames: 165, src: "clips/deploy.mp4", heading: "And deploy it — automatically.", caption: "live on Vercel", playbackRate: 1, startFrom: 0 },
+  { type: "showcase", durationInFrames: 165, image: "shot-growth.png", heading: "They grow what they ship.", caption: "SEO + campaigns" },
+  { type: "clip", durationInFrames: 195, src: "clips/monitoring.mp4", heading: "Then watch it — 24/7.", caption: "uptime · security · traffic", playbackRate: 2, startFrom: 3800, fit: "contain" },
+  { type: "showcase", durationInFrames: 165, image: "shot-meta.png", heading: "Even this video was made by the agents.", caption: "Remotion" },
+
+  // ── ACT 5 · CLOSE (the moat) ──
+  { type: "cta", durationInFrames: 240, title: "Strategy stays human.", subtitle: "the rest runs on agents · shipwithai.nl" },
 ];
 ```
 
-Keep `brand.ts` on the studio theme (ink `#1A1A1A` / cream `#F4F1EA` / vermilion `#E4572E`, Newsreader). Add the music bed last: drop `music.mp3` in `public/` and an `<Audio>` at the composition root (volume ducked).
+---
+
+## 6. Render & iterate
+
+```bash
+cd engagements/shipwithai-promo-20260627/video
+npx tsc --noEmit                                  # validate scenes against Promo.tsx
+npx remotion still Promo out/_t.png --frame=<n>   # eyeball a beat (Read the PNG)
+npx remotion render Promo out/promo-v6.mp4        # full render (~70s wall)
+```
+
+Iterate by reading stills at each beat's midpoint before a full render. Frame offsets (cumulative): maze ~300 · network stages ~766/918/1083/1276 · stack ~1600 · goldmine ~2150 · growth ~3065.
 
 ---
 
-## 7. Prerequisites — status
+## 7. Notes & open polish
 
-**Built (ready to use):**
-- ✅ `clip` scene type — `<OffthreadVideo trimBefore/trimAfter playbackRate>` in a branded frame (validated: typecheck + still render on Remotion 4.0.483).
-- ✅ `stat` scene type — animated count-up counters (validated render).
-- ✅ `claude-design` skill — two paths: **design-sync ("Create using Claude Code")** for high-fidelity component sync, and the lighter tokens/mockups GitHub round-trip. `ui-designer`/`ui-developer`/`/ecommerce` rewired off Figma.
-- ✅ **Aether storefront built + verified** (Next.js, 15 routes); **Aether design system synced to Claude Design** via `/design-sync` (10 components, project `07b42760…`) — the "Create using Claude Code" path proven end-to-end.
-- ✅ `shipwithai-monitor` plugin — `/monitor` + 6 monitor agents + 3 skills (post-launch 24/7 monitoring).
-- ✅ `render-md.mjs` (markdown → branded HTML, validated).
-- ✅ `gh` authed (`kivanov82`), `node` 22, `ffmpeg`, Stripe/Playwright/Vercel MCP connected; node Chromium installed.
-
-**Footage captured (2026-06-28):**
-- ✅ **R1** fleet terminal (`clips/fleet.mp4`) · ✅ **R2** Claude Design canvas (`clips/claude-design.mp4`, 129s) · ✅ **R3a + R4** store + checkout (`clips/app-aether.mp4`) · ✅ **R8** Vercel deploy dashboard (`clips/deploy.mp4`) — live at **aether-store-fawn.vercel.app** · (+ `design-prep.mp4`, `claude-design-extra.mp4` extras)
-
-**Still needed:**
-- ☐ **R6** audit `forge test` · **R7** monitoring
-- ☐ **Evergreen + Meridian** stores → R3b / R3c (brands not built yet)
-- ☐ Stills: S-SEO, S-CAMPAIGN, S-MONTAGE (S-AUDIT ✓)
-- ☐ A licensed `music.mp3`
+- **Monitor clip** (`startFrom: 3800`) lands on the monitors reporting (incl. the real CVE ALERT) rather than the final digest table — readable and on-message; re-trim `startFrom` if a cleaner digest frame is wanted.
+- **Network "WEB" label** sits slightly under the Humans pill's right edge (original cluster geometry) — cosmetic.
+- **Honesty:** Stripe never shown as a live charge; the stats/claims are real runs only.
+- **9:16 cut** (optional, later): same scenes at 1080×1920, re-stack the clip frames vertically.
+- **Next:** this same engine + positioning feeds the **shipwithai.nl** rebuild (Claude Design).
 
 ---
 
-## 8. Runbook — when you're back
+## History
 
-1. **Activate plugins** (reload Claude Code → accept trust/install).
-2. **Brand 1 — Aether (deep):** `/ecommerce` with the Aether brief. Design on the Claude Design canvas (record **R2**), export back, `ui-developer` builds; `npm run dev` → **record R3a** (storefront). Then **`deployer` → Vercel** → **record R8** (deploy output + the live URL opening). Record **R4** as a checkout-UI walkthrough (no real payment). If the run shows the fleet, **record R1** here. *(Aether's design + v2 build + design-sync are already done — what remains for Aether is R1/R2 save, the deploy, and recording R3a/R4.)*
-3. **Brand 2 — Evergreen:** `/ecommerce` with the Evergreen brief → **R3b**. (Add to R2/R4 if you want its canvas/checkout too.)
-4. **Brand 3 — Meridian:** `/ecommerce` with the Meridian brief (booking, not cart) → **R3c**.
-5. **Growth (Aether):** `/seo https://aether… ` + `/campaign` → render their `.md` with `render-md.mjs` → screenshot → `shot-seo.png`, `shot-campaign.png`.
-6. **Audit breadth:** `/audit … --depth full` → **record R6** (`forge test` + tree). Copy `shot-audit-report.png` from the 0626 engagement (or re-render).
-7. **Monitoring (after-launch):** `/monitor https://aether… ` on Aether → set up the watch + run a cycle → **record R7** (the `/monitor` cycle + a notification firing + the digest), or render the digest md → `shot-monitor.png`.
-8. **Montage:** composite the three store homes + audit card + a promo frame → `shot-montage.png`.
-9. **Compose:** `/promo` (subject = the studio) → `remotion-compose` copies the template into `engagements/shipwithai-promo-20260627/video`, `npm install`, drop clips into `public/clips/` + stills into `public/`, paste §6 `scenes.ts`, set `durationSeconds = 75`.
-10. **Render & review:** `npx remotion render Promo out/promo.mp4`. Check pacing, caption legibility, that each clip's `startFrom`/`endAt` lands on the good moment. Tune and re-render.
-11. **Music:** drop `music.mp3` in `public/`, add `<Audio>`, final render. Mark the engagement `complete`.
-
----
-
-## 9. Notes
-- **Honesty:** only real outputs on screen; the stats in scene 3 are the verified numbers above — don't inflate them. Stripe in **test mode**, no keys/cards visible.
-- **Design source location:** the high-fidelity path (`/design-sync`) reads a **local** standalone component library — no repo needed. The lighter path uses a **tracked subfolder** (`design-sources/<brand>/`) in an existing repo, not a new public repo (creating one is classifier-gated).
-- **Shoot long, keep tight:** capture more than 75s of raw; the speed-up + trims do the compression. Aether is the brand that goes deep; Evergreen/Meridian carry the range beat.
-- **9:16 cut** (optional, later): same scenes, 1080×1920, re-stack the clip frames vertically.
+- **v1** — 30s stills-only cut (`engagements/shipwithai-promo-20260626/`).
+- **v2–v3** — 75s "sizzle": *"A full software studio · 20 specialists · One terminal · 10× faster"* across three brands (Aether/Evergreen/Meridian). Sales-led; superseded when the studio repositioned to the **AI-native / legibility** thesis (the "terminal tool" framing was explicitly dropped).
+- **v4–v5** — first educational recuts (overview → use cases → showcase); introduced the `network`/`list`/`maze` scenes.
+- **v6** — *(this doc)* the thesis arc with purpose-built diagram scenes (maze · staged network · stack · goldmine), a real growth deliverable still, and music. 125s.
