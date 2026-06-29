@@ -33,6 +33,11 @@ export type Scene =
   // Three muted quadrants (too simple / not painful enough / complex, not repeatable) and a highlighted
   // top-right "goldmine" cell holding `items`. Reveals axes → muted labels → goldmine → caption.
   | { type: "goldmine"; durationInFrames: number; heading?: string; caption?: string; items: string[]; xAxis?: string; yAxis?: string }
+  // A rapid "thrown-cards" montage: `images` (stills in public/) fly in and pile up
+  // fast, then morph apart into a wall/contact-sheet of everything made, with the
+  // heading + caption landing on top. The wow closer — extract frames of the film
+  // itself for a meta "every scene you just watched" payoff.
+  | { type: "montage"; durationInFrames: number; heading?: string; caption?: string; images: string[] }
   | { type: "cta"; durationInFrames: number; title: string; subtitle: string };
 
 // Default = the ShipWithAI self-promo. `image: ""` renders a captioned placeholder,

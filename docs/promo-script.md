@@ -1,6 +1,6 @@
-# ShipWithAI — Explainer v6 (the AI-native studio story)
+# ShipWithAI — Explainer v7 (the AI-native studio story)
 
-**Status:** RENDERED — `engagements/shipwithai-promo-20260627/video/out/promo-v6.mp4` (125s · 1920×1080 · h264+aac · ~18 MB).
+**Status:** RENDERED — `engagements/shipwithai-promo-20260627/video/out/promo-v7.mp4` (127s · 1920×1080 · h264+aac · ~21 MB).
 **Output:** a single **~2-min educational explainer**, 1920×1080 landscape — for the site, LinkedIn, email.
 **Sound:** licensed music bed (`public/music.mp3`), no voiceover — captions carry it.
 **Goal:** a viewer *understands the idea* — not "buy this tool." Teach the AI-native company thesis, show that ShipWithAI is built exactly that way, then prove it with real deliverables.
@@ -42,7 +42,7 @@ The cut is **data-driven** — `engagements/shipwithai-promo-20260627/video/src/
 | | "And deploy it — automatically." | `clip` deploy | 5.5s | live on Vercel |
 | | "They grow what they ship." | `showcase` shot-growth | 5.5s | real SEO + campaign deliverable |
 | | "Then watch it — 24/7." | `clip` monitoring | 6.5s | the monitor cycle (uptime · security · traffic) |
-| | "Even this video was made by the agents." | `showcase` shot-meta | 5.5s | Remotion (the meta-flex) |
+| | **"Even this video was made by the agents."** | `montage` | 7.5s | 18 frames of the film fly in as thrown cards → pile → snap into a wall of every scene (*"every scene you just watched — rendered by the fleet"*) |
 | **5 · The moat** | **"Strategy stays human."** | `cta` | 8s | *"the rest runs on agents · shipwithai.nl"* |
 
 ---
@@ -56,6 +56,7 @@ Lives in `plugins/shipwithai-video/template/src/{Promo.tsx,scenes.ts}` (the enga
 - **`maze`** — a before/after workflow (two rows of labelled boxes + arrows), scaled to fill the frame. The "remove the maze" beat.
 - **`stack`** — a bottom-up pyramid: `layers` given top→bottom (last = widest base), revealed base-first, top layer is the accent apex. The "make the business readable, layer by layer" beat.
 - **`goldmine`** — a 2×2 opportunity map (`xAxis` × `yAxis`); three muted quadrants + a highlighted top-right cell holding `items`. Makes "the goldmine" self-explanatory.
+- **`montage`** — the wow closer: `images` (stills in `public/`) fly in as "thrown" cards that pile up fast, then morph apart into a wall/contact-sheet of everything made, with the `heading`+`caption` landing on top. Extract frames of the film itself (`ffmpeg -ss <t> -i out/<cut>.mp4 -frames:v 1 -vf scale=960:-2 public/montage/mNN.jpg`) for the meta "every scene you just watched" payoff.
 
 `brand.ts` stays on the studio theme (ink `#1A1A1A` · paper `#F4F1EA` · vermilion `#E4572E` · Newsreader). Music: `public/music.mp3` wired via `brand.music` with a fade.
 
@@ -132,7 +133,10 @@ export const scenes: Scene[] = [
   { type: "clip", durationInFrames: 165, src: "clips/deploy.mp4", heading: "And deploy it — automatically.", caption: "live on Vercel", playbackRate: 1, startFrom: 0 },
   { type: "showcase", durationInFrames: 165, image: "shot-growth.png", heading: "They grow what they ship.", caption: "SEO + campaigns" },
   { type: "clip", durationInFrames: 195, src: "clips/monitoring.mp4", heading: "Then watch it — 24/7.", caption: "uptime · security · traffic", playbackRate: 2, startFrom: 3800, fit: "contain" },
-  { type: "showcase", durationInFrames: 165, image: "shot-meta.png", heading: "Even this video was made by the agents.", caption: "Remotion" },
+  { type: "montage", durationInFrames: 225,
+    heading: "Even this video was made by the agents.",
+    caption: "every scene you just watched — rendered by the fleet",
+    images: [ /* montage/m01.jpg … m18.jpg — frames extracted from this cut */ ] },
 
   // ── ACT 5 · CLOSE (the moat) ──
   { type: "cta", durationInFrames: 240, title: "Strategy stays human.", subtitle: "the rest runs on agents · shipwithai.nl" },
@@ -169,4 +173,5 @@ Iterate by reading stills at each beat's midpoint before a full render. Frame of
 - **v1** — 30s stills-only cut (`engagements/shipwithai-promo-20260626/`).
 - **v2–v3** — 75s "sizzle": *"A full software studio · 20 specialists · One terminal · 10× faster"* across three brands (Aether/Evergreen/Meridian). Sales-led; superseded when the studio repositioned to the **AI-native / legibility** thesis (the "terminal tool" framing was explicitly dropped).
 - **v4–v5** — first educational recuts (overview → use cases → showcase); introduced the `network`/`list`/`maze` scenes.
-- **v6** — *(this doc)* the thesis arc with purpose-built diagram scenes (maze · staged network · stack · goldmine), a real growth deliverable still, and music. 125s.
+- **v6** — the thesis arc with purpose-built diagram scenes (maze · staged network · stack · goldmine), a real growth deliverable still, and music. 125s.
+- **v7** — *(this doc)* + the `montage` wow closer (the film's own scenes thrown into a wall) replacing the flat meta still. 127s.

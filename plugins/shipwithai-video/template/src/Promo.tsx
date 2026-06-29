@@ -699,6 +699,102 @@ const GoldmineScene: React.FC<{ s: Extract<Scene, { type: "goldmine" }> }> = ({ 
   );
 };
 
+// The wow closer: the film's own scenes fly in as "thrown" cards that pile up
+// fast (a burst), then morph apart into a neat wall (contact sheet) of everything
+// that was made, while the heading + caption land. `images` are stills in public/.
+const rand = (i: number, seed: number) => {
+  const x = Math.sin(i * 99.13 + seed * 37.7) * 43758.5453;
+  return x - Math.floor(x);
+};
+
+const MontageScene: React.FC<{ s: Extract<Scene, { type: "montage" }> }> = ({ s }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const W = 1920;
+  const H = 1080;
+  const imgs = s.images;
+  const N = imgs.length;
+
+  const slot = 5; // frames between each card dropping onto the pile
+  const burstEnd = N * slot; // all cards down
+  const resolveStart = burstEnd + 8;
+  const ease = spring({ frame: frame - resolveStart, fps, config: { damping: 200 } });
+
+  // grid (contact sheet) layout
+  const cols = 6;
+  const rows = Math.ceil(N / cols);
+  const gap = 16;
+  const gridW = 1740;
+  const cellW = (gridW - gap * (cols - 1)) / cols;
+  const cellH = (cellW * 9) / 16;
+  const gridLeft = (W - gridW) / 2;
+  const gridTop = (H - (rows * cellH + (rows - 1) * gap)) / 2 + 22;
+
+  // pile geometry (big, dramatic, centered)
+  const pileW = 780;
+  const pileH = (pileW * 9) / 16;
+  const pileCx = W / 2;
+  const pileCy = H / 2 + 6;
+
+  const headOp = interpolate(useEntrance(4), [0, 1], [0, 1]);
+  const capOp = interpolate(ease, [0, 1], [0, 1]);
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: brand.ink }}>
+      {imgs.map((src, i) => {
+        const appear = i * slot;
+        if (frame < appear) return null;
+        const pop = spring({ frame: frame - appear, fps, config: { damping: 180, stiffness: 220 } });
+        const jx = (rand(i, 1) - 0.5) * 130;
+        const jy = (rand(i, 2) - 0.5) * 86;
+        const jrot = (rand(i, 3) - 0.5) * 16;
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const gridX = gridLeft + col * (cellW + gap) + cellW / 2;
+        const gridY = gridTop + row * (cellH + gap) + cellH / 2;
+        const x = interpolate(ease, [0, 1], [pileCx + jx, gridX]);
+        const y = interpolate(ease, [0, 1], [pileCy + jy, gridY]);
+        const w = interpolate(ease, [0, 1], [pileW, cellW]);
+        const h = interpolate(ease, [0, 1], [pileH, cellH]);
+        const rot = interpolate(ease, [0, 1], [jrot, 0]);
+        const popScale = interpolate(pop, [0, 1], [1.16, 1]);
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              left: x,
+              top: y,
+              width: w,
+              height: h,
+              transform: `translate(-50%, -50%) rotate(${rot}deg) scale(${popScale})`,
+              zIndex: i + 1,
+              boxShadow: "0 14px 44px rgba(0,0,0,0.5)",
+              border: `2px solid ${brand.paper}`,
+              borderRadius: 4,
+              overflow: "hidden",
+              backgroundColor: brand.ink,
+            }}
+          >
+            <Img src={staticFile(src)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          </div>
+        );
+      })}
+
+      {s.heading ? (
+        <div style={{ position: "absolute", top: 50, left: 0, right: 0, textAlign: "center", opacity: headOp, zIndex: 100 }}>
+          <span style={{ fontFamily: serif, fontSize: 58, fontWeight: 600, color: brand.paper, letterSpacing: -0.5, backgroundColor: "rgba(26,26,26,0.55)", padding: "12px 32px", borderRadius: 8 }}>{s.heading}</span>
+        </div>
+      ) : null}
+      {s.caption ? (
+        <div style={{ position: "absolute", bottom: 60, left: 0, right: 0, textAlign: "center", opacity: capOp, zIndex: 100 }}>
+          <span style={{ fontFamily: serif, fontSize: 44, color: brand.paper, borderBottom: `4px solid ${brand.accent}`, paddingBottom: 8 }}>{s.caption}</span>
+        </div>
+      ) : null}
+    </AbsoluteFill>
+  );
+};
+
 function renderScene(s: Scene) {
   switch (s.type) {
     case "title":
@@ -723,6 +819,8 @@ function renderScene(s: Scene) {
       return <StackScene s={s} />;
     case "goldmine":
       return <GoldmineScene s={s} />;
+    case "montage":
+      return <MontageScene s={s} />;
     case "cta":
       return <CtaScene s={s} />;
   }
