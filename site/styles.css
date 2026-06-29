@@ -246,9 +246,8 @@ section { position: relative; }
 .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
 .card h3 { font-family: var(--font-display); font-size: var(--fs-h4); font-weight: 600; color: var(--sw-text-strong); margin: 0 0 6px; }
 .card p { font-size: var(--fs-sm); color: var(--sw-text-muted); line-height: 1.55; margin: 0; }
-.mini-badge { font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; }
-.mini-badge.verified { background: var(--green-50); color: var(--green-600); }
-.mini-badge.core { background: rgba(242,103,76,0.12); color: var(--azure-700); }
+.out-tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sw-text-muted); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.out-tag::before { content: "↳"; color: var(--azure-500); font-size: 13px; }
 
 /* spotlight + tilt cards */
 .sw-card-fx { position:relative; transition: transform .14s ease-out, box-shadow .3s ease; transform-style:preserve-3d; }
