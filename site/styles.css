@@ -178,8 +178,8 @@ a { color: inherit; text-decoration: none; }
 .term-body { padding: 18px 20px; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.9; }
 .term-body .cmdline { color: var(--azure-400); }
 .term-body .term-cmd { display:inline-block; overflow:hidden; white-space:nowrap; vertical-align:bottom; color:#E9EEF3; }
-.sw-term.is-in .term-cmd { animation: sw-typing 1.3s steps(34,end) .25s forwards, sw-caret .8s step-end 6; border-right:2px solid var(--azure-400); width: 0; }
-@keyframes sw-typing { to { width: 34ch } }
+.sw-term.is-in .term-cmd { animation: sw-typing 1.4s steps(36,end) .25s forwards, sw-caret .8s step-end 6; border-right:2px solid var(--azure-400); width: 0; }
+@keyframes sw-typing { to { width: 36ch } }
 @keyframes sw-caret { 50% { border-color: transparent } }
 .term-body .row { display: flex; gap: 10px; align-items: baseline; }
 .term-body .row .ok { color: var(--green-500); }
