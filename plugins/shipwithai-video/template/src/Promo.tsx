@@ -217,28 +217,69 @@ const CtaScene: React.FC<{ s: Extract<Scene, { type: "cta" }> }> = ({ s }) => {
 // The hero: the agent fleet as a hub-and-spoke network. A center node sits in the
 // middle with one cluster per plugin evenly around it; accent pulses travel
 // center -> cluster along each edge on a loop to read as task-passing.
+//
+// "AI-native org" story (optional, read top->bottom): when `humans` is set a
+// directing bar sits ABOVE the center (humans direct the fleet); when
+// `contextLayer` is set a full-width shared bar sits at the BASE that every
+// cluster plugs into, with bidirectional pulses (agents read from / write to it).
+// When the bottom bar is present the ellipse + center shift UP to make room.
 const NetworkScene: React.FC<{ s: Extract<Scene, { type: "network" }> }> = ({ s }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const W = 1920;
   const H = 1080;
   const cx = W / 2;
-  const cy = H / 2 + (s.heading ? 34 : 0);
+
+  const hasHumans = !!s.humans;
+  const hasContext = !!s.contextLayer;
+
+  // shared-context bar at the base (full width, ~120px tall)
+  const barH = 120;
+  const barMargin = 28;
+  const barTop = H - barH - barMargin; // 932
+  const barLeft = 90;
+  const barRight = W - 90;
+  const barW = barRight - barLeft;
+
+  // ellipse + center: lift UP when the bottom bar is present so it stays legible
+  const cy = hasContext ? (s.heading ? 472 : 452) : H / 2 + (s.heading ? 34 : 0);
   const rx = 430;
-  const ry = 300;
+  const ry = hasContext ? 250 : 300;
   const n = s.clusters.length;
   const nodes = s.clusters.map((c, i) => {
     const ang = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / n);
     return { plugin: c.plugin, agents: c.agents, x: cx + rx * Math.cos(ang), y: cy + ry * Math.sin(ang) };
   });
+
+  // even, sorted anchor points along the bar so cluster -> bar connectors don't cross
+  const anchorX: number[] = new Array(n);
+  nodes
+    .map((nd, i) => ({ i, x: nd.x, y: nd.y }))
+    .sort((a, b) => a.x - b.x || a.y - b.y)
+    .forEach((o, k) => {
+      anchorX[o.i] = barLeft + barW * ((k + 0.5) / n);
+    });
+
   const centerSp = spring({ frame: frame - 4, fps, config: { damping: 200 } });
   const centerScale = interpolate(centerSp, [0, 1], [0.5, 1]);
   const headSp = spring({ frame: frame - 2, fps, config: { damping: 200 } });
 
+  // humans bar geometry (top center) + connector down to the pm node
+  const humansY = s.heading ? 168 : 124; // pill center
+  const humansBottom = humansY + 30;
+  const pmTop = cy - 76;
+  const humansSp = spring({ frame: frame - 10, fps, config: { damping: 200 } });
+
+  // bottom bar reveal
+  const barSp = spring({ frame: frame - 16, fps, config: { damping: 200 } });
+  const barOp = interpolate(barSp, [0, 1], [0, 1]);
+  const barTy = interpolate(barSp, [0, 1], [44, 0]);
+
   return (
     <AbsoluteFill style={{ backgroundColor: brand.paper }}>
-      {/* edges + task-passing pulses */}
+      {/* edges + pulses */}
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ position: "absolute", top: 0, left: 0 }}>
+        {/* center <-> cluster edges + task-passing pulses */}
         {nodes.map((nd, i) => {
           const edgeSp = spring({ frame: frame - (12 + i * 5), fps, config: { damping: 200 } });
           const edgeOp = interpolate(edgeSp, [0, 1], [0, 0.85]);
@@ -251,12 +292,62 @@ const NetworkScene: React.FC<{ s: Extract<Scene, { type: "network" }> }> = ({ s 
           const travel = interpolate(t, [0, 0.12, 0.88, 1], [0, 1, 1, 0]);
           const gate = interpolate(frame, [22, 38], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
           return (
-            <g key={i}>
+            <g key={`c${i}`}>
               <line x1={cx} y1={cy} x2={ex} y2={ey} stroke="rgba(26,26,26,0.18)" strokeWidth={2} opacity={edgeOp} />
               <circle cx={px} cy={py} r={7} fill={brand.accent} opacity={travel * gate} />
             </g>
           );
         })}
+
+        {/* cluster <-> shared-context-layer edges + bidirectional pulses (read & write) */}
+        {hasContext
+          ? nodes.map((nd, i) => {
+              const ax = anchorX[i];
+              const ay = barTop;
+              const eSp = spring({ frame: frame - (26 + i * 4), fps, config: { damping: 200 } });
+              const grow = interpolate(eSp, [0, 1], [0, 1]);
+              const lx = interpolate(grow, [0, 1], [nd.x, ax]);
+              const ly = interpolate(grow, [0, 1], [nd.y, ay]);
+              const cycle = 60;
+              const gate = interpolate(frame, [30, 48], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+              // down: cluster -> bar (write)
+              const td = ((frame + i * (cycle / n)) % cycle) / cycle;
+              const dx = nd.x + (ax - nd.x) * td;
+              const dy = nd.y + (ay - nd.y) * td;
+              const dTravel = interpolate(td, [0, 0.1, 0.9, 1], [0, 1, 1, 0]);
+              // up: bar -> cluster (read), offset half a cycle
+              const tu = ((frame + i * (cycle / n) + cycle / 2) % cycle) / cycle;
+              const ux = ax + (nd.x - ax) * tu;
+              const uy = ay + (nd.y - ay) * tu;
+              const uTravel = interpolate(tu, [0, 0.1, 0.9, 1], [0, 1, 1, 0]);
+              return (
+                <g key={`x${i}`}>
+                  <line x1={nd.x} y1={nd.y} x2={lx} y2={ly} stroke="rgba(228,87,46,0.22)" strokeWidth={2} opacity={grow} />
+                  <circle cx={dx} cy={dy} r={6} fill={brand.accent} opacity={dTravel * gate} />
+                  <circle cx={ux} cy={uy} r={5} fill="rgba(26,26,26,0.5)" opacity={uTravel * gate} />
+                </g>
+              );
+            })
+          : null}
+
+        {/* humans -> pm connector (subtle: humans direct the fleet) */}
+        {hasHumans
+          ? (() => {
+              const grow = interpolate(humansSp, [0, 1], [0, 1]);
+              const y2 = interpolate(grow, [0, 1], [humansBottom, pmTop]);
+              const cycle = 50;
+              const t = (frame % cycle) / cycle;
+              const py = humansBottom + (pmTop - humansBottom) * t;
+              const tr = interpolate(t, [0, 0.12, 0.88, 1], [0, 1, 1, 0]);
+              const gate = interpolate(frame, [24, 40], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+              return (
+                <g>
+                  <line x1={cx} y1={humansBottom} x2={cx} y2={y2} stroke="rgba(26,26,26,0.25)" strokeWidth={2} opacity={grow} />
+                  <circle cx={cx} cy={py} r={5} fill={brand.accent} opacity={tr * gate * 0.8} />
+                </g>
+              );
+            })()
+          : null}
       </svg>
 
       {/* clusters: plugin label + agent pills */}
@@ -287,6 +378,31 @@ const NetworkScene: React.FC<{ s: Extract<Scene, { type: "network" }> }> = ({ s 
           <div style={{ width: 118, height: 118, borderRadius: "50%", border: `5px solid ${brand.accent}`, backgroundColor: brand.paper, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: serif, fontWeight: 600, fontSize: 44, color: brand.ink }}>{s.center}</div>
         </div>
       </div>
+
+      {/* humans bar (top center) — directs the fleet */}
+      {hasHumans ? (
+        <div style={{ position: "absolute", left: cx, top: humansY, transform: `translate(-50%, -50%) scale(${interpolate(humansSp, [0, 1], [0.9, 1])})`, opacity: interpolate(humansSp, [0, 1], [0, 1]) }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 32px", borderRadius: 999, border: "1.5px solid rgba(26,26,26,0.26)", backgroundColor: brand.paper }}>
+            <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: brand.accent }} />
+            <span style={{ fontFamily: serif, fontSize: 30, color: "rgba(26,26,26,0.82)" }}>{s.humans}</span>
+          </div>
+        </div>
+      ) : null}
+
+      {/* shared context layer (full-width base bar) */}
+      {hasContext ? (
+        <div style={{ position: "absolute", left: barLeft, top: barTop, width: barW, height: barH, transform: `translateY(${barTy}px)`, opacity: barOp, borderRadius: 20, border: "2px solid rgba(228,87,46,0.55)", backgroundColor: "rgba(228,87,46,0.05)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
+          <div style={{ fontFamily: serif, fontSize: 34, fontWeight: 600, color: brand.ink, letterSpacing: -0.5 }}>{s.contextLayer!.label}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 18, fontFamily: "'SF Mono', ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 22, color: "rgba(26,26,26,0.62)" }}>
+            {s.contextLayer!.items.map((it, k) => (
+              <React.Fragment key={it}>
+                {k > 0 ? <span style={{ color: brand.accent }}>·</span> : null}
+                <span>{it}</span>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {s.heading ? (
         <div style={{ position: "absolute", top: 46, left: 0, right: 0, textAlign: "center", opacity: interpolate(headSp, [0, 1], [0, 1]), transform: `translateY(${interpolate(headSp, [0, 1], [-16, 0])}px)` }}>
@@ -322,6 +438,48 @@ const ListScene: React.FC<{ s: Extract<Scene, { type: "list" }> }> = ({ s }) => 
   );
 };
 
+// A horizontal flow of labelled boxes joined by arrows, revealed left-to-right.
+const Flow: React.FC<{ steps: string[]; accent: boolean; delay: number }> = ({ steps, accent, delay }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const line = accent ? brand.accent : "rgba(26,26,26,0.38)";
+  const text = accent ? brand.ink : "rgba(26,26,26,0.55)";
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, flexWrap: "nowrap", maxWidth: 1760 }}>
+      {steps.map((s, i) => {
+        const sp = spring({ frame: frame - (delay + i * 7), fps, config: { damping: 200 } });
+        const op = interpolate(sp, [0, 1], [0, 1]);
+        const ty = interpolate(sp, [0, 1], [16, 0]);
+        return (
+          <React.Fragment key={i}>
+            {i > 0 ? <span style={{ color: line, fontSize: 26, opacity: op, padding: "0 2px" }}>→</span> : null}
+            <div style={{ opacity: op, transform: `translateY(${ty}px)`, border: `2px solid ${line}`, borderRadius: 10, padding: "14px 16px", fontFamily: serif, fontSize: 21, color: text, background: accent ? "rgba(228,87,46,0.06)" : "transparent", whiteSpace: "nowrap", textAlign: "center", lineHeight: 1.05 }}>{s}</div>
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+};
+
+const MazeScene: React.FC<{ s: Extract<Scene, { type: "maze" }> }> = ({ s }) => {
+  const headOp = interpolate(useEntrance(2), [0, 1], [0, 1]);
+  const capOp = interpolate(useEntrance(80), [0, 1], [0, 1]);
+  return (
+    <AbsoluteFill style={{ backgroundColor: brand.paper, justifyContent: "center", alignItems: "center", flexDirection: "column", gap: 72, padding: "0 80px" }}>
+      {s.heading ? <div style={{ position: "absolute", top: 64, left: 0, right: 0, textAlign: "center", fontFamily: serif, fontSize: 56, fontWeight: 600, color: brand.ink, opacity: headOp }}>{s.heading}</div> : null}
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontFamily: "'SF Mono', ui-monospace, Menlo, monospace", fontSize: 18, letterSpacing: 3, textTransform: "uppercase", color: "rgba(26,26,26,0.45)", marginBottom: 18 }}>{s.before.label}</div>
+        <Flow steps={s.before.steps} accent={false} delay={6} />
+      </div>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontFamily: "'SF Mono', ui-monospace, Menlo, monospace", fontSize: 18, letterSpacing: 3, textTransform: "uppercase", color: brand.accent, marginBottom: 18 }}>{s.after.label}</div>
+        <Flow steps={s.after.steps} accent delay={44} />
+      </div>
+      {s.caption ? <div style={{ position: "absolute", bottom: 72, left: 0, right: 0, textAlign: "center", fontFamily: serif, fontSize: 38, color: brand.ink, opacity: capOp }}>{s.caption}</div> : null}
+    </AbsoluteFill>
+  );
+};
+
 function renderScene(s: Scene) {
   switch (s.type) {
     case "title":
@@ -340,6 +498,8 @@ function renderScene(s: Scene) {
       return <NetworkScene s={s} />;
     case "list":
       return <ListScene s={s} />;
+    case "maze":
+      return <MazeScene s={s} />;
     case "cta":
       return <CtaScene s={s} />;
   }

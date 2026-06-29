@@ -14,9 +14,14 @@ export type Scene =
   | { type: "stat"; durationInFrames: number; stats: { value: number; label: string; suffix?: string }[]; tagline?: string }
   // The agent fleet as a hub-and-spoke network: a center node (e.g. "pm") with one cluster per plugin
   // arranged around it, and task-passing pulses animating center -> cluster along each edge.
-  | { type: "network"; durationInFrames: number; heading?: string; center: string; clusters: { plugin: string; agents: string[] }[] }
+  // Optional "AI-native org" story: `humans` adds a directing bar ABOVE the center (humans → fleet),
+  // `contextLayer` adds a full-width shared-context bar at the BASE that every cluster plugs into
+  // (with bidirectional pulses — agents read from / write to it). Both are backwards-compatible.
+  | { type: "network"; durationInFrames: number; heading?: string; center: string; clusters: { plugin: string; agents: string[] }[]; humans?: string; contextLayer?: { label: string; items: string[] } }
   // A staggered list of deliverables/features; columns: 2 for long lists.
   | { type: "list"; durationInFrames: number; heading: string; columns?: 1 | 2; items: { label: string; sub?: string }[] }
+  // A before/after workflow — two rows of labelled boxes joined by arrows ("remove the maze").
+  | { type: "maze"; durationInFrames: number; heading?: string; caption?: string; before: { label: string; steps: string[] }; after: { label: string; steps: string[] } }
   | { type: "cta"; durationInFrames: number; title: string; subtitle: string };
 
 // Default = the ShipWithAI self-promo. `image: ""` renders a captioned placeholder,
