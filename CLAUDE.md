@@ -21,6 +21,7 @@ plugins/
   shipwithai-video/               # /promo      — Remotion video + capture/compose skills + template
   shipwithai-monitor/             # /monitor    — 24/7 post-launch monitoring (tech/sales/traffic/seo/security/reputation) + alerts
 docs/                             # production docs (e.g. promo-script.md)
+site/                             # shipwithai.nl — static marketing site (no build; from the Claude Design "Aurora" template)
 engagements/                      # per-client working dirs (gitignored; only index.json tracked)
 ```
 
