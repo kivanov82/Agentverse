@@ -1,10 +1,10 @@
 # ShipWithAI
 
-> A full software studio in your terminal. AI specialists that **design, build, audit, and ship** — locally, in an afternoon.
+> An **AI-native delivery studio**. Humans bring the strategy, taste and judgment; a fleet of specialist agents does the labor; and it all runs on a **shared, legible context layer**.
 
 **[shipwithai.nl](https://shipwithai.nl)** · [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-ShipWithAI is a **local-first AI delivery studio** — a fleet of specialist agents packaged as Claude Code plugins that produce real client deliverables on your machine. No hosted backend, no automated billing: you run the studio and bill per engagement.
+In the old world a company *is* its people — they hold the knowledge and do the work. In the new world people move up to **strategy, taste and judgment**, **agents do the labor**, and the company becomes a **shared, legible context layer** — the brief, the brand, the conventions, the playbooks — that both plug into. **ShipWithAI is built exactly like that**: a fleet of specialist agents running on an open context layer (its plugins, skills and conventions) to **design, build, deploy, grow and monitor** real products. The **moat is legibility** — a delivery operation documented so well that agents can run it. Runs locally as Claude Code plugins; billed per engagement.
 
 **20 specialist agents · 12 skills · 6 use-cases**, connected to Claude Design, Playwright, Vercel, Stripe, and GitHub.
 

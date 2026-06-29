@@ -2,7 +2,7 @@
   "name": "shipwithai",
   "owner": { "name": "ShipWithAI" },
   "metadata": {
-    "description": "ShipWithAI delivery studio — agent verticals run locally in Claude Code to produce client deliverables."
+    "description": "ShipWithAI — an AI-native delivery studio: a fleet of specialist agents running on a shared, legible context layer (its plugins, skills + conventions) to design, build, deploy, grow and monitor real products. Runs locally in Claude Code."
   },
   "plugins": [
     {

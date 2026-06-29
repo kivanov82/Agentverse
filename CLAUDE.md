@@ -1,8 +1,10 @@
-# ShipWithAI — local-first AI delivery studio
+# ShipWithAI — an AI-native delivery studio
 
-ShipWithAI is a **local-first delivery studio**: a fleet of specialist AI agents that run inside Claude Code to produce real client deliverables — smart-contract audits, e-commerce builds, SEO, marketing campaigns, marketing videos, and 24/7 post-launch monitoring. The studio is packaged as **Claude Code plugins** and runs locally; engagements are billed per project (no automated payments).
+**Positioning (the why).** In the old world a company *is* its people — they hold the knowledge, make the calls, do the work. In the new world people move up to **strategy, taste and judgment**, **agents do the labor**, and the company becomes a **shared, legible context layer** — the brief, the brand, the conventions, the playbooks, the decision logs — that both plug into. ShipWithAI is built exactly like that, and the **moat is legibility**: a delivery operation documented so well that agents can run it. (Don't position it as "a terminal tool" — the operator has the terminal; the customer gets a fleet running on a legible context layer.)
 
-Brand: **ShipWithAI** (no dot). Domain: **shipwithai.nl**.
+**What it is (the how).** A fleet of specialist AI agents that run inside Claude Code, on an open context layer (its plugins, skills and conventions), to **design, build, deploy, grow and monitor** real products — e-commerce builds, SEO, marketing campaigns, marketing videos, 24/7 monitoring (and smart-contract audits). Humans direct and review; agents execute. Packaged as **Claude Code plugins**, runs locally; billed per engagement (no automated payments). We point it at the goldmine: work repetitive enough to systematize, complex enough that agencies are still slow and expensive.
+
+Brand: **ShipWithAI** (no dot). Domain: **shipwithai.nl**. Full positioning → the `positioning-ai-native-studio` memory.
 
 > **History.** This repo was previously a hosted multi-agent web SaaS (a Next.js app + a bespoke agent runtime + Firestore + Stripe/x402 payment rails). That system was retired in the 2026-06 pivot to local-first; the old `apps/web`, `packages/core`, `agents/`, `scripts/`, `memory/`, and monorepo scaffolding were removed (recoverable from git history). The agent prompts and audit methodologies — the real IP — were ported into the plugins below.
 
