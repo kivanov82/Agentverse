@@ -56,6 +56,6 @@ Turn a brief + captured footage into a rendered MP4 using the studio's bundled R
 ## Notes
 
 - **Screen recordings** (`clip` scenes): drop the `.mp4`/`.webm` into `public/` (a `public/clips/` subfolder keeps it tidy — reference as `clips/name.mp4`). Trim each recording to its highlight before import, or use `startFrom`/`endAt`. Transcode `.mov` → `.mp4` with `ffmpeg -i clip.mov -vf scale=1920:-2 -r 30 clip.mp4`.
-- Music: drop an `.mp3` into `public/` and add `<Audio>` per the template's commented example, or leave silent.
+- **Music:** drop an `.mp3` into `public/` and set `brand.music` to its filename — the template renders `<Audio>` with an automatic fade in (first ~0.5s) and fade out (last ~1s). Leave `brand.music: ""` for silent. Suno/AI tracks run several minutes; either pre-cut a ~75s segment with `ffmpeg -ss <start> -t 75 -i in.mp3 -c copy music.mp3`, or pick a startFrom on the `<Audio>` — match the track's build/payoff to the video's arc.
 - If `npm install` is slow or offline, `npx remotion render` still works once deps are present.
 - Don't fabricate metrics in captions — only state what the deliverables actually show.

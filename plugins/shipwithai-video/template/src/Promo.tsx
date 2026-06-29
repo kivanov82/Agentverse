@@ -8,6 +8,7 @@ import {
   spring,
   Img,
   OffthreadVideo,
+  Audio,
   staticFile,
 } from "remotion";
 import { brand } from "./brand";
@@ -96,6 +97,28 @@ const GridScene: React.FC<{ s: Extract<Scene, { type: "grid" }> }> = ({ s }) => 
   );
 };
 
+// A large title that drops in across the TOP of a clip/showcase frame, with a
+// solid ink scrim band so it stays legible over footage.
+const TopHeading: React.FC<{ text: string }> = ({ text }) => {
+  const h = useEntrance(10);
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: "rgba(26,26,26,0.55)",
+        padding: "26px 44px",
+        opacity: interpolate(h, [0, 1], [0, 1]),
+        transform: `translateY(${interpolate(h, [0, 1], [-20, 0])}px)`,
+      }}
+    >
+      <span style={{ fontFamily: serif, fontSize: 58, fontWeight: 600, color: brand.paper, letterSpacing: -0.5 }}>{text}</span>
+    </div>
+  );
+};
+
 const ShowcaseScene: React.FC<{ s: Extract<Scene, { type: "showcase" }> }> = ({ s }) => {
   const e = useEntrance(4);
   const ty = interpolate(e, [0, 1], [60, 0]);
@@ -103,13 +126,14 @@ const ShowcaseScene: React.FC<{ s: Extract<Scene, { type: "showcase" }> }> = ({ 
   return (
     <AbsoluteFill style={{ backgroundColor: brand.ink, justifyContent: "center", alignItems: "center" }}>
       <div
-        style={{ transform: `translateY(${ty}px) scale(${scale})`, width: 1400, height: 720, backgroundColor: brand.paper, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}
+        style={{ position: "relative", transform: `translateY(${ty}px) scale(${scale})`, width: 1400, height: 720, backgroundColor: brand.paper, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}
       >
         {s.image ? (
           <Img src={staticFile(s.image)} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
           <div style={{ color: brand.ink, opacity: 0.35, fontFamily: serif, fontSize: 40 }}>[ {s.caption} ]</div>
         )}
+        {s.heading ? <TopHeading text={s.heading} /> : null}
       </div>
       <div style={{ position: "absolute", bottom: 70, left: 120, right: 120, fontFamily: serif, fontSize: 46, color: brand.paper }}>
         <span style={{ borderBottom: `4px solid ${brand.accent}`, paddingBottom: 8 }}>{s.caption}</span>
@@ -125,7 +149,7 @@ const ClipScene: React.FC<{ s: Extract<Scene, { type: "clip" }> }> = ({ s }) => 
   return (
     <AbsoluteFill style={{ backgroundColor: brand.ink, justifyContent: "center", alignItems: "center" }}>
       <div
-        style={{ transform: `translateY(${ty}px) scale(${scale})`, width: 1600, height: 810, backgroundColor: "#000", overflow: "hidden", border: `2px solid ${brand.accent}` }}
+        style={{ position: "relative", transform: `translateY(${ty}px) scale(${scale})`, width: 1600, height: 810, backgroundColor: brand.ink, overflow: "hidden", border: `2px solid ${brand.accent}` }}
       >
         <OffthreadVideo
           src={staticFile(s.src)}
@@ -133,8 +157,9 @@ const ClipScene: React.FC<{ s: Extract<Scene, { type: "clip" }> }> = ({ s }) => 
           trimBefore={s.startFrom}
           trimAfter={s.endAt}
           muted={s.muted ?? true}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          style={{ width: "100%", height: "100%", objectFit: s.fit ?? "cover" }}
         />
+        {s.heading ? <TopHeading text={s.heading} /> : null}
       </div>
       <div style={{ position: "absolute", bottom: 70, left: 120, right: 120, fontFamily: serif, fontSize: 46, color: brand.paper }}>
         <span style={{ borderBottom: `4px solid ${brand.accent}`, paddingBottom: 8 }}>{s.caption}</span>
@@ -189,6 +214,114 @@ const CtaScene: React.FC<{ s: Extract<Scene, { type: "cta" }> }> = ({ s }) => {
   );
 };
 
+// The hero: the agent fleet as a hub-and-spoke network. A center node sits in the
+// middle with one cluster per plugin evenly around it; accent pulses travel
+// center -> cluster along each edge on a loop to read as task-passing.
+const NetworkScene: React.FC<{ s: Extract<Scene, { type: "network" }> }> = ({ s }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const W = 1920;
+  const H = 1080;
+  const cx = W / 2;
+  const cy = H / 2 + (s.heading ? 34 : 0);
+  const rx = 430;
+  const ry = 300;
+  const n = s.clusters.length;
+  const nodes = s.clusters.map((c, i) => {
+    const ang = -Math.PI / 2 + (i + 0.5) * ((2 * Math.PI) / n);
+    return { plugin: c.plugin, agents: c.agents, x: cx + rx * Math.cos(ang), y: cy + ry * Math.sin(ang) };
+  });
+  const centerSp = spring({ frame: frame - 4, fps, config: { damping: 200 } });
+  const centerScale = interpolate(centerSp, [0, 1], [0.5, 1]);
+  const headSp = spring({ frame: frame - 2, fps, config: { damping: 200 } });
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: brand.paper }}>
+      {/* edges + task-passing pulses */}
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ position: "absolute", top: 0, left: 0 }}>
+        {nodes.map((nd, i) => {
+          const edgeSp = spring({ frame: frame - (12 + i * 5), fps, config: { damping: 200 } });
+          const edgeOp = interpolate(edgeSp, [0, 1], [0, 0.85]);
+          const ex = interpolate(edgeSp, [0, 1], [cx, nd.x]);
+          const ey = interpolate(edgeSp, [0, 1], [cy, nd.y]);
+          const cycle = 45;
+          const t = ((frame + i * (cycle / n)) % cycle) / cycle;
+          const px = cx + (nd.x - cx) * t;
+          const py = cy + (nd.y - cy) * t;
+          const travel = interpolate(t, [0, 0.12, 0.88, 1], [0, 1, 1, 0]);
+          const gate = interpolate(frame, [22, 38], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+          return (
+            <g key={i}>
+              <line x1={cx} y1={cy} x2={ex} y2={ey} stroke="rgba(26,26,26,0.18)" strokeWidth={2} opacity={edgeOp} />
+              <circle cx={px} cy={py} r={7} fill={brand.accent} opacity={travel * gate} />
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* clusters: plugin label + agent pills */}
+      {nodes.map((nd, i) => {
+        const sp = spring({ frame: frame - (18 + i * 6), fps, config: { damping: 200 } });
+        const op = interpolate(sp, [0, 1], [0, 1]);
+        const sc = interpolate(sp, [0, 1], [0.85, 1]);
+        return (
+          <div key={i} style={{ position: "absolute", left: nd.x, top: nd.y, width: 300, transform: `translate(-50%, -50%) scale(${sc})`, opacity: op, textAlign: "center" }}>
+            <div style={{ fontFamily: "'SF Mono', ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 20, letterSpacing: 3, textTransform: "uppercase", color: "rgba(26,26,26,0.5)", marginBottom: 12 }}>{nd.plugin}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+              {nd.agents.map((a, j) => {
+                const psp = spring({ frame: frame - (30 + i * 6 + j * 3), fps, config: { damping: 200 } });
+                const pop = interpolate(psp, [0, 1], [0, 1]);
+                const pty = interpolate(psp, [0, 1], [10, 0]);
+                return (
+                  <div key={a} style={{ opacity: pop, transform: `translateY(${pty}px)`, fontFamily: serif, fontSize: 22, color: brand.ink, padding: "5px 14px", border: "1.5px solid rgba(26,26,26,0.3)", borderRadius: 999, backgroundColor: brand.paper, whiteSpace: "nowrap" }}>{a}</div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* center node with accent ring */}
+      <div style={{ position: "absolute", left: cx, top: cy, transform: `translate(-50%, -50%) scale(${centerScale})` }}>
+        <div style={{ width: 152, height: 152, borderRadius: "50%", border: "2px solid rgba(228,87,46,0.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: 118, height: 118, borderRadius: "50%", border: `5px solid ${brand.accent}`, backgroundColor: brand.paper, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: serif, fontWeight: 600, fontSize: 44, color: brand.ink }}>{s.center}</div>
+        </div>
+      </div>
+
+      {s.heading ? (
+        <div style={{ position: "absolute", top: 46, left: 0, right: 0, textAlign: "center", opacity: interpolate(headSp, [0, 1], [0, 1]), transform: `translateY(${interpolate(headSp, [0, 1], [-16, 0])}px)` }}>
+          <span style={{ fontFamily: serif, fontSize: 56, fontWeight: 600, color: brand.ink, letterSpacing: -1 }}>{s.heading}</span>
+        </div>
+      ) : null}
+    </AbsoluteFill>
+  );
+};
+
+const ListScene: React.FC<{ s: Extract<Scene, { type: "list" }> }> = ({ s }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const cols = s.columns ?? 1;
+  const headSp = spring({ frame: frame - 4, fps, config: { damping: 200 } });
+  return (
+    <AbsoluteFill style={{ backgroundColor: brand.paper, padding: "110px 150px", flexDirection: "column" }}>
+      <div style={{ opacity: interpolate(headSp, [0, 1], [0, 1]), transform: `translateY(${interpolate(headSp, [0, 1], [24, 0])}px)`, fontFamily: serif, fontSize: 84, fontWeight: 600, color: brand.ink, letterSpacing: -1, marginBottom: 64 }}>{s.heading}</div>
+      <div style={{ display: "grid", gridTemplateColumns: cols === 2 ? "1fr 1fr" : "1fr", columnGap: 110, rowGap: 40 }}>
+        {s.items.map((it, i) => {
+          const sp = spring({ frame: frame - (14 + i * 6), fps, config: { damping: 200 } });
+          const op = interpolate(sp, [0, 1], [0, 1]);
+          const tx = interpolate(sp, [0, 1], [-30, 0]);
+          return (
+            <div key={i} style={{ opacity: op, transform: `translateX(${tx}px)`, borderLeft: `4px solid ${brand.accent}`, paddingLeft: 28 }}>
+              <div style={{ fontFamily: serif, fontSize: 46, color: brand.ink, fontWeight: 600, lineHeight: 1.1 }}>{it.label}</div>
+              {it.sub ? <div style={{ fontFamily: serif, fontSize: 28, color: "rgba(26,26,26,0.6)", marginTop: 6 }}>{it.sub}</div> : null}
+            </div>
+          );
+        })}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 function renderScene(s: Scene) {
   switch (s.type) {
     case "title":
@@ -203,14 +336,30 @@ function renderScene(s: Scene) {
       return <ClipScene s={s} />;
     case "stat":
       return <StatScene s={s} />;
+    case "network":
+      return <NetworkScene s={s} />;
+    case "list":
+      return <ListScene s={s} />;
     case "cta":
       return <CtaScene s={s} />;
   }
 }
 
 export const Promo: React.FC = () => {
+  const total = scenes.reduce((n, s) => n + s.durationInFrames, 0);
   return (
     <AbsoluteFill style={{ backgroundColor: brand.paper }}>
+      {brand.music ? (
+        <Audio
+          src={staticFile(brand.music)}
+          volume={(f) =>
+            interpolate(f, [0, 15, total - 30, total], [0, 0.75, 0.75, 0], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            })
+          }
+        />
+      ) : null}
       <Series>
         {scenes.map((s, i) => (
           <Series.Sequence key={i} durationInFrames={s.durationInFrames}>

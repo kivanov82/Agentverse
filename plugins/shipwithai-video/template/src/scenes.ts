@@ -5,12 +5,18 @@ export type Scene =
   | { type: "title"; durationInFrames: number; title: string; subtitle: string }
   | { type: "message"; durationInFrames: number; lines: string[] }
   | { type: "grid"; durationInFrames: number; heading: string; items: string[] }
-  | { type: "showcase"; durationInFrames: number; image: string; caption: string }
+  | { type: "showcase"; durationInFrames: number; image: string; caption: string; heading?: string }
   // A screen recording (mp4/webm in public/), fast-forwarded inside a branded frame.
   // playbackRate 3-5 = the speed-up; startFrom/endAt (in frames of the SOURCE) trim to the highlight.
-  | { type: "clip"; durationInFrames: number; src: string; caption: string; playbackRate?: number; startFrom?: number; endAt?: number; muted?: boolean }
+  // heading = a LARGE title across the top of the clip; fit "contain" letterboxes wide sources (no crop), "cover" (default) fills.
+  | { type: "clip"; durationInFrames: number; src: string; caption: string; playbackRate?: number; startFrom?: number; endAt?: number; muted?: boolean; heading?: string; fit?: "cover" | "contain" }
   // Animated counters: each stat counts up from 0 to `value`, with a label and the tagline below.
   | { type: "stat"; durationInFrames: number; stats: { value: number; label: string; suffix?: string }[]; tagline?: string }
+  // The agent fleet as a hub-and-spoke network: a center node (e.g. "pm") with one cluster per plugin
+  // arranged around it, and task-passing pulses animating center -> cluster along each edge.
+  | { type: "network"; durationInFrames: number; heading?: string; center: string; clusters: { plugin: string; agents: string[] }[] }
+  // A staggered list of deliverables/features; columns: 2 for long lists.
+  | { type: "list"; durationInFrames: number; heading: string; columns?: 1 | 2; items: { label: string; sub?: string }[] }
   | { type: "cta"; durationInFrames: number; title: string; subtitle: string };
 
 // Default = the ShipWithAI self-promo. `image: ""` renders a captioned placeholder,

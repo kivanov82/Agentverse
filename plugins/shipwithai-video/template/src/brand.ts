@@ -7,6 +7,7 @@ export const brand = {
   paper: "#F4F1EA", // cream background
   font: "Newsreader", // display font (falls back to a serif stack if not installed)
   logo: "", // a filename in public/ (e.g. "logo.png"), or "" for none
+  music: "", // a filename in public/ (e.g. "music.mp3"), or "" for none — auto fades in/out
   fps: 30,
   durationSeconds: 30, // keep in sync with the sum of scene durations
 };
