@@ -10,7 +10,9 @@ To re-pull or re-theme the design, use the `DesignSync` MCP (`/design-login`) ag
 
 ## Sections
 
-Nav · Hero (orchestrator terminal) · Trust strip · **The shift** (old company → AI-native company) · **How it works** (brief → design → build → deploy → grow → monitor) · **Services** (the six verticals) · **The moat** (legibility, the readability stack) · **Engagement** (per-engagement pricing) · CTA · Footer.
+Nav · Hero (orchestrator terminal) · Trust strip · **The shift** (old company → AI-native company) · **How it works** (brief → design → build → deploy → grow → monitor) · **Watch** (the embedded 2-min explainer, `assets/promo.mp4`) · **Services** (the six verticals) · **The moat** (legibility, the readability stack) · Closing statement · Footer.
+
+**Explanatory-only:** no calls to action, no email, no pricing — it's an explainer for now. The only buttons (hero "Watch how it works" / "Read the thesis") are in-page scroll links.
 
 ## Run locally
 
@@ -30,6 +32,6 @@ Fonts load from Google Fonts (CDN). The favicon + logo is `assets/swai-mark.svg`
 
 ## Notes
 
-- **Pricing figures (€4k / €12k) are placeholders** carried from the design — set real numbers before going live.
-- CTAs point at `mailto:hello@shipwithai.nl` — wire to the real contact/booking flow when ready.
+- **Explanatory build** — no CTAs, email, or pricing yet. When you're ready to convert, add the engagement/contact flow back (the design system has the components).
+- `assets/promo.mp4` is a 720p / faststart web encode of the studio explainer (`engagements/shipwithai-promo-20260627/video/out/promo-v7.mp4`); `assets/promo-poster.jpg` is its poster frame.
 - All motion is gated behind `prefers-reduced-motion`.
