@@ -17,11 +17,22 @@ export type Scene =
   // Optional "AI-native org" story: `humans` adds a directing bar ABOVE the center (humans → fleet),
   // `contextLayer` adds a full-width shared-context bar at the BASE that every cluster plugs into
   // (with bidirectional pulses — agents read from / write to it). Both are backwards-compatible.
-  | { type: "network"; durationInFrames: number; heading?: string; center: string; clusters: { plugin: string; agents: string[] }[]; humans?: string; contextLayer?: { label: string; items: string[] } }
+  // `stages` (exactly 4 lines) switches the scene into a STAGED build: it reveals one layer per
+  // stage across the duration (1: humans · 2: +center · 3: +clusters · 4: +contextLayer), cumulative,
+  // with the current stage's line shown as a crossfading caption near the bottom. Omit for all-at-once.
+  | { type: "network"; durationInFrames: number; heading?: string; center: string; clusters: { plugin: string; agents: string[] }[]; humans?: string; contextLayer?: { label: string; items: string[] }; stages?: string[] }
   // A staggered list of deliverables/features; columns: 2 for long lists.
   | { type: "list"; durationInFrames: number; heading: string; columns?: 1 | 2; items: { label: string; sub?: string }[] }
   // A before/after workflow — two rows of labelled boxes joined by arrows ("remove the maze").
   | { type: "maze"; durationInFrames: number; heading?: string; caption?: string; before: { label: string; steps: string[] }; after: { label: string; steps: string[] } }
+  // A pyramid that builds bottom-up: `layers` given TOP→BOTTOM (so layers[last] is the widest base).
+  // Each layer is a centered bar (width decreasing toward the top), revealed from the base up; the
+  // top layer is the accent apex. Reads as "layers stack into agent leverage."
+  | { type: "stack"; durationInFrames: number; heading?: string; caption?: string; layers: { label: string; sub?: string }[] }
+  // A 2×2 opportunity map: axes `xAxis` (default "Workflow complexity") × `yAxis` (default "Repetition").
+  // Three muted quadrants (too simple / not painful enough / complex, not repeatable) and a highlighted
+  // top-right "goldmine" cell holding `items`. Reveals axes → muted labels → goldmine → caption.
+  | { type: "goldmine"; durationInFrames: number; heading?: string; caption?: string; items: string[]; xAxis?: string; yAxis?: string }
   | { type: "cta"; durationInFrames: number; title: string; subtitle: string };
 
 // Default = the ShipWithAI self-promo. `image: ""` renders a captioned placeholder,
