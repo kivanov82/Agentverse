@@ -2,9 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/(.*)",
       "has": [{ "type": "host", "value": "www.shipwithai.nl" }],
-      "destination": "https://shipwithai.nl/:path*",
+      "destination": "https://shipwithai.nl/$1",
       "permanent": true
     }
   ]
