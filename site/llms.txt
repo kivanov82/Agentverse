@@ -1,0 +1,42 @@
+# ShipWithAI
+
+> ShipWithAI (shipwithai.nl) is an AI-native delivery studio. A fleet of specialist AI agents designs, builds, deploys, grows and monitors real software — under a method where humans keep strategy, taste and judgment, agents do the labor, and the company itself is a shared, legible context layer (the brief, the brand, the conventions, the playbooks, the decision logs) that both plug into. Every step leaves evidence.
+
+The studio is local-first by architecture: the fleet runs on the client's machine, inside the client's working tree. Deliverables are files the client owns — running code, reports, pages, films. Client code and keys never leave; there is no hosted platform to trust. Engagements are billed per engagement. The studio itself is open source (MIT).
+
+## What ships
+
+- **Smart-contract audits** — severity-rated findings with a Go/No-Go recommendation. Every Critical, High and Medium finding is independently re-verified and proven with a failing Foundry test before it reaches the report.
+- **Web & e-commerce builds** — on-brand storefronts and sites: designed on a real canvas, built, payment-wired, and deployed to the client's infrastructure. Delivered as running code, not mockups.
+- **SEO** — technical and content SEO delivered as real pages: the audit, the keyword plan, and the content itself — implemented, not recommended.
+- **Marketing campaigns** — launch plans, landing pages and ready-to-publish copy, written in the client's voice and grounded in the actual product.
+- **Marketing videos** — scripted, edited, code-rendered product films. The explainer on the site was produced by the same pipeline.
+- **24/7 monitoring** — uptime, sales, traffic, search and security watched around the clock after launch. Alerts on change, not noise.
+
+## Method
+
+1. **Brief** — scope, risks and acceptance tests, signed off by the client.
+2. **Design & build** — design approved on the canvas by a human; running code, with audit findings re-verified.
+3. **Deploy** — live on the client's infrastructure, behind a human go.
+4. **Grow & monitor** — SEO, campaigns, films, and 24/7 monitoring.
+
+Agents act alone on labor; humans decide at checkpoints (design approval, deploy go/no-go). Every decision and correction is written back into the context layer with its provenance, so the same mistake doesn't ship twice.
+
+## The record
+
+- 20 specialist agents across six delivery verticals — audit, build, SEO, campaigns, video, monitoring.
+- A consumer banking app taken from zero to TestFlight in 31 days — one engineer directing agents, inside a regulated fintech.
+- A regulatory feature shipped to production across one backend and two frontends in 1 day.
+- 100% of Critical, High and Medium audit findings adversarially re-verified before they reach the report.
+- The site, the film on it, and the pipeline that produced them were shipped by the fleet itself.
+
+## Who builds it
+
+Founder: Kiril Ivanov — 23+ years of production software; early engineering role at ING, years as a senior software architect in Amsterdam, full-stack blockchain and DeFi platforms since 2016, currently CTO of Kasu Finance (a regulated lending platform). The audit methodologies on the site are the same ones running in that production security programme.
+
+## Links
+
+- [Website](https://shipwithai.nl/)
+- [Book a call / free one-day process audit](https://cal.com/shipwithai/30min)
+- [Source code (open source, MIT)](https://github.com/kivanov82/ShipWith.AI)
+- [Founder on LinkedIn](https://www.linkedin.com/in/kirivanov)
