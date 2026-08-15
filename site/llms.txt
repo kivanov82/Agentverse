@@ -40,3 +40,4 @@ Founder: Kiril Ivanov — 23+ years of production software; early engineering ro
 - [Book a call / free one-day process audit](https://cal.com/shipwithai/30min)
 - [Source code (open source, MIT)](https://github.com/kivanov82/ShipWith.AI)
 - [Founder on LinkedIn](https://www.linkedin.com/in/kirivanov)
+- [Founder on GitHub](https://github.com/kivanov82)
